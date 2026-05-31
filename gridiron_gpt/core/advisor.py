@@ -15,7 +15,7 @@ class Advisor:
     def __init__(self, index_path=INDEX_PATH, docs_path=DOCS_PATH):
         self.index_path = index_path
         self.docs_path = docs_path
-        self.model = SentenceTransformer(MODEL_NAME)
+        self.model = SentenceTransformer(MODEL_NAME, local_files_only=True)
         self.documents = []
         self.index = None
 
