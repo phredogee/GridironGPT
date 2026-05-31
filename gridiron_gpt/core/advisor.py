@@ -96,23 +96,21 @@ class Advisor:
 
     def _detect_team_filter(self, text: str) -> str | None:
         query = text.upper()
+        words = query.replace("?", "").replace(",", "").split()
 
-        team_terms = {
-            "GB": ["GB", "PACKERS", "GREEN BAY"],
-            "CHI": ["CHI", "BEARS", "CHICAGO"],
-            "DET": ["DET", "LIONS", "DETROIT"],
-            "MIN": ["MIN", "VIKINGS", "MINNESOTA"],
-            "DAL": ["DAL", "COWBOYS", "DALLAS"],
-            "HOU": ["HOU", "TEXANS", "HOUSTON"],
-            "KC": ["KC", "CHIEFS", "KANSAS CITY"],
-            "BUF": ["BUF", "BILLS", "BUFFALO"],
-            "PHI": ["PHI", "EAGLES", "PHILADELPHIA"],
-            "SF": ["SF", "49ERS", "SAN FRANCISCO"],
-        }
+        for code, full_name in self._TEAM_NAMES.items():
+            full_name_upper = full_name.upper()
+            aliases = full_name_upper.split()
 
-        for team, terms in team_terms.items():
-            if any(term in query for term in terms):
-                return f"({team})"
+            if code in words:
+                return f"({code})"
+
+            if full_name_upper in query:
+                return f"({code})"
+
+            # Match nickname, city, or region terms like PACKERS, GREEN, BAY, TEXANS
+            if any(alias in words for alias in aliases):
+                return f"({code})"
 
         return None
 
