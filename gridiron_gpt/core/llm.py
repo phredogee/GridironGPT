@@ -3,7 +3,9 @@
 import os
 from typing import Optional
 
-_DEFAULT_MODEL = "claude-haiku-4-5-20251001"
+import requests
+
+_DEFAULT_MODEL = "qwen3:8b"
 
 SYSTEM_PROMPT = """You are a sharp fantasy football advisor. You have access to real player stats.
 
@@ -15,35 +17,58 @@ Rules:
 - Keep it tight — no fluff, no disclaimers"""
 
 
+def _ollama_native_url() -> str:
+    base_url = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434/v1")
+    base_url = base_url.rstrip("/")
+
+    if base_url.endswith("/v1"):
+        base_url = base_url[:-3]
+
+    return f"{base_url}/api/chat"
+
+
 def generate_advice(
     query: str,
     context_docs: list,
     model: str = _DEFAULT_MODEL,
 ) -> Optional[str]:
     """
-    Call Claude to generate fantasy advice from retrieved player docs.
-    Returns None if ANTHROPIC_API_KEY is not set.
+    Generate fantasy advice using a local Ollama model.
+    Uses Ollama's native /api/chat endpoint for reliable Qwen output.
     """
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        return None
+    model = os.environ.get("OLLAMA_MODEL", model)
 
-    try:
-        import anthropic
-        client = anthropic.Anthropic(api_key=api_key)
+    context = "\n".join(f"- {doc['text']}" for doc in context_docs[:5])
 
-        context = "\n".join(f"- {doc['text']}" for doc in context_docs)
-
-        message = client.messages.create(
-            model=model,
-            max_tokens=512,
-            system=SYSTEM_PROMPT,
-            messages=[{
+    payload = {
+        "model": model,
+        "stream": False,
+        "think": False,
+        "messages": [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {
                 "role": "user",
                 "content": f"Question: {query}\n\nPlayer data:\n{context}",
-            }],
-        )
-        return message.content[0].text
+            },
+        ],
+        "options": {
+            "temperature": 0.3,
+            "num_predict": 512,
+        },
+    }
+
+    try:
+        response = requests.post(_ollama_native_url(), json=payload, timeout=120)
+        response.raise_for_status()
+        data = response.json()
+
+        content = data.get("message", {}).get("content", "")
+        content = content.strip()
+
+        if not content:
+            return f"[LLM error: empty response from Ollama; raw response keys={list(data.keys())}]"
+
+        return content
 
     except Exception as e:
         return f"[LLM error: {e}]"

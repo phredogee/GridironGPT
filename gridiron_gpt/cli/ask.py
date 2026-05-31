@@ -36,9 +36,9 @@ def ask(query, top, raw):
         banner("No results found for that query.", emoji="❓")
         return
 
-    has_key = bool(os.environ.get("ANTHROPIC_API_KEY"))
+    use_llm = os.environ.get("GRIDIRON_LLM", "ollama").lower() != "none"
 
-    if not raw and has_key:
+    if not raw and use_llm:
         advice = generate_advice(query, results)
         if advice and not advice.startswith("[LLM error"):
             click.echo(f"\n🏈  {query}\n")
@@ -58,9 +58,9 @@ def ask(query, top, raw):
         pct = int(r["similarity"] * 100)
         click.echo(f"  {i:<4} {r['text']:<55} {pct:>5}%")
 
-    if not has_key and not raw:
+    if not use_llm and not raw:
         click.echo(
-            "\n  💡 Set ANTHROPIC_API_KEY to get AI-generated advice instead of raw results.\n"
+            "\n  💡 Set GRIDIRON_LLM=ollama to get AI-generated advice instead of raw results.\n"
         )
     else:
         click.echo()
