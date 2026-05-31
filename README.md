@@ -1,40 +1,44 @@
-# 🏈 Gridiron GPT — ESPN Pipeline CLI
+![Python](https://img.shields.io/badge/Python-3.11-blue)
+![Status](https://img.shields.io/badge/Status-Active-brightgreen)
+![License](https://img.shields.io/badge/License-MIT-yellow)
 
-Welcome to the **Phred CLI Ecosystem**, where every fetch, merge, and semantic audit is built to teach and empower. This repo scaffolds ESPN-style player pipelines with dry-run diagnostics, contributor-friendly fetchers, and expressive CLI feedback.
+# 🏈 GridironGPT — ESPN Pipeline CLI
 
----
+**Gridiron GPT** is a specialized toolkit for fetching, processing, and auditing fantasy football data. It features an ESPN-style player pipeline with dry-run diagnostics and semantic auditing to ensure data integrity before ingestion.
 
-## 🧪 Running the CLI
+## 🚀 Quick Start
 
+### Installation
+Ensure you are in your virtual environment (`phredenv`):
 ```bash
-./run_zodiac.sh --year 1992
+pip install -r requirements.txt
+```
 
-# ESPN dry-run mode:
-# python -m phred.cli.run_pipeline --season 2025 --dry-run #
-# ===========================================================
+### Running the Pipeline
+Use the provided shell script for standard ESPN dry-runs:
+```bash
+./run_zodiac.sh --year 2025
+```
 
-#ESPN Dry-Run Pipeline Flow:
-# fetch_from_espn(dry_run=True)
-#         ↓
-# get_player_bios(players, dry_run=True)
-#         ↓
-# align_embeddings(players, bios)
-#         ↓
-# 🧠 Semantic audit + CLI feedback
+For more granular control, run the module directly:
+```bash
+python -m gridiron_gpt.cli.draft --season 2025 --dry-run
+```
 
-# Running Tests:
+## 🏗 Project Structure
+* **`gridiron_gpt/`**: Core logic including fetchers, embeddings, and the CLI.
+* **`modules/`**: Predictor and pipeline logic.
+* **`scripts/`**: Utility scripts for testing and environment management.
+* **`tests/`**: Suite for validating pipeline flow and import integrity.
+
+## 🧪 Development & Testing
+Run the test suite to verify the environment and data logic:
+```bash
 export PYTHONPATH=$(pwd)
-pytest gridiron_gpt/tests/test_espn_pipeline.py
+pytest gridiron_gpt/tests/
+```
 
-#Repo Structure:
-# gridiron_gpt/
-# ├── phred/
-# │   ├── sports/
-# │   │   ├── fetch.py
-# │   │   ├── espn.py
-# │   │   └── ...
-# │   ├── cli/
-# │   │   ├── run_pipeline.py
-# │   │   └── ...
-# ├── tests/
-# │   └── test_espn_pipeline.py
+## 🛠 Features
+* **Dry-Run Mode**: Validate data alignment without writing to the database.
+* **Semantic Auditing**: Integrated checks for player bio and embedding consistency.
+* **Flexible Fetchers**: Modular components for retrieving ESPN data.
