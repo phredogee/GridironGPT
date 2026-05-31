@@ -1,6 +1,7 @@
 # core/advisor.py
 
 import os
+import re
 import json
 import faiss
 import numpy as np
@@ -114,6 +115,12 @@ class Advisor:
 
         return None
 
+    def _extract_fantasy_points(self, doc_text: str) -> float:
+        match = re.search(r"scoring ([0-9.]+) fantasy points", doc_text)
+        if match:
+            return float(match.group(1))
+        return 0.0
+
     def query(self, text: str, top_k: int = 5) -> list:
         if self.index is None or self.index.ntotal == 0:
             raise RuntimeError(
@@ -150,7 +157,15 @@ class Advisor:
             if len(results) >= top_k:
                 break
 
-        return results
+        ranking_terms = ["BEST", "TOP", "START", "STARTER"]
+
+        if any(term in text.upper() for term in ranking_terms):
+            results.sort(
+                key=lambda r: self._extract_fantasy_points(r["text"]),
+                reverse=True,
+            )
+
+        return results[:top_k]
 
     def save(self):
         os.makedirs(os.path.dirname(self.index_path), exist_ok=True)
