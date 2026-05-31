@@ -77,6 +77,8 @@ class Advisor:
 
     def _detect_position_filter(self, text: str) -> str | None:
         query = text.upper()
+        words = query.replace("?", "").replace(",", "").split()
+
         position_terms = {
             "QB": ["QB", "QUARTERBACK"],
             "RB": ["RB", "RUNNING BACK"],
@@ -87,8 +89,30 @@ class Advisor:
         }
 
         for pos, terms in position_terms.items():
-            if any(term in query.split() or term in query for term in terms):
+            if any(term in words for term in terms):
                 return f"({pos})"
+
+        return None
+
+    def _detect_team_filter(self, text: str) -> str | None:
+        query = text.upper()
+
+        team_terms = {
+            "GB": ["GB", "PACKERS", "GREEN BAY"],
+            "CHI": ["CHI", "BEARS", "CHICAGO"],
+            "DET": ["DET", "LIONS", "DETROIT"],
+            "MIN": ["MIN", "VIKINGS", "MINNESOTA"],
+            "DAL": ["DAL", "COWBOYS", "DALLAS"],
+            "HOU": ["HOU", "TEXANS", "HOUSTON"],
+            "KC": ["KC", "CHIEFS", "KANSAS CITY"],
+            "BUF": ["BUF", "BILLS", "BUFFALO"],
+            "PHI": ["PHI", "EAGLES", "PHILADELPHIA"],
+            "SF": ["SF", "49ERS", "SAN FRANCISCO"],
+        }
+
+        for team, terms in team_terms.items():
+            if any(term in query for term in terms):
+                return f"({team})"
 
         return None
 
@@ -105,6 +129,7 @@ class Advisor:
         scores, indices = self.index.search(embedding, search_k)
 
         position_filter = self._detect_position_filter(text)
+        team_filter = self._detect_team_filter(text)
         results = []
 
         for rank, i in enumerate(indices[0]):
@@ -114,6 +139,9 @@ class Advisor:
             doc_text = self.documents[i]
 
             if position_filter and position_filter not in doc_text:
+                continue
+
+            if team_filter and team_filter not in doc_text:
                 continue
 
             results.append({
