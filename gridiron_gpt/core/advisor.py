@@ -75,19 +75,56 @@ class Advisor:
         self.documents.extend(texts)
         print(f"✅ {len(texts)} documents indexed.")
 
+    def _detect_position_filter(self, text: str) -> str | None:
+        query = text.upper()
+        position_terms = {
+            "QB": ["QB", "QUARTERBACK"],
+            "RB": ["RB", "RUNNING BACK"],
+            "WR": ["WR", "WIDE RECEIVER"],
+            "TE": ["TE", "TIGHT END"],
+            "K": ["K", "KICKER"],
+            "DEF": ["DEF", "DEFENSE"],
+        }
+
+        for pos, terms in position_terms.items():
+            if any(term in query.split() or term in query for term in terms):
+                return f"({pos})"
+
+        return None
+
     def query(self, text: str, top_k: int = 5) -> list:
         if self.index is None or self.index.ntotal == 0:
             raise RuntimeError(
                 "No index loaded. Run 'espn intake --week <N>' first to build the index."
             )
+
         embedding = self.model.encode([text], normalize_embeddings=True).astype("float32")
-        k = min(top_k, self.index.ntotal)
-        scores, indices = self.index.search(embedding, k)
-        return [
-            {"text": self.documents[i], "similarity": float(scores[0][rank])}
-            for rank, i in enumerate(indices[0])
-            if i < len(self.documents)
-        ]
+
+        # Pull a larger candidate pool, then filter by position if the query asks for one.
+        search_k = min(max(top_k * 20, 50), self.index.ntotal)
+        scores, indices = self.index.search(embedding, search_k)
+
+        position_filter = self._detect_position_filter(text)
+        results = []
+
+        for rank, i in enumerate(indices[0]):
+            if i >= len(self.documents):
+                continue
+
+            doc_text = self.documents[i]
+
+            if position_filter and position_filter not in doc_text:
+                continue
+
+            results.append({
+                "text": doc_text,
+                "similarity": float(scores[0][rank]),
+            })
+
+            if len(results) >= top_k:
+                break
+
+        return results
 
     def save(self):
         os.makedirs(os.path.dirname(self.index_path), exist_ok=True)
