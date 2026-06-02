@@ -1,10 +1,26 @@
-# gpt/cli/__main__.py
+# gridiron_gpt/cli/__main__.py
 
-import argparse
-from gpt.cli.doctor import run_diagnostics
+import click
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--dry-run", action="store_true")
-args = parser.parse_args()
+from gridiron_gpt.cli.ask import ask
+from gridiron_gpt.cli.doctor import run_diagnostics
 
-run_diagnostics(dry_run=args.dry_run)
+
+@click.group()
+def cli():
+    """GridironGPT command line interface."""
+    pass
+
+
+@cli.command()
+@click.option("--dry-run", is_flag=True, help="Run diagnostics without making changes.")
+def doctor(dry_run):
+    """Run project diagnostics."""
+    run_diagnostics(dry_run=dry_run)
+
+
+cli.add_command(ask)
+
+
+if __name__ == "__main__":
+    cli()
