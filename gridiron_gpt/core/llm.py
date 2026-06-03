@@ -31,7 +31,17 @@ def _ollama_native_url() -> str:
     return f"{base_url}/api/chat"
 
 
-def _call_ollama(query: str, context: str, model: str) -> str:
+def _build_user_prompt(query: str, context: str, task_instruction: str = "") -> str:
+    instruction = f"{task_instruction}\n\n" if task_instruction else ""
+
+    return (
+        f"Question: {query}\n\n"
+        f"{instruction}"
+        f"Player data:\n{context}"
+    )
+
+
+def _call_ollama(query: str, context: str, model: str, task_instruction: str = "") -> str:
     model = os.environ.get("OLLAMA_MODEL", model)
 
     payload = {
@@ -42,7 +52,7 @@ def _call_ollama(query: str, context: str, model: str) -> str:
             {"role": "system", "content": SYSTEM_PROMPT},
             {
                 "role": "user",
-                "content": f"Question: {query}\n\nPlayer data:\n{context}",
+                "content": _build_user_prompt(query, context, task_instruction),
             },
         ],
         "options": {
@@ -63,7 +73,7 @@ def _call_ollama(query: str, context: str, model: str) -> str:
     return content
 
 
-def _call_deepseek(query: str, context: str) -> str:
+def _call_deepseek(query: str, context: str, task_instruction: str = "") -> str:
     api_key = os.environ.get("DEEPSEEK_API_KEY")
 
     if not api_key:
@@ -80,7 +90,7 @@ def _call_deepseek(query: str, context: str) -> str:
             {"role": "system", "content": SYSTEM_PROMPT},
             {
                 "role": "user",
-                "content": f"Question: {query}\n\nPlayer data:\n{context}",
+                "content": _build_user_prompt(query, context, task_instruction),
             },
         ],
         temperature=0.3,
@@ -93,6 +103,25 @@ def _call_deepseek(query: str, context: str) -> str:
         return "[LLM error: empty response from DeepSeek]"
 
     return content.strip()
+
+
+def _detect_task_instruction(query: str) -> str:
+    upper_query = query.upper()
+
+    is_compare_query = any(
+        term in upper_query
+        for term in ["COMPARE", " VS ", " VERSUS ", " OR "]
+    )
+
+    if is_compare_query:
+        return (
+            "Compare the players below head-to-head. "
+            "Choose the better fantasy option, explain why, "
+            "and cite fantasy points and points-per-game for each player. "
+            "End with a clear verdict."
+        )
+
+    return ""
 
 
 def generate_advice(
@@ -114,13 +143,14 @@ def generate_advice(
     provider = os.environ.get("LLM_PROVIDER", "ollama").lower().strip()
 
     context = "\n".join(f"- {doc['text']}" for doc in context_docs[:5])
+    task_instruction = _detect_task_instruction(query)
 
     try:
         if provider == "deepseek":
-            return _call_deepseek(query, context)
+            return _call_deepseek(query, context, task_instruction)
 
         if provider == "ollama":
-            return _call_ollama(query, context, model)
+            return _call_ollama(query, context, model, task_instruction)
 
         return f"[LLM error: unknown LLM_PROVIDER '{provider}'. Use 'ollama' or 'deepseek'.]"
 
