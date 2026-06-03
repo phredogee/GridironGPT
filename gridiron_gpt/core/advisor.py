@@ -129,8 +129,14 @@ class Advisor:
 
         embedding = self.model.encode([text], normalize_embeddings=True).astype("float32")
 
-        # Pull a larger candidate pool, then filter by position if the query asks for one.
-        search_k = min(max(top_k * 20, 50), self.index.ntotal)
+        ranking_terms = ["BEST", "TOP", "START", "STARTER", "WAIVER", "PICKUP", "RANK"]
+        is_ranking_query = any(term in text.upper() for term in ranking_terms)
+
+        if is_ranking_query:
+            search_k = self.index.ntotal
+        else:
+            search_k = min(max(top_k * 20, 50), self.index.ntotal)
+
         scores, indices = self.index.search(embedding, search_k)
 
         position_filter = self._detect_position_filter(text)
@@ -152,16 +158,15 @@ class Advisor:
             results.append({
                 "text": doc_text,
                 "similarity": float(scores[0][rank]),
+                "fantasy_points": self._extract_fantasy_points(doc_text),
             })
 
-            if len(results) >= top_k:
+            if not is_ranking_query and len(results) >= top_k:
                 break
 
-        ranking_terms = ["BEST", "TOP", "START", "STARTER"]
-
-        if any(term in text.upper() for term in ranking_terms):
+        if is_ranking_query:
             results.sort(
-                key=lambda r: self._extract_fantasy_points(r["text"]),
+                key=lambda r: r["fantasy_points"],
                 reverse=True,
             )
 
