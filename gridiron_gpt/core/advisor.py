@@ -129,8 +129,13 @@ class Advisor:
 
         embedding = self.model.encode([text], normalize_embeddings=True).astype("float32")
 
+        upper_text = text.upper()
+
         ranking_terms = ["BEST", "TOP", "START", "STARTER", "WAIVER", "PICKUP", "RANK"]
+        waiver_terms = ["WAIVER", "PICKUP", "FREE AGENT", "SLEEPER", "AVAILABLE"]
+
         is_ranking_query = any(term in text.upper() for term in ranking_terms)
+        is_waiver_query = any(term in upper_text for term in waiver_terms)
 
         if is_ranking_query:
             search_k = self.index.ntotal
@@ -163,6 +168,14 @@ class Advisor:
 
             if not is_ranking_query and len(results) >= top_k:
                 break
+
+        if is_waiver_query:
+            # Waiver-style query: ignore obvious elite/rostered players.
+            # This is a first-pass heuristic until we add roster percentage data.
+            results = [
+                r for r in results
+                if 25 <= r["fantasy_points"] <= 230
+            ]
 
         if is_ranking_query:
             results.sort(
