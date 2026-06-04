@@ -176,6 +176,18 @@ class Advisor:
         if query_type == "unknown":
             return []
 
+        if query_type in {"news", "injury", "roster"}:
+            return [{
+                "text": (
+                    f"Query classified as {query_type}. "
+                    "Training camp news, injury, and roster movement ingestion "
+                    "is planned but not connected yet."
+                ),
+                "similarity": 1.0,
+                "fantasy_points": 0.0,
+                "query_type": query_type,
+            }]
+
         embedding = self.model.encode([text], normalize_embeddings=True).astype("float32")
 
         is_ranking_query = query_type == "ranking"
