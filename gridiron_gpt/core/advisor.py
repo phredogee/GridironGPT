@@ -6,6 +6,7 @@ import json
 import faiss
 import numpy as np
 from sentence_transformers import SentenceTransformer
+from gridiron_gpt.data_ingest.news_loader import load_news
 
 INDEX_PATH = "data/index/gridiron.index"
 DOCS_PATH = "data/index/gridiron_docs.json"
@@ -176,17 +177,35 @@ class Advisor:
         if query_type == "unknown":
             return []
 
-        if query_type in {"news", "injury", "roster"}:
-            return [{
-                "text": (
-                    f"Query classified as {query_type}. "
-                    "Training camp news, injury, and roster movement ingestion "
-                    "is planned but not connected yet."
-                ),
-                "similarity": 1.0,
-                "fantasy_points": 0.0,
-                "query_type": query_type,
-            }]
+        if query_type == "news":
+            news_items = load_news()
+            matches = []
+
+            query_words = set(text.upper().replace("?", "").replace(",", "").split())
+
+            for item in news_items:
+                searchable = " ".join([
+                    str(item.get("player", "")),
+                    str(item.get("team", "")),
+                    str(item.get("headline", "")),
+                    str(item.get("fantasy_impact", "")),
+                ]).upper()
+
+                if any(word in searchable for word in query_words):
+                    matches.append({
+                        "text": (
+                            f"{item.get('date', 'unknown date')}: "
+                            f"{item.get('player', 'Unknown player')} "
+                            f"({item.get('team', 'UNK')}) — "
+                            f"{item.get('headline', 'No headline')}. "
+                            f"Fantasy impact: {item.get('fantasy_impact', 'unknown')}."
+                        ),
+                        "similarity": 1.0,
+                        "fantasy_points": 0.0,
+                        "query_type": "news",
+                    })
+
+            return matches[:top_k]
 
         embedding = self.model.encode([text], normalize_embeddings=True).astype("float32")
 
