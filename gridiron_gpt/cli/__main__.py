@@ -3,7 +3,6 @@
 import click
 
 from gridiron_gpt.cli.ask import ask
-from gridiron_gpt.cli.doctor import run_diagnostics
 
 
 @click.group()
@@ -16,6 +15,7 @@ def cli():
 @click.option("--dry-run", is_flag=True, help="Run diagnostics without making changes.")
 def doctor(dry_run):
     """Run project diagnostics."""
+    from gridiron_gpt.cli.doctor import run_diagnostics
     run_diagnostics(dry_run=dry_run)
 
 

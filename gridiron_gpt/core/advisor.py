@@ -133,9 +133,11 @@ class Advisor:
 
         ranking_terms = ["BEST", "TOP", "START", "STARTER", "WAIVER", "PICKUP", "RANK"]
         waiver_terms = ["WAIVER", "PICKUP", "FREE AGENT", "SLEEPER", "AVAILABLE"]
+        compare_terms = ["COMPARE", "VS ", "VERSUS ", " OR "]
 
         is_ranking_query = any(term in text.upper() for term in ranking_terms)
         is_waiver_query = any(term in upper_text for term in waiver_terms)
+        is_compare_query = any(term in upper_text for term in compare_terms)
 
         if is_ranking_query:
             search_k = self.index.ntotal
@@ -182,6 +184,9 @@ class Advisor:
                 key=lambda r: r["fantasy_points"],
                 reverse=True,
             )
+
+        if is_compare_query:
+            return results[:2]
 
         return results[:top_k]
 
