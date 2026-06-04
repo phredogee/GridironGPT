@@ -121,23 +121,66 @@ class Advisor:
             return float(match.group(1))
         return 0.0
 
+    def _classify_query(self, text: str) -> str:
+        upper_text = text.upper()
+
+        ranking_terms = ["BEST", "TOP", "START", "STARTER", "RANK"]
+        waiver_terms = ["WAIVER", "PICKUP", "FREE AGENT", "SLEEPER", "AVAILABLE"]
+        compare_terms = ["COMPARE", "VS ", "VERSUS ", " OR "]
+        news_terms = ["LATEST", "NEWS", "UPDATE", "CAMP", "TRAINING CAMP"]
+        injury_terms = ["INJURY", "INJURED", "HURT", "QUESTIONABLE", "DOUBTFUL", "OUT"]
+        roster_terms = ["ROSTER", "DEPTH CHART", "FIRST TEAM", "REPS", "SIGNED", "RELEASED"]
+
+        football_terms = [
+            "QB", "RB", "WR", "TE", "K", "DEF",
+            "QUARTERBACK", "RUNNING BACK", "WIDE RECEIVER", "TIGHT END",
+            "FANTASY", "FOOTBALL", "PLAYER", "PLAYERS",
+            "START", "SIT", "DRAFT", "WAIVER", "PICKUP",
+            "TEXANS", "COWBOYS", "CHIEFS", "EAGLES", "BILLS", "RAVENS",
+            "PACKERS", "LIONS", "FALCONS", "VIKINGS", "BENGALS",
+        ]
+
+        if any(term in upper_text for term in compare_terms):
+            return "compare"
+
+        if any(term in upper_text for term in waiver_terms):
+            return "waiver"
+
+        if any(term in upper_text for term in injury_terms):
+            return "injury"
+
+        if any(term in upper_text for term in roster_terms):
+            return "roster"
+
+        if any(term in upper_text for term in news_terms):
+            return "news"
+
+        if any(term in upper_text for term in ranking_terms):
+            return "ranking"
+
+        words = set(upper_text.replace("?", "").replace(",", "").split())
+
+        if any(term in words for term in football_terms):
+            return "general"
+
+        return "unknown"
+
     def query(self, text: str, top_k: int = 5) -> list:
         if self.index is None or self.index.ntotal == 0:
             raise RuntimeError(
                 "No index loaded. Run 'espn intake --week <N>' first to build the index."
             )
 
+        query_type = self._classify_query(text)
+
+        if query_type == "unknown":
+            return []
+
         embedding = self.model.encode([text], normalize_embeddings=True).astype("float32")
 
-        upper_text = text.upper()
-
-        ranking_terms = ["BEST", "TOP", "START", "STARTER", "WAIVER", "PICKUP", "RANK"]
-        waiver_terms = ["WAIVER", "PICKUP", "FREE AGENT", "SLEEPER", "AVAILABLE"]
-        compare_terms = ["COMPARE", "VS ", "VERSUS ", " OR "]
-
-        is_ranking_query = any(term in text.upper() for term in ranking_terms)
-        is_waiver_query = any(term in upper_text for term in waiver_terms)
-        is_compare_query = any(term in upper_text for term in compare_terms)
+        is_ranking_query = query_type == "ranking"
+        is_waiver_query = query_type == "waiver"
+        is_compare_query = query_type == "compare"
 
         if is_ranking_query:
             search_k = self.index.ntotal
