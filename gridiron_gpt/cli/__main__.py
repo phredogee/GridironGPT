@@ -4,6 +4,7 @@ import click
 
 from gridiron_gpt.cli.ask import ask
 from gridiron_gpt.data_ingest.digest_loader import build_digest
+from gridiron_gpt.data_ingest.risers import build_risers_report
 
 
 @click.group()
@@ -25,6 +26,10 @@ def digest():
     """Show the daily training camp digest."""
     click.echo(build_digest())
 
+@cli.command()
+def risers():
+    """Show players trending up during training camp."""
+    click.echo(build_risers_report())
 
 cli.add_command(ask)
 
