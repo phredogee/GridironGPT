@@ -26,6 +26,33 @@ def _overall_trend(impacts: list[str]) -> str:
 
     return "• No clear trend"
 
+def _draft_outlook(impacts: list[str]) -> str:
+    cleaned = [(impact or "").lower() for impact in impacts]
+
+    positives = cleaned.count("positive")
+    negatives = cleaned.count("negative")
+    monitors = cleaned.count("monitor")
+
+    if negatives > 0:
+        return "Risk increasing. Consider lowering draft priority until more positive reports arrive."
+
+    if positives >= 2 and monitors == 0:
+        return "Trending up. Consider moving slightly higher on your watchlist."
+
+    if positives >= 2 and monitors > 0:
+        return "Upside is growing, but health or role uncertainty still needs monitoring."
+
+    if positives == 1 and monitors > 0:
+        return "Mixed signal. Keep on watchlist and wait for another camp report."
+
+    if monitors > 0:
+        return "Monitor closely. Do not adjust draft value yet."
+
+    if positives == 1:
+        return "Slight positive movement. Worth tracking."
+
+    return "Neutral. No clear draft adjustment yet."
+
 def build_digest() -> str:
     news = load_news()
     injuries = load_injuries()
@@ -104,7 +131,8 @@ def build_digest() -> str:
             lines.append("")
             lines.append(f"{player} ({team})")
             lines.append(f"Fantasy Outlook: {_overall_trend(card['impacts'])}")
-
+            lines.append(f"Draft Impact: {_draft_outlook(card['impacts'])}")
+            
             if card["news"]:
                 lines.append("News")
                 for headline in card["news"]:
