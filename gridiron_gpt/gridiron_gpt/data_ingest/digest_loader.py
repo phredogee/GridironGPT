@@ -14,6 +14,18 @@ def _impact_icon(impact: str) -> str:
 
     return "•"
 
+def _overall_trend(impacts: list[str]) -> str:
+    cleaned = [(impact or "").lower() for impact in impacts]
+
+    if "negative" in cleaned:
+        return "⬇ Trending Down"
+    if "monitor" in cleaned:
+        return "⚠ Monitor"
+    if "positive" in cleaned:
+        return "⬆ Trending Up"
+
+    return "• No clear trend"
+
 def build_digest() -> str:
     news = load_news()
     injuries = load_injuries()
@@ -59,7 +71,56 @@ def build_digest() -> str:
         lines.append("- No roster moves found.")
 
     lines.append("")
-    lines.append("Fantasy Movers")
+    lines.append("Player Summary")
+
+    player_cards = {}
+
+    for item in news:
+        key = (item.get("player", "Unknown"), item.get("team", "UNK"))
+        player_cards.setdefault(key, {"news": [], "injuries": [], "roster": [], "impacts": []})
+        player_cards[key]["news"].append(item.get("headline", "No headline"))
+        player_cards[key]["impacts"].append(item.get("fantasy_impact", "unknown"))
+
+    for item in injuries:
+        key = (item.get("player", "Unknown"), item.get("team", "UNK"))
+        player_cards.setdefault(key, {"news": [], "injuries": [], "roster": [], "impacts": []})
+        player_cards[key]["injuries"].append(
+            f"{item.get('headline', 'No headline')} "
+            f"[Status: {item.get('status', 'unknown')}; Injury: {item.get('injury', 'unknown')}]"
+        )
+        player_cards[key]["impacts"].append(item.get("fantasy_impact", "monitor"))
+
+    for item in roster_moves:
+        key = (item.get("player", "Unknown"), item.get("team", "UNK"))
+        player_cards.setdefault(key, {"news": [], "injuries": [], "roster": [], "impacts": []})
+        player_cards[key]["roster"].append(
+            f"{item.get('headline', 'No headline')} "
+            f"[Movement: {item.get('movement', 'unknown')}]"
+        )
+        player_cards[key]["impacts"].append(item.get("fantasy_impact", "unknown"))
+
+    if player_cards:
+        for (player, team), card in player_cards.items():
+            lines.append("")
+            lines.append(f"{player} ({team})")
+            lines.append(f"Fantasy Outlook: {_overall_trend(card['impacts'])}")
+
+            if card["news"]:
+                lines.append("News")
+                for headline in card["news"]:
+                    lines.append(f"- {headline}")
+
+            if card["injuries"]:
+                lines.append("Injuries")
+                for injury in card["injuries"]:
+                    lines.append(f"- {injury}")
+
+            if card["roster"]:
+                lines.append("Roster")
+                for move in card["roster"]:
+                    lines.append(f"- {move}")
+    else:
+        lines.append("- No player updates found.")
 
     mover_items = []
 
