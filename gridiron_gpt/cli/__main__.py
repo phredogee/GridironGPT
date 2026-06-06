@@ -8,7 +8,11 @@ from gridiron_gpt.data_ingest.risers import build_risers_report
 from gridiron_gpt.data_ingest.fallers import build_fallers_report
 from gridiron_gpt.data_ingest.player_report import build_player_report
 from gridiron_gpt.data_ingest.news_fetcher import create_news_item, save_news_item
-
+from gridiron_gpt.data_ingest.injury_fetcher import create_injury_item, save_injury_item
+from gridiron_gpt.data_ingest.roster_fetcher import (
+    create_roster_item,
+    save_roster_item,
+)
 
 @click.group()
 def cli():
@@ -72,6 +76,58 @@ def update_news(player, team, headline, source, impact):
     )
     path = save_news_item(item)
     click.echo(f"Saved news item to {path}")
+
+@cli.command("update-injury")
+@click.option("--player", required=True, help="Player name.")
+@click.option("--team", required=True, help="NFL team abbreviation.")
+@click.option("--headline", required=True, help="Injury headline or update.")
+@click.option("--status", default="unknown", show_default=True, help="Practice/player status.")
+@click.option("--injury", default="unknown", show_default=True, help="Injury type.")
+@click.option(
+    "--impact",
+    default="monitor",
+    show_default=True,
+    type=click.Choice(["positive", "negative", "monitor", "neutral", "unknown"]),
+    help="Fantasy impact label.",
+)
+def update_injury(player, team, headline, status, injury, impact):
+    """Add a manual training camp injury item."""
+    item = create_injury_item(
+        player=player,
+        team=team,
+        headline=headline,
+        status=status,
+        injury=injury,
+        fantasy_impact=impact,
+    )
+    path = save_injury_item(item)
+    click.echo(f"Saved injury item to {path}")
+
+@cli.command("update-roster")
+@click.option("--player", required=True)
+@click.option("--team", required=True)
+@click.option("--headline", required=True)
+@click.option("--movement", default="unknown", show_default=True)
+@click.option(
+    "--impact",
+    default="unknown",
+    show_default=True,
+    type=click.Choice(
+        ["positive", "negative", "monitor", "neutral", "unknown"]
+    ),
+)
+def update_roster(player, team, headline, movement, impact):
+    """Add a manual roster movement item."""
+    item = create_roster_item(
+        player=player,
+        team=team,
+        headline=headline,
+        movement=movement,
+        fantasy_impact=impact,
+    )
+
+    path = save_roster_item(item)
+    click.echo(f"Saved roster item to {path}")
 
 
 cli.add_command(ask)
