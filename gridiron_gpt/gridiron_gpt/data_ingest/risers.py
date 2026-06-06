@@ -8,11 +8,17 @@ def get_risers():
     grouped = defaultdict(list)
 
     for item in load_news():
+        if item.get("player", "Unknown") == "Unknown":
+            continue
+
         if item.get("fantasy_impact", "").lower() == "positive":
             key = (item.get("player", "Unknown"), item.get("team", "UNK"))
             grouped[key].append(item.get("headline", "No headline"))
 
     for item in load_roster_moves():
+        if item.get("player", "Unknown") == "Unknown":
+            continue
+
         if item.get("fantasy_impact", "").lower() == "positive":
             key = (item.get("player", "Unknown"), item.get("team", "UNK"))
             grouped[key].append(item.get("headline", "No headline"))

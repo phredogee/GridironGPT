@@ -12,10 +12,54 @@ NEWS_PATH = Path("data/news")
 def _guess_impact(title: str, summary: str = "") -> str:
     text = f"{title} {summary}".lower()
 
-    negative_terms = ["injury", "injured", "carted", "missed practice", "out", "doubtful"]
-    positive_terms = ["first-team", "impressed", "standout", "breakout", "cleared", "returned"]
+    negative_terms = [
+        "injury",
+        "injured",
+        "carted",
+        "missed practice",
+        "out",
+        "doubtful",
+        "suspended",
+        "arrested",
+        "domestic violence",
+        "holdout",
+        "setback",
+        "released",
+        "waived",
+    ]
+
+    monitor_terms = [
+        "limited",
+        "questionable",
+        "day-to-day",
+        "precaution",
+        "contract talks",
+        "not close",
+        "uncertain",
+        "competing",
+    ]
+
+    positive_terms = [
+        "extension",
+        "reach deal",
+        "reworked deal",
+        "signed",
+        "first-team",
+        "first team",
+        "impressed",
+        "standout",
+        "breakout",
+        "cleared",
+        "returned",
+        "activated",
+        "healthy",
+        "full participant",
+    ]
 
     if any(term in text for term in negative_terms):
+        return "negative"
+
+    if any(term in text for term in monitor_terms):
         return "monitor"
 
     if any(term in text for term in positive_terms):
