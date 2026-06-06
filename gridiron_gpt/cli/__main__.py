@@ -9,6 +9,8 @@ from gridiron_gpt.data_ingest.fallers import build_fallers_report
 from gridiron_gpt.data_ingest.player_report import build_player_report
 from gridiron_gpt.data_ingest.news_fetcher import create_news_item, save_news_item
 from gridiron_gpt.data_ingest.injury_fetcher import create_injury_item, save_injury_item
+from gridiron_gpt.data_ingest.rss_news_fetcher import fetch_and_save_from_env
+from gridiron_gpt.data_ingest.player_matcher import extract_player_and_team
 from gridiron_gpt.data_ingest.roster_fetcher import (
     create_roster_item,
     save_roster_item,
@@ -129,6 +131,15 @@ def update_roster(player, team, headline, movement, impact):
     path = save_roster_item(item)
     click.echo(f"Saved roster item to {path}")
 
+@cli.command("fetch-rss-news")
+def fetch_rss_news_command():
+    """Fetch news from GRIDIRON_RSS_URL and save it."""
+    try:
+        count, path = fetch_and_save_from_env()
+    except RuntimeError as e:
+        raise click.ClickException(str(e))
+
+    click.echo(f"Fetched {count} RSS news items into {path}")
 
 cli.add_command(ask)
 
