@@ -102,10 +102,26 @@ def save_rss_news(items: list[dict]) -> Path:
     else:
         existing = []
 
-    existing.extend(items)
+    by_key = {}
+
+    for item in existing:
+        key = (
+            item.get("headline", "").strip().lower(),
+            item.get("url", "").strip().lower(),
+        )
+        by_key[key] = item
+
+    for item in items:
+        key = (
+            item.get("headline", "").strip().lower(),
+            item.get("url", "").strip().lower(),
+        )
+        by_key[key] = item
+
+    deduped = list(by_key.values())
 
     with open(file_path, "w") as f:
-        json.dump(existing, f, indent=2)
+        json.dump(deduped, f, indent=2)
 
     return file_path
 
