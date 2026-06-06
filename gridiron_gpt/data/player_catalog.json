@@ -1,0 +1,5258 @@
+[
+  {
+    "player": "A.J. Brown",
+    "team": "PHI",
+    "position": "WR",
+    "aliases": [
+      "A.J. Brown",
+      "Brown"
+    ]
+  },
+  {
+    "player": "AJ Barner",
+    "team": "SEA",
+    "position": "TE",
+    "aliases": [
+      "AJ Barner",
+      "Barner"
+    ]
+  },
+  {
+    "player": "AJ Dillon",
+    "team": "PHI",
+    "position": "RB",
+    "aliases": [
+      "AJ Dillon",
+      "Dillon"
+    ]
+  },
+  {
+    "player": "Aaron Jones",
+    "team": "MIN",
+    "position": "RB",
+    "aliases": [
+      "Aaron Jones",
+      "Jones"
+    ]
+  },
+  {
+    "player": "Aaron Rodgers",
+    "team": "PIT",
+    "position": "QB",
+    "aliases": [
+      "Aaron Rodgers",
+      "Rodgers"
+    ]
+  },
+  {
+    "player": "Adam Prentice",
+    "team": "DEN",
+    "position": "RB",
+    "aliases": [
+      "Adam Prentice",
+      "Prentice"
+    ]
+  },
+  {
+    "player": "Adam Thielen",
+    "team": "MIN",
+    "position": "WR",
+    "aliases": [
+      "Adam Thielen",
+      "Thielen"
+    ]
+  },
+  {
+    "player": "Adam Trautman",
+    "team": "DEN",
+    "position": "TE",
+    "aliases": [
+      "Adam Trautman",
+      "Trautman"
+    ]
+  },
+  {
+    "player": "Adonai Mitchell",
+    "team": "IND",
+    "position": "WR",
+    "aliases": [
+      "Adonai Mitchell",
+      "Mitchell"
+    ]
+  },
+  {
+    "player": "Aidan O'Connell",
+    "team": "LV",
+    "position": "QB",
+    "aliases": [
+      "Aidan O'Connell",
+      "O'Connell"
+    ]
+  },
+  {
+    "player": "Albert Okwuegbunam",
+    "team": "LV",
+    "position": "TE",
+    "aliases": [
+      "Albert Okwuegbunam",
+      "Okwuegbunam"
+    ]
+  },
+  {
+    "player": "Alec Ingold",
+    "team": "MIA",
+    "position": "FB",
+    "aliases": [
+      "Alec Ingold",
+      "Ingold"
+    ]
+  },
+  {
+    "player": "Alec Pierce",
+    "team": "IND",
+    "position": "WR",
+    "aliases": [
+      "Alec Pierce",
+      "Pierce"
+    ]
+  },
+  {
+    "player": "Alex Bachman",
+    "team": "LV",
+    "position": "WR",
+    "aliases": [
+      "Alex Bachman",
+      "Bachman"
+    ]
+  },
+  {
+    "player": "Allen Lazard",
+    "team": "NYJ",
+    "position": "WR",
+    "aliases": [
+      "Allen Lazard",
+      "Lazard"
+    ]
+  },
+  {
+    "player": "Alvin Kamara",
+    "team": "NO",
+    "position": "RB",
+    "aliases": [
+      "Alvin Kamara",
+      "Kamara"
+    ]
+  },
+  {
+    "player": "Amar Johnson",
+    "team": "LAC",
+    "position": "RB",
+    "aliases": [
+      "Amar Johnson",
+      "Johnson"
+    ]
+  },
+  {
+    "player": "Ameer Abdullah",
+    "team": "IND",
+    "position": "RB",
+    "aliases": [
+      "Ameer Abdullah",
+      "Abdullah"
+    ]
+  },
+  {
+    "player": "Amon-Ra St. Brown",
+    "team": "DET",
+    "position": "WR",
+    "aliases": [
+      "Amon-Ra St. Brown",
+      "Brown"
+    ]
+  },
+  {
+    "player": "Andre Baccellia",
+    "team": "ARI",
+    "position": "WR",
+    "aliases": [
+      "Andre Baccellia",
+      "Baccellia"
+    ]
+  },
+  {
+    "player": "Andrei Iosivas",
+    "team": "CIN",
+    "position": "WR",
+    "aliases": [
+      "Andrei Iosivas",
+      "Iosivas"
+    ]
+  },
+  {
+    "player": "Andrew Beck",
+    "team": "NYJ",
+    "position": "RB",
+    "aliases": [
+      "Andrew Beck",
+      "Beck"
+    ]
+  },
+  {
+    "player": "Andrew Ogletree",
+    "team": "IND",
+    "position": "TE",
+    "aliases": [
+      "Andrew Ogletree",
+      "Ogletree"
+    ]
+  },
+  {
+    "player": "Andy Dalton",
+    "team": "CAR",
+    "position": "QB",
+    "aliases": [
+      "Andy Dalton",
+      "Dalton"
+    ]
+  },
+  {
+    "player": "Anthony Firkser",
+    "team": "DET",
+    "position": "TE",
+    "aliases": [
+      "Anthony Firkser",
+      "Firkser"
+    ]
+  },
+  {
+    "player": "Anthony Gould",
+    "team": "IND",
+    "position": "WR",
+    "aliases": [
+      "Anthony Gould",
+      "Gould"
+    ]
+  },
+  {
+    "player": "Anthony Richardson",
+    "team": "IND",
+    "position": "QB",
+    "aliases": [
+      "Anthony Richardson",
+      "Richardson"
+    ]
+  },
+  {
+    "player": "Antonio Gibson",
+    "team": "NE",
+    "position": "RB",
+    "aliases": [
+      "Antonio Gibson",
+      "Gibson"
+    ]
+  },
+  {
+    "player": "Arian Smith",
+    "team": "NYJ",
+    "position": "WR",
+    "aliases": [
+      "Arian Smith",
+      "Smith"
+    ]
+  },
+  {
+    "player": "Ashton Dulin",
+    "team": "IND",
+    "position": "WR",
+    "aliases": [
+      "Ashton Dulin",
+      "Dulin"
+    ]
+  },
+  {
+    "player": "Ashton Jeanty",
+    "team": "LV",
+    "position": "RB",
+    "aliases": [
+      "Ashton Jeanty",
+      "Jeanty"
+    ]
+  },
+  {
+    "player": "Audric Estim\u00e9",
+    "team": "NO",
+    "position": "RB",
+    "aliases": [
+      "Audric Estim\u00e9",
+      "Estim\u00e9"
+    ]
+  },
+  {
+    "player": "Austin Ekeler",
+    "team": "WAS",
+    "position": "RB",
+    "aliases": [
+      "Austin Ekeler",
+      "Ekeler"
+    ]
+  },
+  {
+    "player": "Austin Hooper",
+    "team": "NE",
+    "position": "TE",
+    "aliases": [
+      "Austin Hooper",
+      "Hooper"
+    ]
+  },
+  {
+    "player": "Austin McNamara",
+    "team": "NYJ",
+    "position": "P",
+    "aliases": [
+      "Austin McNamara",
+      "McNamara"
+    ]
+  },
+  {
+    "player": "Austin Trammell",
+    "team": "JAX",
+    "position": "WR",
+    "aliases": [
+      "Austin Trammell",
+      "Trammell"
+    ]
+  },
+  {
+    "player": "Baker Mayfield",
+    "team": "TB",
+    "position": "QB",
+    "aliases": [
+      "Baker Mayfield",
+      "Mayfield"
+    ]
+  },
+  {
+    "player": "Bam Knight",
+    "team": "ARI",
+    "position": "RB",
+    "aliases": [
+      "Bam Knight",
+      "Knight"
+    ]
+  },
+  {
+    "player": "Beaux Collins",
+    "team": "NYG",
+    "position": "WR",
+    "aliases": [
+      "Beaux Collins",
+      "Collins"
+    ]
+  },
+  {
+    "player": "Ben Sims",
+    "team": "MIN",
+    "position": "TE",
+    "aliases": [
+      "Ben Sims",
+      "Sims"
+    ]
+  },
+  {
+    "player": "Ben Sinnott",
+    "team": "WAS",
+    "position": "TE",
+    "aliases": [
+      "Ben Sinnott",
+      "Sinnott"
+    ]
+  },
+  {
+    "player": "Ben Skowronek",
+    "team": "PIT",
+    "position": "WR",
+    "aliases": [
+      "Ben Skowronek",
+      "Skowronek"
+    ]
+  },
+  {
+    "player": "Ben Yurosek",
+    "team": "MIN",
+    "position": "TE",
+    "aliases": [
+      "Ben Yurosek",
+      "Yurosek"
+    ]
+  },
+  {
+    "player": "Bhayshul Tuten",
+    "team": "JAX",
+    "position": "RB",
+    "aliases": [
+      "Bhayshul Tuten",
+      "Tuten"
+    ]
+  },
+  {
+    "player": "Bijan Robinson",
+    "team": "ATL",
+    "position": "RB",
+    "aliases": [
+      "Bijan Robinson",
+      "Robinson"
+    ]
+  },
+  {
+    "player": "Blake Corum",
+    "team": "LA",
+    "position": "RB",
+    "aliases": [
+      "Blake Corum",
+      "Corum"
+    ]
+  },
+  {
+    "player": "Blake Whiteheart",
+    "team": "CLE",
+    "position": "TE",
+    "aliases": [
+      "Blake Whiteheart",
+      "Whiteheart"
+    ]
+  },
+  {
+    "player": "Bo Melton",
+    "team": "GB",
+    "position": "CB",
+    "aliases": [
+      "Bo Melton",
+      "Melton"
+    ]
+  },
+  {
+    "player": "Bo Nix",
+    "team": "DEN",
+    "position": "QB",
+    "aliases": [
+      "Bo Nix",
+      "Nix"
+    ]
+  },
+  {
+    "player": "Brady Cook",
+    "team": "NYJ",
+    "position": "QB",
+    "aliases": [
+      "Brady Cook",
+      "Cook"
+    ]
+  },
+  {
+    "player": "Braelon Allen",
+    "team": "NYJ",
+    "position": "RB",
+    "aliases": [
+      "Braelon Allen",
+      "Allen"
+    ]
+  },
+  {
+    "player": "Brandin Cooks",
+    "team": "BUF",
+    "position": "WR",
+    "aliases": [
+      "Brandin Cooks",
+      "Cooks"
+    ]
+  },
+  {
+    "player": "Brandon Allen",
+    "team": "TEN",
+    "position": "QB",
+    "aliases": [
+      "Brandon Allen",
+      "Allen"
+    ]
+  },
+  {
+    "player": "Brandon Aubrey",
+    "team": "DAL",
+    "position": "K",
+    "aliases": [
+      "Brandon Aubrey",
+      "Aubrey"
+    ]
+  },
+  {
+    "player": "Brashard Smith",
+    "team": "KC",
+    "position": "RB",
+    "aliases": [
+      "Brashard Smith",
+      "Smith"
+    ]
+  },
+  {
+    "player": "Braxton Berrios",
+    "team": "HOU",
+    "position": "WR",
+    "aliases": [
+      "Braxton Berrios",
+      "Berrios"
+    ]
+  },
+  {
+    "player": "Breece Hall",
+    "team": "NYJ",
+    "position": "RB",
+    "aliases": [
+      "Breece Hall",
+      "Hall"
+    ]
+  },
+  {
+    "player": "Brenden Bates",
+    "team": "HOU",
+    "position": "TE",
+    "aliases": [
+      "Brenden Bates",
+      "Bates"
+    ]
+  },
+  {
+    "player": "Brenton Strange",
+    "team": "JAX",
+    "position": "TE",
+    "aliases": [
+      "Brenton Strange",
+      "Strange"
+    ]
+  },
+  {
+    "player": "Brevyn Spann-Ford",
+    "team": "DAL",
+    "position": "TE",
+    "aliases": [
+      "Brevyn Spann-Ford",
+      "Spann-Ford"
+    ]
+  },
+  {
+    "player": "Brian Robinson",
+    "team": "SF",
+    "position": "RB",
+    "aliases": [
+      "Brian Robinson",
+      "Robinson"
+    ]
+  },
+  {
+    "player": "Brian Thomas Jr.",
+    "team": "JAX",
+    "position": "WR",
+    "aliases": [
+      "Brian Thomas Jr.",
+      "Jr."
+    ]
+  },
+  {
+    "player": "Britain Covey",
+    "team": "PHI",
+    "position": "WR",
+    "aliases": [
+      "Britain Covey",
+      "Covey"
+    ]
+  },
+  {
+    "player": "British Brooks",
+    "team": "HOU",
+    "position": "RB",
+    "aliases": [
+      "British Brooks",
+      "Brooks"
+    ]
+  },
+  {
+    "player": "Brittain Brown",
+    "team": "CHI",
+    "position": "RB",
+    "aliases": [
+      "Brittain Brown",
+      "Brown"
+    ]
+  },
+  {
+    "player": "Brock Bowers",
+    "team": "LV",
+    "position": "TE",
+    "aliases": [
+      "Brock Bowers",
+      "Bowers"
+    ]
+  },
+  {
+    "player": "Brock Purdy",
+    "team": "SF",
+    "position": "QB",
+    "aliases": [
+      "Brock Purdy",
+      "Purdy"
+    ]
+  },
+  {
+    "player": "Brock Wright",
+    "team": "DET",
+    "position": "TE",
+    "aliases": [
+      "Brock Wright",
+      "Wright"
+    ]
+  },
+  {
+    "player": "Bryce Oliver",
+    "team": "TEN",
+    "position": "WR",
+    "aliases": [
+      "Bryce Oliver",
+      "Oliver"
+    ]
+  },
+  {
+    "player": "Bryce Young",
+    "team": "CAR",
+    "position": "QB",
+    "aliases": [
+      "Bryce Young",
+      "Young"
+    ]
+  },
+  {
+    "player": "Brycen Tremayne",
+    "team": "CAR",
+    "position": "WR",
+    "aliases": [
+      "Brycen Tremayne",
+      "Tremayne"
+    ]
+  },
+  {
+    "player": "Bucky Irving",
+    "team": "TB",
+    "position": "RB",
+    "aliases": [
+      "Bucky Irving",
+      "Irving"
+    ]
+  },
+  {
+    "player": "C.J. Ham",
+    "team": "MIN",
+    "position": "FB",
+    "aliases": [
+      "C.J. Ham",
+      "Ham"
+    ]
+  },
+  {
+    "player": "C.J. Stroud",
+    "team": "HOU",
+    "position": "QB",
+    "aliases": [
+      "C.J. Stroud",
+      "Stroud"
+    ]
+  },
+  {
+    "player": "Cade Otton",
+    "team": "TB",
+    "position": "TE",
+    "aliases": [
+      "Cade Otton",
+      "Otton"
+    ]
+  },
+  {
+    "player": "Cade Stover",
+    "team": "HOU",
+    "position": "TE",
+    "aliases": [
+      "Cade Stover",
+      "Stover"
+    ]
+  },
+  {
+    "player": "Caleb Williams",
+    "team": "CHI",
+    "position": "QB",
+    "aliases": [
+      "Caleb Williams",
+      "Williams"
+    ]
+  },
+  {
+    "player": "Calvin Austin III",
+    "team": "PIT",
+    "position": "WR",
+    "aliases": [
+      "Calvin Austin III",
+      "III"
+    ]
+  },
+  {
+    "player": "Calvin Ridley",
+    "team": "TEN",
+    "position": "WR",
+    "aliases": [
+      "Calvin Ridley",
+      "Ridley"
+    ]
+  },
+  {
+    "player": "Cam Akers",
+    "team": "MIN",
+    "position": "RB",
+    "aliases": [
+      "Cam Akers",
+      "Akers"
+    ]
+  },
+  {
+    "player": "Cam Grandy",
+    "team": "CIN",
+    "position": "TE",
+    "aliases": [
+      "Cam Grandy",
+      "Grandy"
+    ]
+  },
+  {
+    "player": "Cam Skattebo",
+    "team": "NYG",
+    "position": "RB",
+    "aliases": [
+      "Cam Skattebo",
+      "Skattebo"
+    ]
+  },
+  {
+    "player": "Cam Ward",
+    "team": "TEN",
+    "position": "QB",
+    "aliases": [
+      "Cam Ward",
+      "Ward"
+    ]
+  },
+  {
+    "player": "Carson Wentz",
+    "team": "MIN",
+    "position": "QB",
+    "aliases": [
+      "Carson Wentz",
+      "Wentz"
+    ]
+  },
+  {
+    "player": "Carter Runyon",
+    "team": "LV",
+    "position": "TE",
+    "aliases": [
+      "Carter Runyon",
+      "Runyon"
+    ]
+  },
+  {
+    "player": "Casey Washington",
+    "team": "ATL",
+    "position": "WR",
+    "aliases": [
+      "Casey Washington",
+      "Washington"
+    ]
+  },
+  {
+    "player": "Cedric Tillman",
+    "team": "CLE",
+    "position": "WR",
+    "aliases": [
+      "Cedric Tillman",
+      "Tillman"
+    ]
+  },
+  {
+    "player": "Cedrick Wilson Jr.",
+    "team": "MIA",
+    "position": "WR",
+    "aliases": [
+      "Cedrick Wilson Jr.",
+      "Jr."
+    ]
+  },
+  {
+    "player": "CeeDee Lamb",
+    "team": "DAL",
+    "position": "WR",
+    "aliases": [
+      "CeeDee Lamb",
+      "Lamb"
+    ]
+  },
+  {
+    "player": "Charlie Jones",
+    "team": "CIN",
+    "position": "WR",
+    "aliases": [
+      "Charlie Jones",
+      "Jones"
+    ]
+  },
+  {
+    "player": "Charlie Kolar",
+    "team": "BAL",
+    "position": "TE",
+    "aliases": [
+      "Charlie Kolar",
+      "Kolar"
+    ]
+  },
+  {
+    "player": "Charlie Woerner",
+    "team": "ATL",
+    "position": "TE",
+    "aliases": [
+      "Charlie Woerner",
+      "Woerner"
+    ]
+  },
+  {
+    "player": "Chase Brown",
+    "team": "CIN",
+    "position": "RB",
+    "aliases": [
+      "Chase Brown",
+      "Brown"
+    ]
+  },
+  {
+    "player": "Chig Okonkwo",
+    "team": "TEN",
+    "position": "TE",
+    "aliases": [
+      "Chig Okonkwo",
+      "Okonkwo"
+    ]
+  },
+  {
+    "player": "Chimere Dike",
+    "team": "TEN",
+    "position": "WR",
+    "aliases": [
+      "Chimere Dike",
+      "Dike"
+    ]
+  },
+  {
+    "player": "Chris Brooks",
+    "team": "GB",
+    "position": "RB",
+    "aliases": [
+      "Chris Brooks",
+      "Brooks"
+    ]
+  },
+  {
+    "player": "Chris Godwin Jr.",
+    "team": "TB",
+    "position": "WR",
+    "aliases": [
+      "Chris Godwin Jr.",
+      "Jr."
+    ]
+  },
+  {
+    "player": "Chris Manhertz",
+    "team": "NYG",
+    "position": "TE",
+    "aliases": [
+      "Chris Manhertz",
+      "Manhertz"
+    ]
+  },
+  {
+    "player": "Chris Moore",
+    "team": "WAS",
+    "position": "WR",
+    "aliases": [
+      "Chris Moore",
+      "Moore"
+    ]
+  },
+  {
+    "player": "Chris Oladokun",
+    "team": "KC",
+    "position": "QB",
+    "aliases": [
+      "Chris Oladokun",
+      "Oladokun"
+    ]
+  },
+  {
+    "player": "Chris Olave",
+    "team": "NO",
+    "position": "WR",
+    "aliases": [
+      "Chris Olave",
+      "Olave"
+    ]
+  },
+  {
+    "player": "Chris Rodriguez Jr.",
+    "team": "WAS",
+    "position": "RB",
+    "aliases": [
+      "Chris Rodriguez Jr.",
+      "Jr."
+    ]
+  },
+  {
+    "player": "Christian Kirk",
+    "team": "HOU",
+    "position": "WR",
+    "aliases": [
+      "Christian Kirk",
+      "Kirk"
+    ]
+  },
+  {
+    "player": "Christian McCaffrey",
+    "team": "SF",
+    "position": "RB",
+    "aliases": [
+      "Christian McCaffrey",
+      "McCaffrey"
+    ]
+  },
+  {
+    "player": "Christian Watson",
+    "team": "GB",
+    "position": "WR",
+    "aliases": [
+      "Christian Watson",
+      "Watson"
+    ]
+  },
+  {
+    "player": "Chuba Hubbard",
+    "team": "CAR",
+    "position": "RB",
+    "aliases": [
+      "Chuba Hubbard",
+      "Hubbard"
+    ]
+  },
+  {
+    "player": "Clayton Tune",
+    "team": "GB",
+    "position": "QB",
+    "aliases": [
+      "Clayton Tune",
+      "Tune"
+    ]
+  },
+  {
+    "player": "Clyde Edwards-Helaire",
+    "team": "KC",
+    "position": "RB",
+    "aliases": [
+      "Clyde Edwards-Helaire",
+      "Edwards-Helaire"
+    ]
+  },
+  {
+    "player": "Cody Ford",
+    "team": "CIN",
+    "position": "G",
+    "aliases": [
+      "Cody Ford",
+      "Ford"
+    ]
+  },
+  {
+    "player": "Cody White",
+    "team": "SEA",
+    "position": "WR",
+    "aliases": [
+      "Cody White",
+      "White"
+    ]
+  },
+  {
+    "player": "Colby Parkinson",
+    "team": "LA",
+    "position": "TE",
+    "aliases": [
+      "Colby Parkinson",
+      "Parkinson"
+    ]
+  },
+  {
+    "player": "Cole Kmet",
+    "team": "CHI",
+    "position": "TE",
+    "aliases": [
+      "Cole Kmet",
+      "Kmet"
+    ]
+  },
+  {
+    "player": "Colson Yankoff",
+    "team": "WAS",
+    "position": "TE",
+    "aliases": [
+      "Colson Yankoff",
+      "Yankoff"
+    ]
+  },
+  {
+    "player": "Colston Loveland",
+    "team": "CHI",
+    "position": "TE",
+    "aliases": [
+      "Colston Loveland",
+      "Loveland"
+    ]
+  },
+  {
+    "player": "Connor Colby",
+    "team": "SF",
+    "position": "G",
+    "aliases": [
+      "Connor Colby",
+      "Colby"
+    ]
+  },
+  {
+    "player": "Connor Heyward",
+    "team": "PIT",
+    "position": "TE",
+    "aliases": [
+      "Connor Heyward",
+      "Heyward"
+    ]
+  },
+  {
+    "player": "Cooper Kupp",
+    "team": "SEA",
+    "position": "WR",
+    "aliases": [
+      "Cooper Kupp",
+      "Kupp"
+    ]
+  },
+  {
+    "player": "Cooper Rush",
+    "team": "BAL",
+    "position": "QB",
+    "aliases": [
+      "Cooper Rush",
+      "Rush"
+    ]
+  },
+  {
+    "player": "Corey Kiner",
+    "team": "ARI",
+    "position": "RB",
+    "aliases": [
+      "Corey Kiner",
+      "Kiner"
+    ]
+  },
+  {
+    "player": "Courtland Sutton",
+    "team": "DEN",
+    "position": "WR",
+    "aliases": [
+      "Courtland Sutton",
+      "Sutton"
+    ]
+  },
+  {
+    "player": "Craig Reynolds",
+    "team": "DET",
+    "position": "RB",
+    "aliases": [
+      "Craig Reynolds",
+      "Reynolds"
+    ]
+  },
+  {
+    "player": "Curtis Samuel",
+    "team": "BUF",
+    "position": "WR",
+    "aliases": [
+      "Curtis Samuel",
+      "Samuel"
+    ]
+  },
+  {
+    "player": "D'Andre Swift",
+    "team": "CHI",
+    "position": "RB",
+    "aliases": [
+      "D'Andre Swift",
+      "Swift"
+    ]
+  },
+  {
+    "player": "D'Ernest Johnson",
+    "team": "NE",
+    "position": "RB",
+    "aliases": [
+      "D'Ernest Johnson",
+      "Johnson"
+    ]
+  },
+  {
+    "player": "DJ Giddens",
+    "team": "IND",
+    "position": "RB",
+    "aliases": [
+      "DJ Giddens",
+      "Giddens"
+    ]
+  },
+  {
+    "player": "DJ Moore",
+    "team": "CHI",
+    "position": "WR",
+    "aliases": [
+      "DJ Moore",
+      "Moore"
+    ]
+  },
+  {
+    "player": "DK Metcalf",
+    "team": "PIT",
+    "position": "WR",
+    "aliases": [
+      "DK Metcalf",
+      "Metcalf"
+    ]
+  },
+  {
+    "player": "Dak Prescott",
+    "team": "DAL",
+    "position": "QB",
+    "aliases": [
+      "Dak Prescott",
+      "Prescott"
+    ]
+  },
+  {
+    "player": "Dallas Goedert",
+    "team": "PHI",
+    "position": "TE",
+    "aliases": [
+      "Dallas Goedert",
+      "Goedert"
+    ]
+  },
+  {
+    "player": "Dalton Kincaid",
+    "team": "BUF",
+    "position": "TE",
+    "aliases": [
+      "Dalton Kincaid",
+      "Kincaid"
+    ]
+  },
+  {
+    "player": "Dalton Schultz",
+    "team": "HOU",
+    "position": "TE",
+    "aliases": [
+      "Dalton Schultz",
+      "Schultz"
+    ]
+  },
+  {
+    "player": "Dameon Pierce",
+    "team": "KC",
+    "position": "RB",
+    "aliases": [
+      "Dameon Pierce",
+      "Pierce"
+    ]
+  },
+  {
+    "player": "Daniel Bellinger",
+    "team": "NYG",
+    "position": "TE",
+    "aliases": [
+      "Daniel Bellinger",
+      "Bellinger"
+    ]
+  },
+  {
+    "player": "Daniel Jones",
+    "team": "IND",
+    "position": "QB",
+    "aliases": [
+      "Daniel Jones",
+      "Jones"
+    ]
+  },
+  {
+    "player": "Dante Pettis",
+    "team": "NO",
+    "position": "WR",
+    "aliases": [
+      "Dante Pettis",
+      "Pettis"
+    ]
+  },
+  {
+    "player": "Dare Ogunbowale",
+    "team": "HOU",
+    "position": "RB",
+    "aliases": [
+      "Dare Ogunbowale",
+      "Ogunbowale"
+    ]
+  },
+  {
+    "player": "Dareke Young",
+    "team": "SEA",
+    "position": "WR",
+    "aliases": [
+      "Dareke Young",
+      "Young"
+    ]
+  },
+  {
+    "player": "Darian Kinnard",
+    "team": "GB",
+    "position": "OT",
+    "aliases": [
+      "Darian Kinnard",
+      "Kinnard"
+    ]
+  },
+  {
+    "player": "Darius Cooper",
+    "team": "PHI",
+    "position": "WR",
+    "aliases": [
+      "Darius Cooper",
+      "Cooper"
+    ]
+  },
+  {
+    "player": "Darius Slayton",
+    "team": "NYG",
+    "position": "WR",
+    "aliases": [
+      "Darius Slayton",
+      "Slayton"
+    ]
+  },
+  {
+    "player": "Darnell Mooney",
+    "team": "ATL",
+    "position": "WR",
+    "aliases": [
+      "Darnell Mooney",
+      "Mooney"
+    ]
+  },
+  {
+    "player": "Darnell Washington",
+    "team": "PIT",
+    "position": "TE",
+    "aliases": [
+      "Darnell Washington",
+      "Washington"
+    ]
+  },
+  {
+    "player": "Darren Waller",
+    "team": "MIA",
+    "position": "TE",
+    "aliases": [
+      "Darren Waller",
+      "Waller"
+    ]
+  },
+  {
+    "player": "Davante Adams",
+    "team": "LA",
+    "position": "WR",
+    "aliases": [
+      "Davante Adams",
+      "Adams"
+    ]
+  },
+  {
+    "player": "David Martin-Robinson",
+    "team": "TEN",
+    "position": "TE",
+    "aliases": [
+      "David Martin-Robinson",
+      "Martin-Robinson"
+    ]
+  },
+  {
+    "player": "David Montgomery",
+    "team": "DET",
+    "position": "RB",
+    "aliases": [
+      "David Montgomery",
+      "Montgomery"
+    ]
+  },
+  {
+    "player": "David Moore",
+    "team": "CAR",
+    "position": "WR",
+    "aliases": [
+      "David Moore",
+      "Moore"
+    ]
+  },
+  {
+    "player": "David Njoku",
+    "team": "CLE",
+    "position": "TE",
+    "aliases": [
+      "David Njoku",
+      "Njoku"
+    ]
+  },
+  {
+    "player": "David Sills",
+    "team": "ATL",
+    "position": "WR",
+    "aliases": [
+      "David Sills",
+      "Sills"
+    ]
+  },
+  {
+    "player": "Davis Allen",
+    "team": "LA",
+    "position": "TE",
+    "aliases": [
+      "Davis Allen",
+      "Allen"
+    ]
+  },
+  {
+    "player": "Davis Mills",
+    "team": "HOU",
+    "position": "QB",
+    "aliases": [
+      "Davis Mills",
+      "Mills"
+    ]
+  },
+  {
+    "player": "Dawson Knox",
+    "team": "BUF",
+    "position": "TE",
+    "aliases": [
+      "Dawson Knox",
+      "Knox"
+    ]
+  },
+  {
+    "player": "De'Von Achane",
+    "team": "MIA",
+    "position": "RB",
+    "aliases": [
+      "De'Von Achane",
+      "Achane"
+    ]
+  },
+  {
+    "player": "DeAndre Hopkins",
+    "team": "BAL",
+    "position": "WR",
+    "aliases": [
+      "DeAndre Hopkins",
+      "Hopkins"
+    ]
+  },
+  {
+    "player": "DeMario Douglas",
+    "team": "NE",
+    "position": "WR",
+    "aliases": [
+      "DeMario Douglas",
+      "Douglas"
+    ]
+  },
+  {
+    "player": "DeVonta Smith",
+    "team": "PHI",
+    "position": "WR",
+    "aliases": [
+      "DeVonta Smith",
+      "Smith"
+    ]
+  },
+  {
+    "player": "Dee Eskridge",
+    "team": "MIA",
+    "position": "WR",
+    "aliases": [
+      "Dee Eskridge",
+      "Eskridge"
+    ]
+  },
+  {
+    "player": "DeeJay Dallas",
+    "team": "JAX",
+    "position": "RB",
+    "aliases": [
+      "DeeJay Dallas",
+      "Dallas"
+    ]
+  },
+  {
+    "player": "Deebo Samuel Sr.",
+    "team": "WAS",
+    "position": "WR",
+    "aliases": [
+      "Deebo Samuel Sr.",
+      "Sr."
+    ]
+  },
+  {
+    "player": "Demarcus Robinson",
+    "team": "SF",
+    "position": "WR",
+    "aliases": [
+      "Demarcus Robinson",
+      "Robinson"
+    ]
+  },
+  {
+    "player": "Deonte Banks",
+    "team": "NYG",
+    "position": "CB",
+    "aliases": [
+      "Deonte Banks",
+      "Banks"
+    ]
+  },
+  {
+    "player": "Derius Davis",
+    "team": "LAC",
+    "position": "WR",
+    "aliases": [
+      "Derius Davis",
+      "Davis"
+    ]
+  },
+  {
+    "player": "Derrick Henry",
+    "team": "BAL",
+    "position": "RB",
+    "aliases": [
+      "Derrick Henry",
+      "Henry"
+    ]
+  },
+  {
+    "player": "Devaughn Vele",
+    "team": "NO",
+    "position": "WR",
+    "aliases": [
+      "Devaughn Vele",
+      "Vele"
+    ]
+  },
+  {
+    "player": "Deven Thompkins",
+    "team": "ATL",
+    "position": "WR",
+    "aliases": [
+      "Deven Thompkins",
+      "Thompkins"
+    ]
+  },
+  {
+    "player": "Devin Culp",
+    "team": "TB",
+    "position": "TE",
+    "aliases": [
+      "Devin Culp",
+      "Culp"
+    ]
+  },
+  {
+    "player": "Devin Duvernay",
+    "team": "CHI",
+    "position": "WR",
+    "aliases": [
+      "Devin Duvernay",
+      "Duvernay"
+    ]
+  },
+  {
+    "player": "Devin Neal",
+    "team": "NO",
+    "position": "RB",
+    "aliases": [
+      "Devin Neal",
+      "Neal"
+    ]
+  },
+  {
+    "player": "Devin Singletary",
+    "team": "NYG",
+    "position": "RB",
+    "aliases": [
+      "Devin Singletary",
+      "Singletary"
+    ]
+  },
+  {
+    "player": "Devontez Walker",
+    "team": "BAL",
+    "position": "WR",
+    "aliases": [
+      "Devontez Walker",
+      "Walker"
+    ]
+  },
+  {
+    "player": "Dillon Gabriel",
+    "team": "CLE",
+    "position": "QB",
+    "aliases": [
+      "Dillon Gabriel",
+      "Gabriel"
+    ]
+  },
+  {
+    "player": "Dont'e Thornton Jr.",
+    "team": "LV",
+    "position": "WR",
+    "aliases": [
+      "Dont'e Thornton Jr.",
+      "Jr."
+    ]
+  },
+  {
+    "player": "Dontayvion Wicks",
+    "team": "GB",
+    "position": "WR",
+    "aliases": [
+      "Dontayvion Wicks",
+      "Wicks"
+    ]
+  },
+  {
+    "player": "Drake Dabney",
+    "team": "GB",
+    "position": "TE",
+    "aliases": [
+      "Drake Dabney",
+      "Dabney"
+    ]
+  },
+  {
+    "player": "Drake London",
+    "team": "ATL",
+    "position": "WR",
+    "aliases": [
+      "Drake London",
+      "London"
+    ]
+  },
+  {
+    "player": "Drake Maye",
+    "team": "NE",
+    "position": "QB",
+    "aliases": [
+      "Drake Maye",
+      "Maye"
+    ]
+  },
+  {
+    "player": "Drew Lock",
+    "team": "SEA",
+    "position": "QB",
+    "aliases": [
+      "Drew Lock",
+      "Lock"
+    ]
+  },
+  {
+    "player": "Drew Sample",
+    "team": "CIN",
+    "position": "TE",
+    "aliases": [
+      "Drew Sample",
+      "Sample"
+    ]
+  },
+  {
+    "player": "Durham Smythe",
+    "team": "CHI",
+    "position": "TE",
+    "aliases": [
+      "Durham Smythe",
+      "Smythe"
+    ]
+  },
+  {
+    "player": "Dyami Brown",
+    "team": "JAX",
+    "position": "WR",
+    "aliases": [
+      "Dyami Brown",
+      "Brown"
+    ]
+  },
+  {
+    "player": "Dylan Drummond",
+    "team": "ATL",
+    "position": "WR",
+    "aliases": [
+      "Dylan Drummond",
+      "Drummond"
+    ]
+  },
+  {
+    "player": "Dylan Laube",
+    "team": "LV",
+    "position": "RB",
+    "aliases": [
+      "Dylan Laube",
+      "Laube"
+    ]
+  },
+  {
+    "player": "Dylan Sampson",
+    "team": "CLE",
+    "position": "RB",
+    "aliases": [
+      "Dylan Sampson",
+      "Sampson"
+    ]
+  },
+  {
+    "player": "Efton Chism III",
+    "team": "NE",
+    "position": "WR",
+    "aliases": [
+      "Efton Chism III",
+      "III"
+    ]
+  },
+  {
+    "player": "Elic Ayomanor",
+    "team": "TEN",
+    "position": "WR",
+    "aliases": [
+      "Elic Ayomanor",
+      "Ayomanor"
+    ]
+  },
+  {
+    "player": "Elijah Arroyo",
+    "team": "SEA",
+    "position": "TE",
+    "aliases": [
+      "Elijah Arroyo",
+      "Arroyo"
+    ]
+  },
+  {
+    "player": "Elijah Higgins",
+    "team": "ARI",
+    "position": "TE",
+    "aliases": [
+      "Elijah Higgins",
+      "Higgins"
+    ]
+  },
+  {
+    "player": "Elijah Moore",
+    "team": "DEN",
+    "position": "WR",
+    "aliases": [
+      "Elijah Moore",
+      "Moore"
+    ]
+  },
+  {
+    "player": "Emanuel Wilson",
+    "team": "GB",
+    "position": "RB",
+    "aliases": [
+      "Emanuel Wilson",
+      "Wilson"
+    ]
+  },
+  {
+    "player": "Emari Demercado",
+    "team": "ARI",
+    "position": "RB",
+    "aliases": [
+      "Emari Demercado",
+      "Demercado"
+    ]
+  },
+  {
+    "player": "Emeka Egbuka",
+    "team": "TB",
+    "position": "WR",
+    "aliases": [
+      "Emeka Egbuka",
+      "Egbuka"
+    ]
+  },
+  {
+    "player": "Eric Saubert",
+    "team": "SEA",
+    "position": "TE",
+    "aliases": [
+      "Eric Saubert",
+      "Saubert"
+    ]
+  },
+  {
+    "player": "Evan Engram",
+    "team": "DEN",
+    "position": "TE",
+    "aliases": [
+      "Evan Engram",
+      "Engram"
+    ]
+  },
+  {
+    "player": "Evan Hull",
+    "team": "NO",
+    "position": "RB",
+    "aliases": [
+      "Evan Hull",
+      "Hull"
+    ]
+  },
+  {
+    "player": "Feleipe Franks",
+    "team": "ATL",
+    "position": "TE",
+    "aliases": [
+      "Feleipe Franks",
+      "Franks"
+    ]
+  },
+  {
+    "player": "Foster Moreau",
+    "team": "NO",
+    "position": "TE",
+    "aliases": [
+      "Foster Moreau",
+      "Moreau"
+    ]
+  },
+  {
+    "player": "Frank Crum",
+    "team": "DEN",
+    "position": "OT",
+    "aliases": [
+      "Frank Crum",
+      "Crum"
+    ]
+  },
+  {
+    "player": "Frank Gore Jr.",
+    "team": "BUF",
+    "position": "RB",
+    "aliases": [
+      "Frank Gore Jr.",
+      "Jr."
+    ]
+  },
+  {
+    "player": "Gabe Davis",
+    "team": "BUF",
+    "position": "WR",
+    "aliases": [
+      "Gabe Davis",
+      "Davis"
+    ]
+  },
+  {
+    "player": "Gage Larvadain",
+    "team": "CLE",
+    "position": "WR",
+    "aliases": [
+      "Gage Larvadain",
+      "Larvadain"
+    ]
+  },
+  {
+    "player": "Garrett Wilson",
+    "team": "NYJ",
+    "position": "WR",
+    "aliases": [
+      "Garrett Wilson",
+      "Wilson"
+    ]
+  },
+  {
+    "player": "Geno Smith",
+    "team": "LV",
+    "position": "QB",
+    "aliases": [
+      "Geno Smith",
+      "Smith"
+    ]
+  },
+  {
+    "player": "George Holani",
+    "team": "SEA",
+    "position": "RB",
+    "aliases": [
+      "George Holani",
+      "Holani"
+    ]
+  },
+  {
+    "player": "George Kittle",
+    "team": "SF",
+    "position": "TE",
+    "aliases": [
+      "George Kittle",
+      "Kittle"
+    ]
+  },
+  {
+    "player": "George Pickens",
+    "team": "DAL",
+    "position": "WR",
+    "aliases": [
+      "George Pickens",
+      "Pickens"
+    ]
+  },
+  {
+    "player": "Grant Calcaterra",
+    "team": "PHI",
+    "position": "TE",
+    "aliases": [
+      "Grant Calcaterra",
+      "Calcaterra"
+    ]
+  },
+  {
+    "player": "Greg Dortch",
+    "team": "ARI",
+    "position": "WR",
+    "aliases": [
+      "Greg Dortch",
+      "Dortch"
+    ]
+  },
+  {
+    "player": "Greg Dulcich",
+    "team": "MIA",
+    "position": "TE",
+    "aliases": [
+      "Greg Dulcich",
+      "Dulcich"
+    ]
+  },
+  {
+    "player": "Gunnar Helm",
+    "team": "TEN",
+    "position": "TE",
+    "aliases": [
+      "Gunnar Helm",
+      "Helm"
+    ]
+  },
+  {
+    "player": "Gunner Olszewski",
+    "team": "NYG",
+    "position": "WR",
+    "aliases": [
+      "Gunner Olszewski",
+      "Olszewski"
+    ]
+  },
+  {
+    "player": "Harold Fannin Jr.",
+    "team": "CLE",
+    "position": "TE",
+    "aliases": [
+      "Harold Fannin Jr.",
+      "Jr."
+    ]
+  },
+  {
+    "player": "Harrison Bryant",
+    "team": "HOU",
+    "position": "TE",
+    "aliases": [
+      "Harrison Bryant",
+      "Bryant"
+    ]
+  },
+  {
+    "player": "Hassan Haskins",
+    "team": "LAC",
+    "position": "RB",
+    "aliases": [
+      "Hassan Haskins",
+      "Haskins"
+    ]
+  },
+  {
+    "player": "Hunter Henry",
+    "team": "NE",
+    "position": "TE",
+    "aliases": [
+      "Hunter Henry",
+      "Henry"
+    ]
+  },
+  {
+    "player": "Hunter Long",
+    "team": "JAX",
+    "position": "TE",
+    "aliases": [
+      "Hunter Long",
+      "Long"
+    ]
+  },
+  {
+    "player": "Hunter Luepke",
+    "team": "DAL",
+    "position": "RB",
+    "aliases": [
+      "Hunter Luepke",
+      "Luepke"
+    ]
+  },
+  {
+    "player": "Hunter Renfrow",
+    "team": "CAR",
+    "position": "WR",
+    "aliases": [
+      "Hunter Renfrow",
+      "Renfrow"
+    ]
+  },
+  {
+    "player": "Ian Thomas",
+    "team": "LV",
+    "position": "TE",
+    "aliases": [
+      "Ian Thomas",
+      "Thomas"
+    ]
+  },
+  {
+    "player": "Isaac TeSlaa",
+    "team": "DET",
+    "position": "WR",
+    "aliases": [
+      "Isaac TeSlaa",
+      "TeSlaa"
+    ]
+  },
+  {
+    "player": "Isaiah Bond",
+    "team": "CLE",
+    "position": "WR",
+    "aliases": [
+      "Isaiah Bond",
+      "Bond"
+    ]
+  },
+  {
+    "player": "Isaiah Davis",
+    "team": "NYJ",
+    "position": "RB",
+    "aliases": [
+      "Isaiah Davis",
+      "Davis"
+    ]
+  },
+  {
+    "player": "Isaiah Hodgins",
+    "team": "NYG",
+    "position": "WR",
+    "aliases": [
+      "Isaiah Hodgins",
+      "Hodgins"
+    ]
+  },
+  {
+    "player": "Isaiah Likely",
+    "team": "BAL",
+    "position": "TE",
+    "aliases": [
+      "Isaiah Likely",
+      "Likely"
+    ]
+  },
+  {
+    "player": "Isaiah Pola-Mao",
+    "team": "LV",
+    "position": "SAF",
+    "aliases": [
+      "Isaiah Pola-Mao",
+      "Pola-Mao"
+    ]
+  },
+  {
+    "player": "Isaiah Williams",
+    "team": "NYJ",
+    "position": "WR",
+    "aliases": [
+      "Isaiah Williams",
+      "Williams"
+    ]
+  },
+  {
+    "player": "Isiah Pacheco",
+    "team": "KC",
+    "position": "RB",
+    "aliases": [
+      "Isiah Pacheco",
+      "Pacheco"
+    ]
+  },
+  {
+    "player": "J.J. McCarthy",
+    "team": "MIN",
+    "position": "QB",
+    "aliases": [
+      "J.J. McCarthy",
+      "McCarthy"
+    ]
+  },
+  {
+    "player": "J.K. Dobbins",
+    "team": "DEN",
+    "position": "RB",
+    "aliases": [
+      "J.K. Dobbins",
+      "Dobbins"
+    ]
+  },
+  {
+    "player": "Ja'Marr Chase",
+    "team": "CIN",
+    "position": "WR",
+    "aliases": [
+      "Ja'Marr Chase",
+      "Chase"
+    ]
+  },
+  {
+    "player": "Ja'Tavion Sanders",
+    "team": "CAR",
+    "position": "TE",
+    "aliases": [
+      "Ja'Tavion Sanders",
+      "Sanders"
+    ]
+  },
+  {
+    "player": "Jacardia Wright",
+    "team": "SEA",
+    "position": "RB",
+    "aliases": [
+      "Jacardia Wright",
+      "Wright"
+    ]
+  },
+  {
+    "player": "Jack Bech",
+    "team": "LV",
+    "position": "WR",
+    "aliases": [
+      "Jack Bech",
+      "Bech"
+    ]
+  },
+  {
+    "player": "Jack Stoll",
+    "team": "NO",
+    "position": "TE",
+    "aliases": [
+      "Jack Stoll",
+      "Stoll"
+    ]
+  },
+  {
+    "player": "Jack Westover",
+    "team": "NE",
+    "position": "TE",
+    "aliases": [
+      "Jack Westover",
+      "Westover"
+    ]
+  },
+  {
+    "player": "Jackson Hawes",
+    "team": "BUF",
+    "position": "TE",
+    "aliases": [
+      "Jackson Hawes",
+      "Hawes"
+    ]
+  },
+  {
+    "player": "Jacob Saylors",
+    "team": "DET",
+    "position": "RB",
+    "aliases": [
+      "Jacob Saylors",
+      "Saylors"
+    ]
+  },
+  {
+    "player": "Jacoby Brissett",
+    "team": "ARI",
+    "position": "QB",
+    "aliases": [
+      "Jacoby Brissett",
+      "Brissett"
+    ]
+  },
+  {
+    "player": "Jacoby Jones",
+    "team": "WAS",
+    "position": "WR",
+    "aliases": [
+      "Jacoby Jones",
+      "Jones"
+    ]
+  },
+  {
+    "player": "Jacory Croskey-Merritt",
+    "team": "WAS",
+    "position": "RB",
+    "aliases": [
+      "Jacory Croskey-Merritt",
+      "Croskey-Merritt"
+    ]
+  },
+  {
+    "player": "Jahan Dotson",
+    "team": "PHI",
+    "position": "WR",
+    "aliases": [
+      "Jahan Dotson",
+      "Dotson"
+    ]
+  },
+  {
+    "player": "Jahdae Walker",
+    "team": "CHI",
+    "position": "WR",
+    "aliases": [
+      "Jahdae Walker",
+      "Walker"
+    ]
+  },
+  {
+    "player": "Jahmyr Gibbs",
+    "team": "DET",
+    "position": "RB",
+    "aliases": [
+      "Jahmyr Gibbs",
+      "Gibbs"
+    ]
+  },
+  {
+    "player": "Jake Bobo",
+    "team": "SEA",
+    "position": "WR",
+    "aliases": [
+      "Jake Bobo",
+      "Bobo"
+    ]
+  },
+  {
+    "player": "Jake Browning",
+    "team": "CIN",
+    "position": "QB",
+    "aliases": [
+      "Jake Browning",
+      "Browning"
+    ]
+  },
+  {
+    "player": "Jake Ferguson",
+    "team": "DAL",
+    "position": "TE",
+    "aliases": [
+      "Jake Ferguson",
+      "Ferguson"
+    ]
+  },
+  {
+    "player": "Jake Tonges",
+    "team": "SF",
+    "position": "TE",
+    "aliases": [
+      "Jake Tonges",
+      "Tonges"
+    ]
+  },
+  {
+    "player": "Jakobi Meyers",
+    "team": "LV",
+    "position": "WR",
+    "aliases": [
+      "Jakobi Meyers",
+      "Meyers"
+    ]
+  },
+  {
+    "player": "Jakobie Keeney-James",
+    "team": "GB",
+    "position": "WR",
+    "aliases": [
+      "Jakobie Keeney-James",
+      "Keeney-James"
+    ]
+  },
+  {
+    "player": "Jaleel McLaughlin",
+    "team": "DEN",
+    "position": "RB",
+    "aliases": [
+      "Jaleel McLaughlin",
+      "McLaughlin"
+    ]
+  },
+  {
+    "player": "Jalen Brooks",
+    "team": "ARI",
+    "position": "WR",
+    "aliases": [
+      "Jalen Brooks",
+      "Brooks"
+    ]
+  },
+  {
+    "player": "Jalen Coker",
+    "team": "CAR",
+    "position": "WR",
+    "aliases": [
+      "Jalen Coker",
+      "Coker"
+    ]
+  },
+  {
+    "player": "Jalen Hurts",
+    "team": "PHI",
+    "position": "QB",
+    "aliases": [
+      "Jalen Hurts",
+      "Hurts"
+    ]
+  },
+  {
+    "player": "Jalen McMillan",
+    "team": "TB",
+    "position": "WR",
+    "aliases": [
+      "Jalen McMillan",
+      "McMillan"
+    ]
+  },
+  {
+    "player": "Jalen Nailor",
+    "team": "MIN",
+    "position": "WR",
+    "aliases": [
+      "Jalen Nailor",
+      "Nailor"
+    ]
+  },
+  {
+    "player": "Jalen Royals",
+    "team": "KC",
+    "position": "WR",
+    "aliases": [
+      "Jalen Royals",
+      "Royals"
+    ]
+  },
+  {
+    "player": "Jalen Tolbert",
+    "team": "DAL",
+    "position": "WR",
+    "aliases": [
+      "Jalen Tolbert",
+      "Tolbert"
+    ]
+  },
+  {
+    "player": "Jalin Hyatt",
+    "team": "NYG",
+    "position": "WR",
+    "aliases": [
+      "Jalin Hyatt",
+      "Hyatt"
+    ]
+  },
+  {
+    "player": "Jamari Thrash",
+    "team": "CLE",
+    "position": "WR",
+    "aliases": [
+      "Jamari Thrash",
+      "Thrash"
+    ]
+  },
+  {
+    "player": "Jameis Winston",
+    "team": "NYG",
+    "position": "QB",
+    "aliases": [
+      "Jameis Winston",
+      "Winston"
+    ]
+  },
+  {
+    "player": "James Conner",
+    "team": "ARI",
+    "position": "RB",
+    "aliases": [
+      "James Conner",
+      "Conner"
+    ]
+  },
+  {
+    "player": "James Cook",
+    "team": "BUF",
+    "position": "RB",
+    "aliases": [
+      "James Cook",
+      "Cook"
+    ]
+  },
+  {
+    "player": "James Mitchell",
+    "team": "CAR",
+    "position": "TE",
+    "aliases": [
+      "James Mitchell",
+      "Mitchell"
+    ]
+  },
+  {
+    "player": "James Proche",
+    "team": "TEN",
+    "position": "WR",
+    "aliases": [
+      "James Proche",
+      "Proche"
+    ]
+  },
+  {
+    "player": "Jameson Williams",
+    "team": "DET",
+    "position": "WR",
+    "aliases": [
+      "Jameson Williams",
+      "Williams"
+    ]
+  },
+  {
+    "player": "Jared Goff",
+    "team": "DET",
+    "position": "QB",
+    "aliases": [
+      "Jared Goff",
+      "Goff"
+    ]
+  },
+  {
+    "player": "Jared Verse",
+    "team": "LA",
+    "position": "LB",
+    "aliases": [
+      "Jared Verse",
+      "Verse"
+    ]
+  },
+  {
+    "player": "Jared Wayne",
+    "team": "HOU",
+    "position": "WR",
+    "aliases": [
+      "Jared Wayne",
+      "Wayne"
+    ]
+  },
+  {
+    "player": "Jared Wiley",
+    "team": "KC",
+    "position": "TE",
+    "aliases": [
+      "Jared Wiley",
+      "Wiley"
+    ]
+  },
+  {
+    "player": "Jaret Patterson",
+    "team": "LAC",
+    "position": "RB",
+    "aliases": [
+      "Jaret Patterson",
+      "Patterson"
+    ]
+  },
+  {
+    "player": "Jarrett Stidham",
+    "team": "DEN",
+    "position": "QB",
+    "aliases": [
+      "Jarrett Stidham",
+      "Stidham"
+    ]
+  },
+  {
+    "player": "Jauan Jennings",
+    "team": "SF",
+    "position": "WR",
+    "aliases": [
+      "Jauan Jennings",
+      "Jennings"
+    ]
+  },
+  {
+    "player": "Javonte Williams",
+    "team": "DAL",
+    "position": "RB",
+    "aliases": [
+      "Javonte Williams",
+      "Williams"
+    ]
+  },
+  {
+    "player": "Jawhar Jordan",
+    "team": "HOU",
+    "position": "RB",
+    "aliases": [
+      "Jawhar Jordan",
+      "Jordan"
+    ]
+  },
+  {
+    "player": "Jaxon Smith-Njigba",
+    "team": "SEA",
+    "position": "WR",
+    "aliases": [
+      "Jaxon Smith-Njigba",
+      "Smith-Njigba"
+    ]
+  },
+  {
+    "player": "Jaxson Dart",
+    "team": "NYG",
+    "position": "QB",
+    "aliases": [
+      "Jaxson Dart",
+      "Dart"
+    ]
+  },
+  {
+    "player": "Jayden Daniels",
+    "team": "WAS",
+    "position": "QB",
+    "aliases": [
+      "Jayden Daniels",
+      "Daniels"
+    ]
+  },
+  {
+    "player": "Jayden Higgins",
+    "team": "HOU",
+    "position": "WR",
+    "aliases": [
+      "Jayden Higgins",
+      "Higgins"
+    ]
+  },
+  {
+    "player": "Jayden Reed",
+    "team": "GB",
+    "position": "WR",
+    "aliases": [
+      "Jayden Reed",
+      "Reed"
+    ]
+  },
+  {
+    "player": "Jaydon Blue",
+    "team": "DAL",
+    "position": "RB",
+    "aliases": [
+      "Jaydon Blue",
+      "Blue"
+    ]
+  },
+  {
+    "player": "Jaylen Waddle",
+    "team": "MIA",
+    "position": "WR",
+    "aliases": [
+      "Jaylen Waddle",
+      "Waddle"
+    ]
+  },
+  {
+    "player": "Jaylen Warren",
+    "team": "PIT",
+    "position": "RB",
+    "aliases": [
+      "Jaylen Warren",
+      "Warren"
+    ]
+  },
+  {
+    "player": "Jaylen Wright",
+    "team": "MIA",
+    "position": "RB",
+    "aliases": [
+      "Jaylen Wright",
+      "Wright"
+    ]
+  },
+  {
+    "player": "Jaylin Lane",
+    "team": "WAS",
+    "position": "WR",
+    "aliases": [
+      "Jaylin Lane",
+      "Lane"
+    ]
+  },
+  {
+    "player": "Jaylin Noel",
+    "team": "HOU",
+    "position": "WR",
+    "aliases": [
+      "Jaylin Noel",
+      "Noel"
+    ]
+  },
+  {
+    "player": "Jeffery Simmons",
+    "team": "TEN",
+    "position": "DT",
+    "aliases": [
+      "Jeffery Simmons",
+      "Simmons"
+    ]
+  },
+  {
+    "player": "Jelani Woods",
+    "team": "NYJ",
+    "position": "TE",
+    "aliases": [
+      "Jelani Woods",
+      "Woods"
+    ]
+  },
+  {
+    "player": "Jeremy McNichols",
+    "team": "WAS",
+    "position": "RB",
+    "aliases": [
+      "Jeremy McNichols",
+      "McNichols"
+    ]
+  },
+  {
+    "player": "Jeremy Ruckert",
+    "team": "NYJ",
+    "position": "TE",
+    "aliases": [
+      "Jeremy Ruckert",
+      "Ruckert"
+    ]
+  },
+  {
+    "player": "Jerome Ford",
+    "team": "CLE",
+    "position": "RB",
+    "aliases": [
+      "Jerome Ford",
+      "Ford"
+    ]
+  },
+  {
+    "player": "Jerry Jeudy",
+    "team": "CLE",
+    "position": "WR",
+    "aliases": [
+      "Jerry Jeudy",
+      "Jeudy"
+    ]
+  },
+  {
+    "player": "Jimmy Horn Jr.",
+    "team": "CAR",
+    "position": "WR",
+    "aliases": [
+      "Jimmy Horn Jr.",
+      "Jr."
+    ]
+  },
+  {
+    "player": "Joe Burrow",
+    "team": "CIN",
+    "position": "QB",
+    "aliases": [
+      "Joe Burrow",
+      "Burrow"
+    ]
+  },
+  {
+    "player": "Joe Flacco",
+    "team": "CLE",
+    "position": "QB",
+    "aliases": [
+      "Joe Flacco",
+      "Flacco"
+    ]
+  },
+  {
+    "player": "Joe Milton III",
+    "team": "DAL",
+    "position": "QB",
+    "aliases": [
+      "Joe Milton III",
+      "III"
+    ]
+  },
+  {
+    "player": "John Bates",
+    "team": "WAS",
+    "position": "TE",
+    "aliases": [
+      "John Bates",
+      "Bates"
+    ]
+  },
+  {
+    "player": "John FitzPatrick",
+    "team": "GB",
+    "position": "TE",
+    "aliases": [
+      "John FitzPatrick",
+      "FitzPatrick"
+    ]
+  },
+  {
+    "player": "John Metchie III",
+    "team": "PHI",
+    "position": "WR",
+    "aliases": [
+      "John Metchie III",
+      "III"
+    ]
+  },
+  {
+    "player": "Johnny Mundt",
+    "team": "JAX",
+    "position": "TE",
+    "aliases": [
+      "Johnny Mundt",
+      "Mundt"
+    ]
+  },
+  {
+    "player": "Jonathan Mingo",
+    "team": "DAL",
+    "position": "WR",
+    "aliases": [
+      "Jonathan Mingo",
+      "Mingo"
+    ]
+  },
+  {
+    "player": "Jonathan Taylor",
+    "team": "IND",
+    "position": "RB",
+    "aliases": [
+      "Jonathan Taylor",
+      "Taylor"
+    ]
+  },
+  {
+    "player": "Jonnu Smith",
+    "team": "PIT",
+    "position": "TE",
+    "aliases": [
+      "Jonnu Smith",
+      "Smith"
+    ]
+  },
+  {
+    "player": "Jordan Addison",
+    "team": "MIN",
+    "position": "WR",
+    "aliases": [
+      "Jordan Addison",
+      "Addison"
+    ]
+  },
+  {
+    "player": "Jordan Davis",
+    "team": "PHI",
+    "position": "DT",
+    "aliases": [
+      "Jordan Davis",
+      "Davis"
+    ]
+  },
+  {
+    "player": "Jordan James",
+    "team": "SF",
+    "position": "RB",
+    "aliases": [
+      "Jordan James",
+      "James"
+    ]
+  },
+  {
+    "player": "Jordan Love",
+    "team": "GB",
+    "position": "QB",
+    "aliases": [
+      "Jordan Love",
+      "Love"
+    ]
+  },
+  {
+    "player": "Jordan Mason",
+    "team": "MIN",
+    "position": "RB",
+    "aliases": [
+      "Jordan Mason",
+      "Mason"
+    ]
+  },
+  {
+    "player": "Jordan Watkins",
+    "team": "SF",
+    "position": "WR",
+    "aliases": [
+      "Jordan Watkins",
+      "Watkins"
+    ]
+  },
+  {
+    "player": "Jordan Whittington",
+    "team": "LA",
+    "position": "WR",
+    "aliases": [
+      "Jordan Whittington",
+      "Whittington"
+    ]
+  },
+  {
+    "player": "Josh Allen",
+    "team": "BUF",
+    "position": "QB",
+    "aliases": [
+      "Josh Allen",
+      "Allen"
+    ]
+  },
+  {
+    "player": "Josh Downs",
+    "team": "IND",
+    "position": "WR",
+    "aliases": [
+      "Josh Downs",
+      "Downs"
+    ]
+  },
+  {
+    "player": "Josh Jacobs",
+    "team": "GB",
+    "position": "RB",
+    "aliases": [
+      "Josh Jacobs",
+      "Jacobs"
+    ]
+  },
+  {
+    "player": "Josh Johnson",
+    "team": "WAS",
+    "position": "QB",
+    "aliases": [
+      "Josh Johnson",
+      "Johnson"
+    ]
+  },
+  {
+    "player": "Josh Oliver",
+    "team": "MIN",
+    "position": "TE",
+    "aliases": [
+      "Josh Oliver",
+      "Oliver"
+    ]
+  },
+  {
+    "player": "Josh Palmer",
+    "team": "BUF",
+    "position": "WR",
+    "aliases": [
+      "Josh Palmer",
+      "Palmer"
+    ]
+  },
+  {
+    "player": "Josh Reynolds",
+    "team": "NYJ",
+    "position": "WR",
+    "aliases": [
+      "Josh Reynolds",
+      "Reynolds"
+    ]
+  },
+  {
+    "player": "Josh Whyle",
+    "team": "GB",
+    "position": "TE",
+    "aliases": [
+      "Josh Whyle",
+      "Whyle"
+    ]
+  },
+  {
+    "player": "Josh Williams",
+    "team": "TB",
+    "position": "RB",
+    "aliases": [
+      "Josh Williams",
+      "Williams"
+    ]
+  },
+  {
+    "player": "Joshua Dobbs",
+    "team": "NE",
+    "position": "QB",
+    "aliases": [
+      "Joshua Dobbs",
+      "Dobbs"
+    ]
+  },
+  {
+    "player": "Josiah Deguara",
+    "team": "ARI",
+    "position": "TE",
+    "aliases": [
+      "Josiah Deguara",
+      "Deguara"
+    ]
+  },
+  {
+    "player": "JuJu Smith-Schuster",
+    "team": "KC",
+    "position": "WR",
+    "aliases": [
+      "JuJu Smith-Schuster",
+      "Smith-Schuster"
+    ]
+  },
+  {
+    "player": "Julian Hill",
+    "team": "MIA",
+    "position": "TE",
+    "aliases": [
+      "Julian Hill",
+      "Hill"
+    ]
+  },
+  {
+    "player": "Julius Chestnut",
+    "team": "TEN",
+    "position": "RB",
+    "aliases": [
+      "Julius Chestnut",
+      "Chestnut"
+    ]
+  },
+  {
+    "player": "Justice Hill",
+    "team": "BAL",
+    "position": "RB",
+    "aliases": [
+      "Justice Hill",
+      "Hill"
+    ]
+  },
+  {
+    "player": "Justin Fields",
+    "team": "NYJ",
+    "position": "QB",
+    "aliases": [
+      "Justin Fields",
+      "Fields"
+    ]
+  },
+  {
+    "player": "Justin Herbert",
+    "team": "LAC",
+    "position": "QB",
+    "aliases": [
+      "Justin Herbert",
+      "Herbert"
+    ]
+  },
+  {
+    "player": "Justin Jefferson",
+    "team": "MIN",
+    "position": "WR",
+    "aliases": [
+      "Justin Jefferson",
+      "Jefferson"
+    ]
+  },
+  {
+    "player": "Justin Watson",
+    "team": "HOU",
+    "position": "WR",
+    "aliases": [
+      "Justin Watson",
+      "Watson"
+    ]
+  },
+  {
+    "player": "Juwan Johnson",
+    "team": "NO",
+    "position": "TE",
+    "aliases": [
+      "Juwan Johnson",
+      "Johnson"
+    ]
+  },
+  {
+    "player": "KaVontae Turpin",
+    "team": "DAL",
+    "position": "WR",
+    "aliases": [
+      "KaVontae Turpin",
+      "Turpin"
+    ]
+  },
+  {
+    "player": "Kaleb Johnson",
+    "team": "PIT",
+    "position": "RB",
+    "aliases": [
+      "Kaleb Johnson",
+      "Johnson"
+    ]
+  },
+  {
+    "player": "Kalel Mullings",
+    "team": "TEN",
+    "position": "RB",
+    "aliases": [
+      "Kalel Mullings",
+      "Mullings"
+    ]
+  },
+  {
+    "player": "Kalif Raymond",
+    "team": "DET",
+    "position": "WR",
+    "aliases": [
+      "Kalif Raymond",
+      "Raymond"
+    ]
+  },
+  {
+    "player": "Kameron Johnson",
+    "team": "TB",
+    "position": "WR",
+    "aliases": [
+      "Kameron Johnson",
+      "Johnson"
+    ]
+  },
+  {
+    "player": "Kareem Hunt",
+    "team": "KC",
+    "position": "RB",
+    "aliases": [
+      "Kareem Hunt",
+      "Hunt"
+    ]
+  },
+  {
+    "player": "Kayshon Boutte",
+    "team": "NE",
+    "position": "WR",
+    "aliases": [
+      "Kayshon Boutte",
+      "Boutte"
+    ]
+  },
+  {
+    "player": "Ke'Shawn Williams",
+    "team": "CIN",
+    "position": "WR",
+    "aliases": [
+      "Ke'Shawn Williams",
+      "Williams"
+    ]
+  },
+  {
+    "player": "KeAndre Lambert-Smith",
+    "team": "LAC",
+    "position": "WR",
+    "aliases": [
+      "KeAndre Lambert-Smith",
+      "Lambert-Smith"
+    ]
+  },
+  {
+    "player": "Keaton Mitchell",
+    "team": "BAL",
+    "position": "RB",
+    "aliases": [
+      "Keaton Mitchell",
+      "Mitchell"
+    ]
+  },
+  {
+    "player": "Keenan Allen",
+    "team": "LAC",
+    "position": "WR",
+    "aliases": [
+      "Keenan Allen",
+      "Allen"
+    ]
+  },
+  {
+    "player": "Keleki Latu",
+    "team": "BUF",
+    "position": "TE",
+    "aliases": [
+      "Keleki Latu",
+      "Latu"
+    ]
+  },
+  {
+    "player": "Kendall Milton",
+    "team": "CIN",
+    "position": "RB",
+    "aliases": [
+      "Kendall Milton",
+      "Milton"
+    ]
+  },
+  {
+    "player": "Kendre Miller",
+    "team": "NO",
+    "position": "RB",
+    "aliases": [
+      "Kendre Miller",
+      "Miller"
+    ]
+  },
+  {
+    "player": "Kendrick Bourne",
+    "team": "SF",
+    "position": "WR",
+    "aliases": [
+      "Kendrick Bourne",
+      "Bourne"
+    ]
+  },
+  {
+    "player": "Kene Nwangwu",
+    "team": "NYJ",
+    "position": "RB",
+    "aliases": [
+      "Kene Nwangwu",
+      "Nwangwu"
+    ]
+  },
+  {
+    "player": "Kenneth Gainwell",
+    "team": "PIT",
+    "position": "RB",
+    "aliases": [
+      "Kenneth Gainwell",
+      "Gainwell"
+    ]
+  },
+  {
+    "player": "Kenneth Walker III",
+    "team": "SEA",
+    "position": "RB",
+    "aliases": [
+      "Kenneth Walker III",
+      "III"
+    ]
+  },
+  {
+    "player": "Kenny Pickett",
+    "team": "LV",
+    "position": "QB",
+    "aliases": [
+      "Kenny Pickett",
+      "Pickett"
+    ]
+  },
+  {
+    "player": "Keon Coleman",
+    "team": "BUF",
+    "position": "WR",
+    "aliases": [
+      "Keon Coleman",
+      "Coleman"
+    ]
+  },
+  {
+    "player": "Kevin Austin Jr.",
+    "team": "NO",
+    "position": "WR",
+    "aliases": [
+      "Kevin Austin Jr.",
+      "Jr."
+    ]
+  },
+  {
+    "player": "KhaDarel Hodge",
+    "team": "ATL",
+    "position": "WR",
+    "aliases": [
+      "KhaDarel Hodge",
+      "Hodge"
+    ]
+  },
+  {
+    "player": "Khalil Herbert",
+    "team": "NYJ",
+    "position": "RB",
+    "aliases": [
+      "Khalil Herbert",
+      "Herbert"
+    ]
+  },
+  {
+    "player": "Khalil Shakir",
+    "team": "BUF",
+    "position": "WR",
+    "aliases": [
+      "Khalil Shakir",
+      "Shakir"
+    ]
+  },
+  {
+    "player": "Kimani Vidal",
+    "team": "LAC",
+    "position": "RB",
+    "aliases": [
+      "Kimani Vidal",
+      "Vidal"
+    ]
+  },
+  {
+    "player": "Kirk Cousins",
+    "team": "ATL",
+    "position": "QB",
+    "aliases": [
+      "Kirk Cousins",
+      "Cousins"
+    ]
+  },
+  {
+    "player": "Konata Mumpfield",
+    "team": "LA",
+    "position": "WR",
+    "aliases": [
+      "Konata Mumpfield",
+      "Mumpfield"
+    ]
+  },
+  {
+    "player": "Kyle Juszczyk",
+    "team": "SF",
+    "position": "FB",
+    "aliases": [
+      "Kyle Juszczyk",
+      "Juszczyk"
+    ]
+  },
+  {
+    "player": "Kyle Monangai",
+    "team": "CHI",
+    "position": "RB",
+    "aliases": [
+      "Kyle Monangai",
+      "Monangai"
+    ]
+  },
+  {
+    "player": "Kyle Pitts",
+    "team": "ATL",
+    "position": "TE",
+    "aliases": [
+      "Kyle Pitts",
+      "Pitts"
+    ]
+  },
+  {
+    "player": "Kyle Williams",
+    "team": "NE",
+    "position": "WR",
+    "aliases": [
+      "Kyle Williams",
+      "Williams"
+    ]
+  },
+  {
+    "player": "Kylen Granson",
+    "team": "PHI",
+    "position": "TE",
+    "aliases": [
+      "Kylen Granson",
+      "Granson"
+    ]
+  },
+  {
+    "player": "Kyler Murray",
+    "team": "ARI",
+    "position": "QB",
+    "aliases": [
+      "Kyler Murray",
+      "Murray"
+    ]
+  },
+  {
+    "player": "Kyren Williams",
+    "team": "LA",
+    "position": "RB",
+    "aliases": [
+      "Kyren Williams",
+      "Williams"
+    ]
+  },
+  {
+    "player": "Ladd McConkey",
+    "team": "LAC",
+    "position": "WR",
+    "aliases": [
+      "Ladd McConkey",
+      "McConkey"
+    ]
+  },
+  {
+    "player": "Lamar Jackson",
+    "team": "BAL",
+    "position": "QB",
+    "aliases": [
+      "Lamar Jackson",
+      "Jackson"
+    ]
+  },
+  {
+    "player": "LeQuint Allen Jr.",
+    "team": "JAX",
+    "position": "RB",
+    "aliases": [
+      "LeQuint Allen Jr.",
+      "Jr."
+    ]
+  },
+  {
+    "player": "Lil'Jordan Humphrey",
+    "team": "NYG",
+    "position": "WR",
+    "aliases": [
+      "Lil'Jordan Humphrey",
+      "Humphrey"
+    ]
+  },
+  {
+    "player": "Lucas Krull",
+    "team": "DEN",
+    "position": "TE",
+    "aliases": [
+      "Lucas Krull",
+      "Krull"
+    ]
+  },
+  {
+    "player": "Luke Farrell",
+    "team": "SF",
+    "position": "TE",
+    "aliases": [
+      "Luke Farrell",
+      "Farrell"
+    ]
+  },
+  {
+    "player": "Luke McCaffrey",
+    "team": "WAS",
+    "position": "WR",
+    "aliases": [
+      "Luke McCaffrey",
+      "McCaffrey"
+    ]
+  },
+  {
+    "player": "Luke Musgrave",
+    "team": "GB",
+    "position": "TE",
+    "aliases": [
+      "Luke Musgrave",
+      "Musgrave"
+    ]
+  },
+  {
+    "player": "Luke Schoonmaker",
+    "team": "DAL",
+    "position": "TE",
+    "aliases": [
+      "Luke Schoonmaker",
+      "Schoonmaker"
+    ]
+  },
+  {
+    "player": "Luther Burden III",
+    "team": "CHI",
+    "position": "WR",
+    "aliases": [
+      "Luther Burden III",
+      "III"
+    ]
+  },
+  {
+    "player": "Mac Jones",
+    "team": "SF",
+    "position": "QB",
+    "aliases": [
+      "Mac Jones",
+      "Jones"
+    ]
+  },
+  {
+    "player": "Mack Hollins",
+    "team": "NE",
+    "position": "WR",
+    "aliases": [
+      "Mack Hollins",
+      "Hollins"
+    ]
+  },
+  {
+    "player": "Malachi Corley",
+    "team": "CLE",
+    "position": "WR",
+    "aliases": [
+      "Malachi Corley",
+      "Corley"
+    ]
+  },
+  {
+    "player": "Malachi Moore",
+    "team": "NYJ",
+    "position": "SAF",
+    "aliases": [
+      "Malachi Moore",
+      "Moore"
+    ]
+  },
+  {
+    "player": "Malik Cunningham",
+    "team": "DET",
+    "position": "WR",
+    "aliases": [
+      "Malik Cunningham",
+      "Cunningham"
+    ]
+  },
+  {
+    "player": "Malik Davis",
+    "team": "DAL",
+    "position": "RB",
+    "aliases": [
+      "Malik Davis",
+      "Davis"
+    ]
+  },
+  {
+    "player": "Malik Heath",
+    "team": "GB",
+    "position": "WR",
+    "aliases": [
+      "Malik Heath",
+      "Heath"
+    ]
+  },
+  {
+    "player": "Malik Nabers",
+    "team": "NYG",
+    "position": "WR",
+    "aliases": [
+      "Malik Nabers",
+      "Nabers"
+    ]
+  },
+  {
+    "player": "Malik Washington",
+    "team": "MIA",
+    "position": "WR",
+    "aliases": [
+      "Malik Washington",
+      "Washington"
+    ]
+  },
+  {
+    "player": "Malik Willis",
+    "team": "GB",
+    "position": "QB",
+    "aliases": [
+      "Malik Willis",
+      "Willis"
+    ]
+  },
+  {
+    "player": "Marcus Jones",
+    "team": "NE",
+    "position": "CB",
+    "aliases": [
+      "Marcus Jones",
+      "Jones"
+    ]
+  },
+  {
+    "player": "Marcus Mariota",
+    "team": "WAS",
+    "position": "QB",
+    "aliases": [
+      "Marcus Mariota",
+      "Mariota"
+    ]
+  },
+  {
+    "player": "Mark Andrews",
+    "team": "BAL",
+    "position": "TE",
+    "aliases": [
+      "Mark Andrews",
+      "Andrews"
+    ]
+  },
+  {
+    "player": "Marquez Valdes-Scantling",
+    "team": "SF",
+    "position": "WR",
+    "aliases": [
+      "Marquez Valdes-Scantling",
+      "Valdes-Scantling"
+    ]
+  },
+  {
+    "player": "Marquise Brown",
+    "team": "KC",
+    "position": "WR",
+    "aliases": [
+      "Marquise Brown",
+      "Brown"
+    ]
+  },
+  {
+    "player": "Marshawn Kneeland",
+    "team": "DAL",
+    "position": "DE",
+    "aliases": [
+      "Marshawn Kneeland",
+      "Kneeland"
+    ]
+  },
+  {
+    "player": "Marvin Harrison Jr.",
+    "team": "ARI",
+    "position": "WR",
+    "aliases": [
+      "Marvin Harrison Jr.",
+      "Jr."
+    ]
+  },
+  {
+    "player": "Marvin Mims Jr.",
+    "team": "DEN",
+    "position": "WR",
+    "aliases": [
+      "Marvin Mims Jr.",
+      "Jr."
+    ]
+  },
+  {
+    "player": "Mason Kinsey",
+    "team": "TEN",
+    "position": "WR",
+    "aliases": [
+      "Mason Kinsey",
+      "Kinsey"
+    ]
+  },
+  {
+    "player": "Mason Rudolph",
+    "team": "PIT",
+    "position": "QB",
+    "aliases": [
+      "Mason Rudolph",
+      "Rudolph"
+    ]
+  },
+  {
+    "player": "Mason Taylor",
+    "team": "NYJ",
+    "position": "TE",
+    "aliases": [
+      "Mason Taylor",
+      "Taylor"
+    ]
+  },
+  {
+    "player": "Mason Tipton",
+    "team": "NO",
+    "position": "WR",
+    "aliases": [
+      "Mason Tipton",
+      "Tipton"
+    ]
+  },
+  {
+    "player": "Matt Haack",
+    "team": "ARI",
+    "position": "P",
+    "aliases": [
+      "Matt Haack",
+      "Haack"
+    ]
+  },
+  {
+    "player": "Matthew Golden",
+    "team": "GB",
+    "position": "WR",
+    "aliases": [
+      "Matthew Golden",
+      "Golden"
+    ]
+  },
+  {
+    "player": "Matthew Stafford",
+    "team": "LA",
+    "position": "QB",
+    "aliases": [
+      "Matthew Stafford",
+      "Stafford"
+    ]
+  },
+  {
+    "player": "Max Brosmer",
+    "team": "MIN",
+    "position": "QB",
+    "aliases": [
+      "Max Brosmer",
+      "Brosmer"
+    ]
+  },
+  {
+    "player": "Mecole Hardman",
+    "team": "BUF",
+    "position": "WR",
+    "aliases": [
+      "Mecole Hardman",
+      "Hardman"
+    ]
+  },
+  {
+    "player": "Michael Bandy",
+    "team": "DEN",
+    "position": "WR",
+    "aliases": [
+      "Michael Bandy",
+      "Bandy"
+    ]
+  },
+  {
+    "player": "Michael Carter",
+    "team": "ARI",
+    "position": "RB",
+    "aliases": [
+      "Michael Carter",
+      "Carter"
+    ]
+  },
+  {
+    "player": "Michael Mayer",
+    "team": "LV",
+    "position": "TE",
+    "aliases": [
+      "Michael Mayer",
+      "Mayer"
+    ]
+  },
+  {
+    "player": "Michael Penix Jr.",
+    "team": "ATL",
+    "position": "QB",
+    "aliases": [
+      "Michael Penix Jr.",
+      "Jr."
+    ]
+  },
+  {
+    "player": "Michael Pittman",
+    "team": "IND",
+    "position": "WR",
+    "aliases": [
+      "Michael Pittman",
+      "Pittman"
+    ]
+  },
+  {
+    "player": "Michael Wilson",
+    "team": "ARI",
+    "position": "WR",
+    "aliases": [
+      "Michael Wilson",
+      "Wilson"
+    ]
+  },
+  {
+    "player": "Mike Evans",
+    "team": "TB",
+    "position": "WR",
+    "aliases": [
+      "Mike Evans",
+      "Evans"
+    ]
+  },
+  {
+    "player": "Mike Gesicki",
+    "team": "CIN",
+    "position": "TE",
+    "aliases": [
+      "Mike Gesicki",
+      "Gesicki"
+    ]
+  },
+  {
+    "player": "Miles Sanders",
+    "team": "DAL",
+    "position": "RB",
+    "aliases": [
+      "Miles Sanders",
+      "Sanders"
+    ]
+  },
+  {
+    "player": "Mitchell Evans",
+    "team": "CAR",
+    "position": "TE",
+    "aliases": [
+      "Mitchell Evans",
+      "Evans"
+    ]
+  },
+  {
+    "player": "Mitchell Tinsley",
+    "team": "CIN",
+    "position": "WR",
+    "aliases": [
+      "Mitchell Tinsley",
+      "Tinsley"
+    ]
+  },
+  {
+    "player": "Mitchell Trubisky",
+    "team": "BUF",
+    "position": "QB",
+    "aliases": [
+      "Mitchell Trubisky",
+      "Trubisky"
+    ]
+  },
+  {
+    "player": "Mo Alie-Cox",
+    "team": "IND",
+    "position": "TE",
+    "aliases": [
+      "Mo Alie-Cox",
+      "Alie-Cox"
+    ]
+  },
+  {
+    "player": "Moliki Matavao",
+    "team": "NO",
+    "position": "TE",
+    "aliases": [
+      "Moliki Matavao",
+      "Matavao"
+    ]
+  },
+  {
+    "player": "Myles Gaskin",
+    "team": "SEA",
+    "position": "RB",
+    "aliases": [
+      "Myles Gaskin",
+      "Gaskin"
+    ]
+  },
+  {
+    "player": "Najee Harris",
+    "team": "LAC",
+    "position": "RB",
+    "aliases": [
+      "Najee Harris",
+      "Harris"
+    ]
+  },
+  {
+    "player": "Nate Adkins",
+    "team": "DEN",
+    "position": "TE",
+    "aliases": [
+      "Nate Adkins",
+      "Adkins"
+    ]
+  },
+  {
+    "player": "Nate Carter",
+    "team": "ATL",
+    "position": "RB",
+    "aliases": [
+      "Nate Carter",
+      "Carter"
+    ]
+  },
+  {
+    "player": "Nick Chubb",
+    "team": "HOU",
+    "position": "RB",
+    "aliases": [
+      "Nick Chubb",
+      "Chubb"
+    ]
+  },
+  {
+    "player": "Nick Westbrook-Ikhine",
+    "team": "MIA",
+    "position": "WR",
+    "aliases": [
+      "Nick Westbrook-Ikhine",
+      "Westbrook-Ikhine"
+    ]
+  },
+  {
+    "player": "Nico Collins",
+    "team": "HOU",
+    "position": "WR",
+    "aliases": [
+      "Nico Collins",
+      "Collins"
+    ]
+  },
+  {
+    "player": "Nikko Remigio",
+    "team": "KC",
+    "position": "WR",
+    "aliases": [
+      "Nikko Remigio",
+      "Remigio"
+    ]
+  },
+  {
+    "player": "Noah Brown",
+    "team": "WAS",
+    "position": "WR",
+    "aliases": [
+      "Noah Brown",
+      "Brown"
+    ]
+  },
+  {
+    "player": "Noah Fant",
+    "team": "CIN",
+    "position": "TE",
+    "aliases": [
+      "Noah Fant",
+      "Fant"
+    ]
+  },
+  {
+    "player": "Noah Gray",
+    "team": "KC",
+    "position": "TE",
+    "aliases": [
+      "Noah Gray",
+      "Gray"
+    ]
+  },
+  {
+    "player": "Olamide Zaccheaus",
+    "team": "CHI",
+    "position": "WR",
+    "aliases": [
+      "Olamide Zaccheaus",
+      "Zaccheaus"
+    ]
+  },
+  {
+    "player": "Ollie Gordon II",
+    "team": "MIA",
+    "position": "RB",
+    "aliases": [
+      "Ollie Gordon II",
+      "II"
+    ]
+  },
+  {
+    "player": "Omarion Hampton",
+    "team": "LAC",
+    "position": "RB",
+    "aliases": [
+      "Omarion Hampton",
+      "Hampton"
+    ]
+  },
+  {
+    "player": "Oronde Gadsden II",
+    "team": "LAC",
+    "position": "TE",
+    "aliases": [
+      "Oronde Gadsden II",
+      "II"
+    ]
+  },
+  {
+    "player": "Owen Wright",
+    "team": "TB",
+    "position": "RB",
+    "aliases": [
+      "Owen Wright",
+      "Wright"
+    ]
+  },
+  {
+    "player": "Parker Washington",
+    "team": "JAX",
+    "position": "WR",
+    "aliases": [
+      "Parker Washington",
+      "Washington"
+    ]
+  },
+  {
+    "player": "Pat Bryant",
+    "team": "DEN",
+    "position": "WR",
+    "aliases": [
+      "Pat Bryant",
+      "Bryant"
+    ]
+  },
+  {
+    "player": "Pat Freiermuth",
+    "team": "PIT",
+    "position": "TE",
+    "aliases": [
+      "Pat Freiermuth",
+      "Freiermuth"
+    ]
+  },
+  {
+    "player": "Patrick Mahomes",
+    "team": "KC",
+    "position": "QB",
+    "aliases": [
+      "Patrick Mahomes",
+      "Mahomes"
+    ]
+  },
+  {
+    "player": "Patrick Ricard",
+    "team": "BAL",
+    "position": "FB",
+    "aliases": [
+      "Patrick Ricard",
+      "Ricard"
+    ]
+  },
+  {
+    "player": "Payne Durham",
+    "team": "TB",
+    "position": "TE",
+    "aliases": [
+      "Payne Durham",
+      "Durham"
+    ]
+  },
+  {
+    "player": "Pharaoh Brown",
+    "team": "ARI",
+    "position": "TE",
+    "aliases": [
+      "Pharaoh Brown",
+      "Brown"
+    ]
+  },
+  {
+    "player": "Phil Mafah",
+    "team": "DAL",
+    "position": "RB",
+    "aliases": [
+      "Phil Mafah",
+      "Mafah"
+    ]
+  },
+  {
+    "player": "Philip Rivers",
+    "team": "IND",
+    "position": "QB",
+    "aliases": [
+      "Philip Rivers",
+      "Rivers"
+    ]
+  },
+  {
+    "player": "Puka Nacua",
+    "team": "LA",
+    "position": "WR",
+    "aliases": [
+      "Puka Nacua",
+      "Nacua"
+    ]
+  },
+  {
+    "player": "Quentin Johnston",
+    "team": "LAC",
+    "position": "WR",
+    "aliases": [
+      "Quentin Johnston",
+      "Johnston"
+    ]
+  },
+  {
+    "player": "Quentin Skinner",
+    "team": "NYJ",
+    "position": "WR",
+    "aliases": [
+      "Quentin Skinner",
+      "Skinner"
+    ]
+  },
+  {
+    "player": "Quinn Ewers",
+    "team": "MIA",
+    "position": "QB",
+    "aliases": [
+      "Quinn Ewers",
+      "Ewers"
+    ]
+  },
+  {
+    "player": "Quinshon Judkins",
+    "team": "CLE",
+    "position": "RB",
+    "aliases": [
+      "Quinshon Judkins",
+      "Judkins"
+    ]
+  },
+  {
+    "player": "Quintin Morris",
+    "team": "JAX",
+    "position": "TE",
+    "aliases": [
+      "Quintin Morris",
+      "Morris"
+    ]
+  },
+  {
+    "player": "RJ Harvey",
+    "team": "DEN",
+    "position": "RB",
+    "aliases": [
+      "RJ Harvey",
+      "Harvey"
+    ]
+  },
+  {
+    "player": "Rachaad White",
+    "team": "TB",
+    "position": "RB",
+    "aliases": [
+      "Rachaad White",
+      "White"
+    ]
+  },
+  {
+    "player": "Raheem Mostert",
+    "team": "LV",
+    "position": "RB",
+    "aliases": [
+      "Raheem Mostert",
+      "Mostert"
+    ]
+  },
+  {
+    "player": "Raheim Sanders",
+    "team": "CLE",
+    "position": "RB",
+    "aliases": [
+      "Raheim Sanders",
+      "Sanders"
+    ]
+  },
+  {
+    "player": "Rashee Rice",
+    "team": "KC",
+    "position": "WR",
+    "aliases": [
+      "Rashee Rice",
+      "Rice"
+    ]
+  },
+  {
+    "player": "Rasheen Ali",
+    "team": "BAL",
+    "position": "RB",
+    "aliases": [
+      "Rasheen Ali",
+      "Ali"
+    ]
+  },
+  {
+    "player": "Rashid Shaheed",
+    "team": "SEA",
+    "position": "WR",
+    "aliases": [
+      "Rashid Shaheed",
+      "Shaheed"
+    ]
+  },
+  {
+    "player": "Rashod Bateman",
+    "team": "BAL",
+    "position": "WR",
+    "aliases": [
+      "Rashod Bateman",
+      "Bateman"
+    ]
+  },
+  {
+    "player": "Ray Davis",
+    "team": "BUF",
+    "position": "RB",
+    "aliases": [
+      "Ray Davis",
+      "Davis"
+    ]
+  },
+  {
+    "player": "Ray-Ray McCloud",
+    "team": "NYG",
+    "position": "WR",
+    "aliases": [
+      "Ray-Ray McCloud",
+      "McCloud"
+    ]
+  },
+  {
+    "player": "Reggie Gilliam",
+    "team": "BUF",
+    "position": "FB",
+    "aliases": [
+      "Reggie Gilliam",
+      "Gilliam"
+    ]
+  },
+  {
+    "player": "Rhamondre Stevenson",
+    "team": "NE",
+    "position": "RB",
+    "aliases": [
+      "Rhamondre Stevenson",
+      "Stevenson"
+    ]
+  },
+  {
+    "player": "Ricky Pearsall",
+    "team": "SF",
+    "position": "WR",
+    "aliases": [
+      "Ricky Pearsall",
+      "Pearsall"
+    ]
+  },
+  {
+    "player": "Rico Dowdle",
+    "team": "CAR",
+    "position": "RB",
+    "aliases": [
+      "Rico Dowdle",
+      "Dowdle"
+    ]
+  },
+  {
+    "player": "Rigoberto Sanchez",
+    "team": "IND",
+    "position": "P",
+    "aliases": [
+      "Rigoberto Sanchez",
+      "Sanchez"
+    ]
+  },
+  {
+    "player": "Riley Leonard",
+    "team": "IND",
+    "position": "QB",
+    "aliases": [
+      "Riley Leonard",
+      "Leonard"
+    ]
+  },
+  {
+    "player": "Robbie Chosen",
+    "team": "WAS",
+    "position": "WR",
+    "aliases": [
+      "Robbie Chosen",
+      "Chosen"
+    ]
+  },
+  {
+    "player": "Robert Tonyan",
+    "team": "KC",
+    "position": "TE",
+    "aliases": [
+      "Robert Tonyan",
+      "Tonyan"
+    ]
+  },
+  {
+    "player": "Rodney Thomas",
+    "team": "IND",
+    "position": "SAF",
+    "aliases": [
+      "Rodney Thomas",
+      "Thomas"
+    ]
+  },
+  {
+    "player": "Roman Wilson",
+    "team": "PIT",
+    "position": "WR",
+    "aliases": [
+      "Roman Wilson",
+      "Wilson"
+    ]
+  },
+  {
+    "player": "Rome Odunze",
+    "team": "CHI",
+    "position": "WR",
+    "aliases": [
+      "Rome Odunze",
+      "Odunze"
+    ]
+  },
+  {
+    "player": "Romeo Doubs",
+    "team": "GB",
+    "position": "WR",
+    "aliases": [
+      "Romeo Doubs",
+      "Doubs"
+    ]
+  },
+  {
+    "player": "Ronnie Bell",
+    "team": "NO",
+    "position": "WR",
+    "aliases": [
+      "Ronnie Bell",
+      "Bell"
+    ]
+  },
+  {
+    "player": "Ronnie Rivers",
+    "team": "LA",
+    "position": "RB",
+    "aliases": [
+      "Ronnie Rivers",
+      "Rivers"
+    ]
+  },
+  {
+    "player": "Roschon Johnson",
+    "team": "CHI",
+    "position": "RB",
+    "aliases": [
+      "Roschon Johnson",
+      "Johnson"
+    ]
+  },
+  {
+    "player": "Ross Dwelley",
+    "team": "DET",
+    "position": "TE",
+    "aliases": [
+      "Ross Dwelley",
+      "Dwelley"
+    ]
+  },
+  {
+    "player": "Russell Wilson",
+    "team": "NYG",
+    "position": "QB",
+    "aliases": [
+      "Russell Wilson",
+      "Wilson"
+    ]
+  },
+  {
+    "player": "Ryan Flournoy",
+    "team": "DAL",
+    "position": "WR",
+    "aliases": [
+      "Ryan Flournoy",
+      "Flournoy"
+    ]
+  },
+  {
+    "player": "Ryan Miller",
+    "team": "TB",
+    "position": "WR",
+    "aliases": [
+      "Ryan Miller",
+      "Miller"
+    ]
+  },
+  {
+    "player": "Sal Cannella",
+    "team": "CLE",
+    "position": "TE",
+    "aliases": [
+      "Sal Cannella",
+      "Cannella"
+    ]
+  },
+  {
+    "player": "Sam Darnold",
+    "team": "SEA",
+    "position": "QB",
+    "aliases": [
+      "Sam Darnold",
+      "Darnold"
+    ]
+  },
+  {
+    "player": "Sam LaPorta",
+    "team": "DET",
+    "position": "TE",
+    "aliases": [
+      "Sam LaPorta",
+      "LaPorta"
+    ]
+  },
+  {
+    "player": "Samaje Perine",
+    "team": "CIN",
+    "position": "RB",
+    "aliases": [
+      "Samaje Perine",
+      "Perine"
+    ]
+  },
+  {
+    "player": "Samori Toure",
+    "team": "NO",
+    "position": "WR",
+    "aliases": [
+      "Samori Toure",
+      "Toure"
+    ]
+  },
+  {
+    "player": "Saquon Barkley",
+    "team": "PHI",
+    "position": "RB",
+    "aliases": [
+      "Saquon Barkley",
+      "Barkley"
+    ]
+  },
+  {
+    "player": "Savion Williams",
+    "team": "GB",
+    "position": "WR",
+    "aliases": [
+      "Savion Williams",
+      "Williams"
+    ]
+  },
+  {
+    "player": "Scott Matlock",
+    "team": "LAC",
+    "position": "DT",
+    "aliases": [
+      "Scott Matlock",
+      "Matlock"
+    ]
+  },
+  {
+    "player": "Scott Miller",
+    "team": "PIT",
+    "position": "WR",
+    "aliases": [
+      "Scott Miller",
+      "Miller"
+    ]
+  },
+  {
+    "player": "Sean Tucker",
+    "team": "TB",
+    "position": "RB",
+    "aliases": [
+      "Sean Tucker",
+      "Tucker"
+    ]
+  },
+  {
+    "player": "Shane Buechele",
+    "team": "KC",
+    "position": "QB",
+    "aliases": [
+      "Shane Buechele",
+      "Buechele"
+    ]
+  },
+  {
+    "player": "Shane Zylstra",
+    "team": "DET",
+    "position": "TE",
+    "aliases": [
+      "Shane Zylstra",
+      "Zylstra"
+    ]
+  },
+  {
+    "player": "Shedeur Sanders",
+    "team": "CLE",
+    "position": "QB",
+    "aliases": [
+      "Shedeur Sanders",
+      "Sanders"
+    ]
+  },
+  {
+    "player": "Shedrick Jackson",
+    "team": "LV",
+    "position": "WR",
+    "aliases": [
+      "Shedrick Jackson",
+      "Jackson"
+    ]
+  },
+  {
+    "player": "Sione Vaki",
+    "team": "DET",
+    "position": "RB",
+    "aliases": [
+      "Sione Vaki",
+      "Vaki"
+    ]
+  },
+  {
+    "player": "Skyy Moore",
+    "team": "SF",
+    "position": "WR",
+    "aliases": [
+      "Skyy Moore",
+      "Moore"
+    ]
+  },
+  {
+    "player": "Spencer Anderson",
+    "team": "PIT",
+    "position": "G",
+    "aliases": [
+      "Spencer Anderson",
+      "Anderson"
+    ]
+  },
+  {
+    "player": "Spencer Rattler",
+    "team": "NO",
+    "position": "QB",
+    "aliases": [
+      "Spencer Rattler",
+      "Rattler"
+    ]
+  },
+  {
+    "player": "Stefon Diggs",
+    "team": "NE",
+    "position": "WR",
+    "aliases": [
+      "Stefon Diggs",
+      "Diggs"
+    ]
+  },
+  {
+    "player": "Sterling Shepard",
+    "team": "TB",
+    "position": "WR",
+    "aliases": [
+      "Sterling Shepard",
+      "Shepard"
+    ]
+  },
+  {
+    "player": "Stone Smartt",
+    "team": "NYJ",
+    "position": "TE",
+    "aliases": [
+      "Stone Smartt",
+      "Smartt"
+    ]
+  },
+  {
+    "player": "Sydney Brown",
+    "team": "PHI",
+    "position": "SAF",
+    "aliases": [
+      "Sydney Brown",
+      "Brown"
+    ]
+  },
+  {
+    "player": "T.J. Hockenson",
+    "team": "MIN",
+    "position": "TE",
+    "aliases": [
+      "T.J. Hockenson",
+      "Hockenson"
+    ]
+  },
+  {
+    "player": "Tahj Brooks",
+    "team": "CIN",
+    "position": "RB",
+    "aliases": [
+      "Tahj Brooks",
+      "Brooks"
+    ]
+  },
+  {
+    "player": "Tahj Washington",
+    "team": "MIA",
+    "position": "WR",
+    "aliases": [
+      "Tahj Washington",
+      "Washington"
+    ]
+  },
+  {
+    "player": "Tai Felton",
+    "team": "MIN",
+    "position": "WR",
+    "aliases": [
+      "Tai Felton",
+      "Felton"
+    ]
+  },
+  {
+    "player": "Tank Bigsby",
+    "team": "JAX",
+    "position": "RB",
+    "aliases": [
+      "Tank Bigsby",
+      "Bigsby"
+    ]
+  },
+  {
+    "player": "Tanner Conner",
+    "team": "MIA",
+    "position": "TE",
+    "aliases": [
+      "Tanner Conner",
+      "Conner"
+    ]
+  },
+  {
+    "player": "Tanner Hudson",
+    "team": "CIN",
+    "position": "TE",
+    "aliases": [
+      "Tanner Hudson",
+      "Hudson"
+    ]
+  },
+  {
+    "player": "Tanner McKee",
+    "team": "PHI",
+    "position": "QB",
+    "aliases": [
+      "Tanner McKee",
+      "McKee"
+    ]
+  },
+  {
+    "player": "Tay Martin",
+    "team": "WAS",
+    "position": "WR",
+    "aliases": [
+      "Tay Martin",
+      "Martin"
+    ]
+  },
+  {
+    "player": "Taysom Hill",
+    "team": "NO",
+    "position": "TE",
+    "aliases": [
+      "Taysom Hill",
+      "Hill"
+    ]
+  },
+  {
+    "player": "Teddy Bridgewater",
+    "team": "TB",
+    "position": "QB",
+    "aliases": [
+      "Teddy Bridgewater",
+      "Bridgewater"
+    ]
+  },
+  {
+    "player": "Tee Higgins",
+    "team": "CIN",
+    "position": "WR",
+    "aliases": [
+      "Tee Higgins",
+      "Higgins"
+    ]
+  },
+  {
+    "player": "Terrance Ferguson",
+    "team": "LA",
+    "position": "TE",
+    "aliases": [
+      "Terrance Ferguson",
+      "Ferguson"
+    ]
+  },
+  {
+    "player": "Terrell Jennings",
+    "team": "NE",
+    "position": "RB",
+    "aliases": [
+      "Terrell Jennings",
+      "Jennings"
+    ]
+  },
+  {
+    "player": "Terry McLaurin",
+    "team": "WAS",
+    "position": "WR",
+    "aliases": [
+      "Terry McLaurin",
+      "McLaurin"
+    ]
+  },
+  {
+    "player": "Tetairoa McMillan",
+    "team": "CAR",
+    "position": "WR",
+    "aliases": [
+      "Tetairoa McMillan",
+      "McMillan"
+    ]
+  },
+  {
+    "player": "Tez Johnson",
+    "team": "TB",
+    "position": "WR",
+    "aliases": [
+      "Tez Johnson",
+      "Johnson"
+    ]
+  },
+  {
+    "player": "Theo Johnson",
+    "team": "NYG",
+    "position": "TE",
+    "aliases": [
+      "Theo Johnson",
+      "Johnson"
+    ]
+  },
+  {
+    "player": "Theo Wease Jr.",
+    "team": "MIA",
+    "position": "WR",
+    "aliases": [
+      "Theo Wease Jr.",
+      "Jr."
+    ]
+  },
+  {
+    "player": "Tim Jones",
+    "team": "JAX",
+    "position": "WR",
+    "aliases": [
+      "Tim Jones",
+      "Jones"
+    ]
+  },
+  {
+    "player": "Tim Patrick",
+    "team": "JAX",
+    "position": "WR",
+    "aliases": [
+      "Tim Patrick",
+      "Patrick"
+    ]
+  },
+  {
+    "player": "Tip Reiman",
+    "team": "ARI",
+    "position": "TE",
+    "aliases": [
+      "Tip Reiman",
+      "Reiman"
+    ]
+  },
+  {
+    "player": "Tom Kennedy",
+    "team": "DET",
+    "position": "WR",
+    "aliases": [
+      "Tom Kennedy",
+      "Kennedy"
+    ]
+  },
+  {
+    "player": "Tommy Tremble",
+    "team": "CAR",
+    "position": "TE",
+    "aliases": [
+      "Tommy Tremble",
+      "Tremble"
+    ]
+  },
+  {
+    "player": "Tony Pollard",
+    "team": "TEN",
+    "position": "RB",
+    "aliases": [
+      "Tony Pollard",
+      "Pollard"
+    ]
+  },
+  {
+    "player": "Tory Horton",
+    "team": "SEA",
+    "position": "WR",
+    "aliases": [
+      "Tory Horton",
+      "Horton"
+    ]
+  },
+  {
+    "player": "Travis Etienne",
+    "team": "JAX",
+    "position": "RB",
+    "aliases": [
+      "Travis Etienne",
+      "Etienne"
+    ]
+  },
+  {
+    "player": "Travis Hunter",
+    "team": "JAX",
+    "position": "WR",
+    "aliases": [
+      "Travis Hunter",
+      "Hunter"
+    ]
+  },
+  {
+    "player": "Travis Kelce",
+    "team": "KC",
+    "position": "TE",
+    "aliases": [
+      "Travis Kelce",
+      "Kelce"
+    ]
+  },
+  {
+    "player": "Trayveon Williams",
+    "team": "LAC",
+    "position": "RB",
+    "aliases": [
+      "Trayveon Williams",
+      "Williams"
+    ]
+  },
+  {
+    "player": "Tre Harris",
+    "team": "LAC",
+    "position": "WR",
+    "aliases": [
+      "Tre Harris",
+      "Harris"
+    ]
+  },
+  {
+    "player": "Tre Tucker",
+    "team": "LV",
+    "position": "WR",
+    "aliases": [
+      "Tre Tucker",
+      "Tucker"
+    ]
+  },
+  {
+    "player": "TreVeyon Henderson",
+    "team": "NE",
+    "position": "RB",
+    "aliases": [
+      "TreVeyon Henderson",
+      "Henderson"
+    ]
+  },
+  {
+    "player": "Trent Sherfield",
+    "team": "DEN",
+    "position": "WR",
+    "aliases": [
+      "Trent Sherfield",
+      "Sherfield"
+    ]
+  },
+  {
+    "player": "Trevor Etienne",
+    "team": "CAR",
+    "position": "RB",
+    "aliases": [
+      "Trevor Etienne",
+      "Etienne"
+    ]
+  },
+  {
+    "player": "Trevor Lawrence",
+    "team": "JAX",
+    "position": "QB",
+    "aliases": [
+      "Trevor Lawrence",
+      "Lawrence"
+    ]
+  },
+  {
+    "player": "Trey Benson",
+    "team": "ARI",
+    "position": "RB",
+    "aliases": [
+      "Trey Benson",
+      "Benson"
+    ]
+  },
+  {
+    "player": "Trey Lance",
+    "team": "LAC",
+    "position": "QB",
+    "aliases": [
+      "Trey Lance",
+      "Lance"
+    ]
+  },
+  {
+    "player": "Trey McBride",
+    "team": "ARI",
+    "position": "TE",
+    "aliases": [
+      "Trey McBride",
+      "McBride"
+    ]
+  },
+  {
+    "player": "Treylon Burks",
+    "team": "WAS",
+    "position": "WR",
+    "aliases": [
+      "Treylon Burks",
+      "Burks"
+    ]
+  },
+  {
+    "player": "Tristan Wirfs",
+    "team": "TB",
+    "position": "OT",
+    "aliases": [
+      "Tristan Wirfs",
+      "Wirfs"
+    ]
+  },
+  {
+    "player": "Troy Franklin",
+    "team": "DEN",
+    "position": "WR",
+    "aliases": [
+      "Troy Franklin",
+      "Franklin"
+    ]
+  },
+  {
+    "player": "Tua Tagovailoa",
+    "team": "MIA",
+    "position": "QB",
+    "aliases": [
+      "Tua Tagovailoa",
+      "Tagovailoa"
+    ]
+  },
+  {
+    "player": "Tucker Fisk",
+    "team": "LAC",
+    "position": "TE",
+    "aliases": [
+      "Tucker Fisk",
+      "Fisk"
+    ]
+  },
+  {
+    "player": "Tucker Kraft",
+    "team": "GB",
+    "position": "TE",
+    "aliases": [
+      "Tucker Kraft",
+      "Kraft"
+    ]
+  },
+  {
+    "player": "Tutu Atwell",
+    "team": "LA",
+    "position": "WR",
+    "aliases": [
+      "Tutu Atwell",
+      "Atwell"
+    ]
+  },
+  {
+    "player": "Ty Chandler",
+    "team": "MIN",
+    "position": "RB",
+    "aliases": [
+      "Ty Chandler",
+      "Chandler"
+    ]
+  },
+  {
+    "player": "Ty Johnson",
+    "team": "BUF",
+    "position": "RB",
+    "aliases": [
+      "Ty Johnson",
+      "Johnson"
+    ]
+  },
+  {
+    "player": "Tyjae Spears",
+    "team": "TEN",
+    "position": "RB",
+    "aliases": [
+      "Tyjae Spears",
+      "Spears"
+    ]
+  },
+  {
+    "player": "Tylan Wallace",
+    "team": "BAL",
+    "position": "WR",
+    "aliases": [
+      "Tylan Wallace",
+      "Wallace"
+    ]
+  },
+  {
+    "player": "Tyler Allgeier",
+    "team": "ATL",
+    "position": "RB",
+    "aliases": [
+      "Tyler Allgeier",
+      "Allgeier"
+    ]
+  },
+  {
+    "player": "Tyler Badie",
+    "team": "DEN",
+    "position": "RB",
+    "aliases": [
+      "Tyler Badie",
+      "Badie"
+    ]
+  },
+  {
+    "player": "Tyler Conklin",
+    "team": "LAC",
+    "position": "TE",
+    "aliases": [
+      "Tyler Conklin",
+      "Conklin"
+    ]
+  },
+  {
+    "player": "Tyler Goodson",
+    "team": "IND",
+    "position": "RB",
+    "aliases": [
+      "Tyler Goodson",
+      "Goodson"
+    ]
+  },
+  {
+    "player": "Tyler Higbee",
+    "team": "LA",
+    "position": "TE",
+    "aliases": [
+      "Tyler Higbee",
+      "Higbee"
+    ]
+  },
+  {
+    "player": "Tyler Huntley",
+    "team": "BAL",
+    "position": "QB",
+    "aliases": [
+      "Tyler Huntley",
+      "Huntley"
+    ]
+  },
+  {
+    "player": "Tyler Johnson",
+    "team": "NYJ",
+    "position": "WR",
+    "aliases": [
+      "Tyler Johnson",
+      "Johnson"
+    ]
+  },
+  {
+    "player": "Tyler Lockett",
+    "team": "TEN",
+    "position": "WR",
+    "aliases": [
+      "Tyler Lockett",
+      "Lockett"
+    ]
+  },
+  {
+    "player": "Tyler Shough",
+    "team": "NO",
+    "position": "QB",
+    "aliases": [
+      "Tyler Shough",
+      "Shough"
+    ]
+  },
+  {
+    "player": "Tyler Warren",
+    "team": "IND",
+    "position": "TE",
+    "aliases": [
+      "Tyler Warren",
+      "Warren"
+    ]
+  },
+  {
+    "player": "Tyquan Thornton",
+    "team": "KC",
+    "position": "WR",
+    "aliases": [
+      "Tyquan Thornton",
+      "Thornton"
+    ]
+  },
+  {
+    "player": "Tyreek Hill",
+    "team": "MIA",
+    "position": "WR",
+    "aliases": [
+      "Tyreek Hill",
+      "Hill"
+    ]
+  },
+  {
+    "player": "Tyrell Shavers",
+    "team": "BUF",
+    "position": "WR",
+    "aliases": [
+      "Tyrell Shavers",
+      "Shavers"
+    ]
+  },
+  {
+    "player": "Tyrod Taylor",
+    "team": "NYJ",
+    "position": "QB",
+    "aliases": [
+      "Tyrod Taylor",
+      "Taylor"
+    ]
+  },
+  {
+    "player": "Tyrone Tracy Jr.",
+    "team": "NYG",
+    "position": "RB",
+    "aliases": [
+      "Tyrone Tracy Jr.",
+      "Jr."
+    ]
+  },
+  {
+    "player": "Tyson Bagent",
+    "team": "CHI",
+    "position": "QB",
+    "aliases": [
+      "Tyson Bagent",
+      "Bagent"
+    ]
+  },
+  {
+    "player": "Van Jefferson",
+    "team": "TEN",
+    "position": "WR",
+    "aliases": [
+      "Van Jefferson",
+      "Jefferson"
+    ]
+  },
+  {
+    "player": "Velus Jones Jr.",
+    "team": "SEA",
+    "position": "RB",
+    "aliases": [
+      "Velus Jones Jr.",
+      "Jr."
+    ]
+  },
+  {
+    "player": "Wan'Dale Robinson",
+    "team": "NYG",
+    "position": "WR",
+    "aliases": [
+      "Wan'Dale Robinson",
+      "Robinson"
+    ]
+  },
+  {
+    "player": "Will Dissly",
+    "team": "LAC",
+    "position": "TE",
+    "aliases": [
+      "Will Dissly",
+      "Dissly"
+    ]
+  },
+  {
+    "player": "Will Mallory",
+    "team": "IND",
+    "position": "TE",
+    "aliases": [
+      "Will Mallory",
+      "Mallory"
+    ]
+  },
+  {
+    "player": "Will McDonald IV",
+    "team": "NYJ",
+    "position": "DE",
+    "aliases": [
+      "Will McDonald IV",
+      "IV"
+    ]
+  },
+  {
+    "player": "Will Shipley",
+    "team": "PHI",
+    "position": "RB",
+    "aliases": [
+      "Will Shipley",
+      "Shipley"
+    ]
+  },
+  {
+    "player": "Woody Marks",
+    "team": "HOU",
+    "position": "RB",
+    "aliases": [
+      "Woody Marks",
+      "Marks"
+    ]
+  },
+  {
+    "player": "Xavier Gipson",
+    "team": "PHI",
+    "position": "WR",
+    "aliases": [
+      "Xavier Gipson",
+      "Gipson"
+    ]
+  },
+  {
+    "player": "Xavier Hutchinson",
+    "team": "HOU",
+    "position": "WR",
+    "aliases": [
+      "Xavier Hutchinson",
+      "Hutchinson"
+    ]
+  },
+  {
+    "player": "Xavier Legette",
+    "team": "CAR",
+    "position": "WR",
+    "aliases": [
+      "Xavier Legette",
+      "Legette"
+    ]
+  },
+  {
+    "player": "Xavier Restrepo",
+    "team": "TEN",
+    "position": "WR",
+    "aliases": [
+      "Xavier Restrepo",
+      "Restrepo"
+    ]
+  },
+  {
+    "player": "Xavier Smith",
+    "team": "LA",
+    "position": "WR",
+    "aliases": [
+      "Xavier Smith",
+      "Smith"
+    ]
+  },
+  {
+    "player": "Xavier Weaver",
+    "team": "ARI",
+    "position": "WR",
+    "aliases": [
+      "Xavier Weaver",
+      "Weaver"
+    ]
+  },
+  {
+    "player": "Xavier Worthy",
+    "team": "KC",
+    "position": "WR",
+    "aliases": [
+      "Xavier Worthy",
+      "Worthy"
+    ]
+  },
+  {
+    "player": "Zach Charbonnet",
+    "team": "SEA",
+    "position": "RB",
+    "aliases": [
+      "Zach Charbonnet",
+      "Charbonnet"
+    ]
+  },
+  {
+    "player": "Zach Ertz",
+    "team": "WAS",
+    "position": "TE",
+    "aliases": [
+      "Zach Ertz",
+      "Ertz"
+    ]
+  },
+  {
+    "player": "Zach Wilson",
+    "team": "MIA",
+    "position": "QB",
+    "aliases": [
+      "Zach Wilson",
+      "Wilson"
+    ]
+  },
+  {
+    "player": "Zaire Mitchell-Paden",
+    "team": "BAL",
+    "position": "TE",
+    "aliases": [
+      "Zaire Mitchell-Paden",
+      "Mitchell-Paden"
+    ]
+  },
+  {
+    "player": "Zamir White",
+    "team": "LV",
+    "position": "RB",
+    "aliases": [
+      "Zamir White",
+      "White"
+    ]
+  },
+  {
+    "player": "Zavier Scott",
+    "team": "MIN",
+    "position": "RB",
+    "aliases": [
+      "Zavier Scott",
+      "Scott"
+    ]
+  },
+  {
+    "player": "Zay Flowers",
+    "team": "BAL",
+    "position": "WR",
+    "aliases": [
+      "Zay Flowers",
+      "Flowers"
+    ]
+  },
+  {
+    "player": "Zay Jones",
+    "team": "ARI",
+    "position": "WR",
+    "aliases": [
+      "Zay Jones",
+      "Jones"
+    ]
+  }
+]

@@ -1,18 +1,25 @@
-PLAYER_TEAM_MAP = {
-    "Tank Dell": {"team": "HOU", "aliases": ["Tank Dell", "Dell"]},
-    "Joe Mixon": {"team": "HOU", "aliases": ["Joe Mixon", "Mixon"]},
-    "Baker Mayfield": {"team": "TB", "aliases": ["Baker Mayfield", "Mayfield"]},
-    "Christian Watson": {"team": "GB", "aliases": ["Christian Watson", "WR Watson", "Watson"]},
-    "Jonathon Cooper": {"team": "DEN", "aliases": ["Jonathon Cooper", "LB Cooper", "Cooper"]},
+from gridiron_gpt.data_ingest.player_catalog import load_player_catalog
+
+
+MANUAL_ALIASES = {
+    "Christian Watson": ["WR Watson"],
+    "Jonathon Cooper": ["LB Cooper"],
 }
 
 
 def extract_player_and_team(text: str) -> tuple[str, str]:
     lowered = text.lower()
+    catalog = load_player_catalog()
 
-    for player, data in PLAYER_TEAM_MAP.items():
-        for alias in data["aliases"]:
+    for item in catalog:
+        player = item["player"]
+        team = item["team"]
+        aliases = item.get("aliases", [])
+
+        aliases.extend(MANUAL_ALIASES.get(player, []))
+
+        for alias in aliases:
             if alias.lower() in lowered:
-                return player, data["team"]
+                return player, team
 
     return "Unknown", "UNK"
