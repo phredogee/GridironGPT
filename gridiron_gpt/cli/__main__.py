@@ -11,6 +11,7 @@ from gridiron_gpt.data_ingest.news_fetcher import create_news_item, save_news_it
 from gridiron_gpt.data_ingest.injury_fetcher import create_injury_item, save_injury_item
 from gridiron_gpt.data_ingest.rss_news_fetcher import fetch_and_save_from_env
 from gridiron_gpt.data_ingest.player_matcher import extract_player_and_team
+from gridiron_gpt.data_ingest.team_report import build_team_report
 from gridiron_gpt.data_ingest.roster_fetcher import (
     create_roster_item,
     save_roster_item,
@@ -168,6 +169,12 @@ def update_all(show_digest):
     if show_digest:
         click.echo("")
         click.echo(build_digest())
+
+@cli.command("report-team")
+@click.option("--team", required=True, help="NFL team abbreviation, e.g. HOU, DAL, GB.")
+def report_team(team):
+    """Show a camp report for a specific team."""
+    click.echo(build_team_report(team))
 
 cli.add_command(ask)
 
