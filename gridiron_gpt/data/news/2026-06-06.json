@@ -44,8 +44,8 @@
   },
   {
     "date": "2026-06-06",
-    "player": "Baker Mayfield",
-    "team": "TB",
+    "player": "Unknown",
+    "team": "UNK",
     "headline": "Bucs' Mayfield: Contract talks 'not anywhere close...",
     "source": "ESPN NFL RSS",
     "fantasy_impact": "monitor",
@@ -53,8 +53,8 @@
   },
   {
     "date": "2026-06-06",
-    "player": "Darius Cooper",
-    "team": "PHI",
+    "player": "Unknown",
+    "team": "UNK",
     "headline": "Broncos LB Cooper accused of domestic violence",
     "source": "ESPN NFL RSS",
     "fantasy_impact": "negative",
@@ -80,8 +80,8 @@
   },
   {
     "date": "2026-06-06",
-    "player": "George Pickens",
-    "team": "DAL",
+    "player": "Unknown",
+    "team": "UNK",
     "headline": "Cowboys expect Pickens' presence at June camp",
     "source": "ESPN NFL RSS",
     "fantasy_impact": "unknown",
@@ -125,8 +125,8 @@
   },
   {
     "date": "2026-06-06",
-    "player": "Rasheen Ali",
-    "team": "BAL",
+    "player": "Unknown",
+    "team": "UNK",
     "headline": "Myth or reality? Examining the 'Madden curse' thro...",
     "source": "ESPN NFL RSS",
     "fantasy_impact": "unknown",
@@ -134,8 +134,8 @@
   },
   {
     "date": "2026-06-06",
-    "player": "Noah Fant",
-    "team": "CIN",
+    "player": "Unknown",
+    "team": "UNK",
     "headline": "Fantasy buzz: With extension done, is Christian Wa...",
     "source": "ESPN NFL RSS",
     "fantasy_impact": "negative",
@@ -161,8 +161,8 @@
   },
   {
     "date": "2026-06-06",
-    "player": "A.J. Brown",
-    "team": "PHI",
+    "player": "Jared Verse",
+    "team": "LA",
     "headline": "A pocket pair of 8s: Browns' Jared Verse, Dillion ...",
     "source": "ESPN NFL RSS",
     "fantasy_impact": "unknown",
@@ -170,8 +170,8 @@
   },
   {
     "date": "2026-06-06",
-    "player": "Drew Lock",
-    "team": "SEA",
+    "player": "Unknown",
+    "team": "UNK",
     "headline": "Barnwell makes sense of the Myles Garrett blockbus...",
     "source": "ESPN NFL RSS",
     "fantasy_impact": "unknown",
@@ -179,8 +179,8 @@
   },
   {
     "date": "2026-06-06",
-    "player": "Chris Moore",
-    "team": "WAS",
+    "player": "DJ Moore",
+    "team": "CHI",
     "headline": "'I'm ready for it': After DJ Moore's exit, Rome Odunze embracing being Bears' WR1",
     "source": "ESPN NFL RSS",
     "fantasy_impact": "unknown",
@@ -188,11 +188,20 @@
   },
   {
     "date": "2026-06-06",
-    "player": "A.J. Brown",
-    "team": "PHI",
+    "player": "Unknown",
+    "team": "UNK",
     "headline": "Ward wants to stay with Browns after Garrett deal",
     "source": "ESPN NFL RSS",
     "fantasy_impact": "unknown",
     "url": "https://www.espn.com/nfl/story/_/id/48984752/ward-definitely-wants-stay-browns-garrett-trade"
+  },
+  {
+    "date": "2026-06-06",
+    "player": "Unknown",
+    "team": "UNK",
+    "headline": "Jumpman meets Madden: Michael Jordan's role in ins...",
+    "source": "ESPN NFL RSS",
+    "fantasy_impact": "positive",
+    "url": "https://www.espn.com/nfl/story/_/id/48970798/caleb-williams-madden-cover-tribute-chicago-jumpman-michael-jordan"
   }
 ]
