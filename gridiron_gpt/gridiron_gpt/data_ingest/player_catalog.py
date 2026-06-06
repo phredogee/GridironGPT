@@ -35,7 +35,6 @@ def build_player_catalog(
             "position": position,
             "aliases": [
                 player,
-                player.split()[-1],
             ],
         }
 
