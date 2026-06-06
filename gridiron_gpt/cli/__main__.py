@@ -141,6 +141,34 @@ def fetch_rss_news_command():
 
     click.echo(f"Fetched {count} RSS news items into {path}")
 
+@cli.command("update-all")
+@click.option(
+    "--show-digest",
+    is_flag=True,
+    help="Print the full camp digest after updating."
+)
+def update_all(show_digest):
+    """Fetch latest news and show camp movement summaries."""
+    click.echo("🏈 Updating GridironGPT...")
+    click.echo("")
+
+    try:
+        count, path = fetch_and_save_from_env()
+    except RuntimeError as e:
+        raise click.ClickException(str(e))
+
+    click.echo(f"✓ Fetched {count} RSS news items")
+    click.echo(f"✓ Updated news file: {path}")
+    click.echo("")
+
+    click.echo(build_risers_report())
+    click.echo("")
+    click.echo(build_fallers_report())
+
+    if show_digest:
+        click.echo("")
+        click.echo(build_digest())
+
 cli.add_command(ask)
 
 
