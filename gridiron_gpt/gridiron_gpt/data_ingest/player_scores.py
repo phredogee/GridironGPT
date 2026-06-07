@@ -13,6 +13,21 @@ IMPACT_SCORES = {
     "negative": -1.0,
 }
 
+def recommendation_from_score(score: float) -> str:
+    if score >= 2:
+        return "BUY"
+
+    if score > 0:
+        return "WATCH"
+
+    if score == 0:
+        return "HOLD"
+
+    if score > -1:
+        return "MONITOR"
+
+    return "SELL"
+
 def _add_signal(scores, item, source):
     player = item.get("player", "Unknown")
     team = item.get("team", "UNK")
@@ -76,7 +91,14 @@ def build_draft_watch_report() -> str:
     lines.append("🔥 Biggest Risers")
     if risers:
         for (player, team), data in risers[:10]:
-            lines.append(f"{player} ({team}) — Score: {data['score']:+.1f}")
+            rating = recommendation_from_score(data["score"])
+
+            lines.append(
+                f"{player} ({team}) — "
+                f"Score: {data['score']:+.1f} "
+                f"[{rating}]"
+            )
+
             for signal in data["signals"][:3]:
                 if signal["value"] > 0:
                     lines.append(f"+ {signal['headline']} [{signal['source']}]")
@@ -117,16 +139,7 @@ def build_player_scorecard(player_name: str) -> str:
     score = matched_data["score"]
     signals = matched_data["signals"]
 
-    if score >= 2:
-        recommendation = "BUY / MOVE UP WATCHLIST"
-    elif score > 0:
-        recommendation = "WATCH / SLIGHTLY POSITIVE"
-    elif score == 0:
-        recommendation = "HOLD / NO CLEAR MOVEMENT"
-    elif score > -1:
-        recommendation = "MONITOR RISK"
-    else:
-        recommendation = "AVOID / MOVE DOWN WATCHLIST"
+    recommendation = recommendation_from_score(score)
 
     lines = []
     lines.append(f"🏈 {player} Scorecard")
