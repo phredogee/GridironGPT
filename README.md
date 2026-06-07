@@ -152,6 +152,9 @@ gg risers
 ```bash
 gg fallers
 ```
+## Draft Watch
+
+<img width="408" height="235" alt="image" src="https://github.com/user-attachments/assets/16908c8c-d20e-4d91-bc1a-ff228e9a5120" />
 
 ---
 
