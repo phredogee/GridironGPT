@@ -3,6 +3,7 @@
 import click
 
 from gridiron_gpt.cli.ask import ask
+from gridiron_gpt.data_ingest.timeline import build_player_timeline
 from gridiron_gpt.data_ingest.digest_loader import build_digest
 from gridiron_gpt.data_ingest.risers import build_risers_report
 from gridiron_gpt.data_ingest.fallers import build_fallers_report
@@ -175,6 +176,12 @@ def update_all(show_digest):
 def report_team(team):
     """Show a camp report for a specific team."""
     click.echo(build_team_report(team))
+
+@cli.command()
+@click.option("--player", required=True, help="Player name to show timeline for.")
+def timeline(player):
+    """Show dated camp updates for a player."""
+    click.echo(build_player_timeline(player))
 
 cli.add_command(ask)
 
