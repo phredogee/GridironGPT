@@ -159,3 +159,35 @@ def build_player_scorecard(player_name: str) -> str:
         )
 
     return "\n".join(lines)
+
+def build_signal_rankings(limit: int = 25) -> str:
+    scores = calculate_player_scores()
+
+    ranked = sorted(
+        scores.items(),
+        key=lambda item: item[1]["score"],
+        reverse=True,
+    )
+
+    ranked = [
+        ((player, team), data)
+        for (player, team), data in ranked
+        if data["score"] != 0
+    ]
+
+    lines = []
+    lines.append("🏆 SIGNAL RANKINGS")
+    lines.append("")
+
+    if not ranked:
+        lines.append("- No scored players found.")
+        return "\n".join(lines)
+
+    for idx, ((player, team), data) in enumerate(ranked[:limit], start=1):
+        rating = recommendation_from_score(data["score"])
+        lines.append(
+            f"{idx}. {player} ({team}) — "
+            f"Score: {data['score']:+.1f} [{rating}]"
+        )
+
+    return "\n".join(lines)

@@ -17,6 +17,7 @@ from gridiron_gpt.data_ingest.player_compare import build_player_comparison
 from gridiron_gpt.data_ingest.player_scores import (
     build_draft_watch_report,
     build_player_scorecard,
+    build_signal_rankings,
 )
 from gridiron_gpt.data_ingest.roster_fetcher import (
     create_roster_item,
@@ -205,6 +206,12 @@ def score(player):
 def compare(player1, player2):
     """Compare two players using current fantasy signal scores."""
     click.echo(build_player_comparison(player1, player2))
+
+@cli.command()
+@click.option("--limit", default=25, show_default=True, help="Number of players to show.")
+def rankings(limit):
+    """Show ranked players by current fantasy signal score."""
+    click.echo(build_signal_rankings(limit=limit))
 
 cli.add_command(ask)
 
