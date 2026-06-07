@@ -211,13 +211,19 @@ def compare(player1, player2):
 @click.option("--limit", default=25, show_default=True, help="Number of players to show.")
 @click.option("--team", default=None, help="Filter by NFL team abbreviation, e.g. HOU.")
 @click.option("--position", default=None, help="Filter by position, e.g. QB, RB, WR, TE.")
-def rankings(limit, team, position):
+@click.option("--buy", "recommendation", flag_value="BUY", default=None, help="Show BUY candidates.")
+@click.option("--watch", "recommendation", flag_value="WATCH", help="Show WATCH candidates.")
+@click.option("--hold", "recommendation", flag_value="HOLD", help="Show HOLD candidates.")
+@click.option("--monitor", "recommendation", flag_value="MONITOR", help="Show MONITOR candidates.")
+@click.option("--sell", "recommendation", flag_value="SELL", help="Show SELL candidates.")
+def rankings(limit, team, position, recommendation):
     """Show ranked players by current fantasy signal score."""
     click.echo(
         build_signal_rankings(
             limit=limit,
             team_filter=team,
             position_filter=position,
+            recommendation_filter=recommendation,
         )
     )
 

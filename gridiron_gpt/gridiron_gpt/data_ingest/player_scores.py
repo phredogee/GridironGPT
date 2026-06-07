@@ -181,6 +181,7 @@ def build_signal_rankings(
     limit: int = 25,
     team_filter: str | None = None,
     position_filter: str | None = None,
+    recommendation_filter: str | None = None,
 ) -> str:
     scores = calculate_player_scores()
 
@@ -222,6 +223,15 @@ def build_signal_rankings(
 
     if position_filter:
         title += f" — {position_filter}"
+
+    if recommendation_filter:
+        title += f" — {recommendation_filter}"
+        recommendation_filter = recommendation_filter.upper()
+        ranked = [
+            ((player, team), data)
+            for (player, team), data in ranked
+            if recommendation_from_score(data["score"]) == recommendation_filter
+        ]
 
     lines.append(title)
 
