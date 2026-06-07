@@ -61,17 +61,22 @@ def build_digest() -> str:
     lines = []
     lines.append("🏈 DAILY CAMP DIGEST")
     lines.append("")
-    
+
     lines.append("News")
-    if news:
-        for item in news:
+    known_news = [
+        item for item in news
+        if item.get("player", "Unknown") != "Unknown"
+    ]
+
+    if known_news:
+        for item in known_news:
             lines.append(
                 f"- {item.get('player', 'Unknown')} ({item.get('team', 'UNK')}): "
                 f"{item.get('headline', 'No headline')} "
                 f"[Impact: {item.get('fantasy_impact', 'unknown')}]"
             )
     else:
-        lines.append("- No news items found.")
+        lines.append("- No player-specific news items found.")
 
     lines.append("")
     lines.append("Injuries")
@@ -103,12 +108,18 @@ def build_digest() -> str:
     player_cards = {}
 
     for item in news:
+        if item.get("player", "Unknown") == "Unknown":
+            continue
+
         key = (item.get("player", "Unknown"), item.get("team", "UNK"))
         player_cards.setdefault(key, {"news": [], "injuries": [], "roster": [], "impacts": []})
         player_cards[key]["news"].append(item.get("headline", "No headline"))
         player_cards[key]["impacts"].append(item.get("fantasy_impact", "unknown"))
 
     for item in injuries:
+        if item.get("player", "Unknown") == "Unknown":
+            continue
+
         key = (item.get("player", "Unknown"), item.get("team", "UNK"))
         player_cards.setdefault(key, {"news": [], "injuries": [], "roster": [], "impacts": []})
         player_cards[key]["injuries"].append(
@@ -118,6 +129,9 @@ def build_digest() -> str:
         player_cards[key]["impacts"].append(item.get("fantasy_impact", "monitor"))
 
     for item in roster_moves:
+        if item.get("player", "Unknown") == "Unknown":
+            continue
+
         key = (item.get("player", "Unknown"), item.get("team", "UNK"))
         player_cards.setdefault(key, {"news": [], "injuries": [], "roster": [], "impacts": []})
         player_cards[key]["roster"].append(
@@ -132,62 +146,22 @@ def build_digest() -> str:
             lines.append(f"{player} ({team})")
             lines.append(f"Fantasy Outlook: {_overall_trend(card['impacts'])}")
             lines.append(f"Draft Impact: {_draft_outlook(card['impacts'])}")
-            
+
             if card["news"]:
                 lines.append("News")
-                for headline in card["news"]:
+                for headline in sorted(set(card["news"])):
                     lines.append(f"- {headline}")
 
             if card["injuries"]:
                 lines.append("Injuries")
-                for injury in card["injuries"]:
+                for injury in sorted(set(card["injuries"])):
                     lines.append(f"- {injury}")
 
             if card["roster"]:
                 lines.append("Roster")
-                for move in card["roster"]:
+                for move in sorted(set(card["roster"])):
                     lines.append(f"- {move}")
     else:
         lines.append("- No player updates found.")
-
-    mover_items = []
-
-    for item in news:
-        mover_items.append({
-            "player": item.get("player", "Unknown"),
-            "team": item.get("team", "UNK"),
-            "headline": item.get("headline", "No headline"),
-            "impact": item.get("fantasy_impact", "unknown"),
-            "source": "News",
-        })
-
-    for item in injuries:
-        mover_items.append({
-            "player": item.get("player", "Unknown"),
-            "team": item.get("team", "UNK"),
-            "headline": item.get("headline", "No headline"),
-            "impact": item.get("fantasy_impact", "monitor"),
-            "source": "Injury",
-        })
-
-    for item in roster_moves:
-        mover_items.append({
-            "player": item.get("player", "Unknown"),
-            "team": item.get("team", "UNK"),
-            "headline": item.get("headline", "No headline"),
-            "impact": item.get("fantasy_impact", "unknown"),
-            "source": "Roster",
-        })
-
-    if mover_items:
-        for item in mover_items:
-            icon = _impact_icon(item["impact"])
-            lines.append(
-                f"{icon} {item['player']} ({item['team']}) — "
-                f"{item['headline']} "
-                f"[{item['source']}; Impact: {item['impact']}]"
-            )
-    else:
-        lines.append("- No fantasy movers found.")
 
     return "\n".join(lines)

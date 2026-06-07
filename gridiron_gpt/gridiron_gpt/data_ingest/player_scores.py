@@ -13,7 +13,6 @@ IMPACT_SCORES = {
     "negative": -1.0,
 }
 
-
 def _add_signal(scores, item, source):
     player = item.get("player", "Unknown")
     team = item.get("team", "UNK")
@@ -25,15 +24,23 @@ def _add_signal(scores, item, source):
     value = IMPACT_SCORES.get(impact, 0.0)
 
     key = (player, team)
+    headline = item.get("headline", "No headline")
+
+    existing_headlines = {
+        signal["headline"]
+        for signal in scores[key]["signals"]
+    }
+
+    if headline in existing_headlines:
+        return
 
     scores[key]["score"] += value
     scores[key]["signals"].append({
         "source": source,
-        "headline": item.get("headline", "No headline"),
+        "headline": headline,
         "impact": impact,
         "value": value,
     })
-
 
 def calculate_player_scores():
     scores = defaultdict(lambda: {"score": 0.0, "signals": []})
@@ -90,3 +97,52 @@ def build_draft_watch_report() -> str:
         lines.append("- No concerns found.")
 
     return "\n".join(lines).strip()
+
+def build_player_scorecard(player_name: str) -> str:
+    scores = calculate_player_scores()
+
+    matched_key = None
+    matched_data = None
+
+    for (player, team), data in scores.items():
+        if player_name.lower() in player.lower():
+            matched_key = (player, team)
+            matched_data = data
+            break
+
+    if not matched_key or not matched_data:
+        return f"No scorecard found for {player_name}."
+
+    player, team = matched_key
+    score = matched_data["score"]
+    signals = matched_data["signals"]
+
+    if score >= 2:
+        recommendation = "BUY / MOVE UP WATCHLIST"
+    elif score > 0:
+        recommendation = "WATCH / SLIGHTLY POSITIVE"
+    elif score == 0:
+        recommendation = "HOLD / NO CLEAR MOVEMENT"
+    elif score > -1:
+        recommendation = "MONITOR RISK"
+    else:
+        recommendation = "AVOID / MOVE DOWN WATCHLIST"
+
+    lines = []
+    lines.append(f"🏈 {player} Scorecard")
+    lines.append("")
+    lines.append(f"Team: {team}")
+    lines.append(f"Current Score: {score:+.1f}")
+    lines.append(f"Recommendation: {recommendation}")
+    lines.append("")
+    lines.append("Signals")
+
+    for signal in sorted(signals, key=lambda s: s["value"], reverse=True):
+        value = signal["value"]
+        prefix = "+" if value > 0 else ""
+        lines.append(
+            f"{prefix}{value:.1f}  {signal['headline']} "
+            f"[{signal['source']}; Impact: {signal['impact']}]"
+        )
+
+    return "\n".join(lines)
