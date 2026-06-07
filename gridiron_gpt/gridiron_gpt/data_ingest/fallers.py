@@ -1,33 +1,17 @@
-from collections import defaultdict
-
-from gridiron_gpt.data_ingest.news_loader import load_news
-from gridiron_gpt.data_ingest.roster_loader import load_roster_moves
-
-
-def get_fallers():
-    grouped = defaultdict(list)
-
-    for item in load_news():
-        if item.get("player", "Unknown") == "Unknown":
-            continue
-
-        if item.get("fantasy_impact", "").lower() == "negative":
-            key = (item.get("player", "Unknown"), item.get("team", "UNK"))
-            grouped[key].append(item.get("headline", "No headline"))
-
-    for item in load_roster_moves():
-        if item.get("player", "Unknown") == "Unknown":
-            continue
-        
-        if item.get("fantasy_impact", "").lower() == "negative":
-            key = (item.get("player", "Unknown"), item.get("team", "UNK"))
-            grouped[key].append(item.get("headline", "No headline"))
-
-    return grouped
+from gridiron_gpt.data_ingest.player_scores import calculate_player_scores
 
 
 def build_fallers_report() -> str:
-    fallers = get_fallers()
+    scores = calculate_player_scores()
+
+    fallers = sorted(
+        [
+            ((player, team), data)
+            for (player, team), data in scores.items()
+            if data["score"] < 0
+        ],
+        key=lambda item: item[1]["score"],
+    )
 
     lines = []
     lines.append("⬇ CAMP FALLERS")
@@ -37,10 +21,17 @@ def build_fallers_report() -> str:
         lines.append("- No camp fallers found.")
         return "\n".join(lines)
 
-    for (player, team), headlines in fallers.items():
-        lines.append(f"{player} ({team})")
-        for headline in headlines:
-            lines.append(f"- {headline}")
+    for (player, team), data in fallers[:10]:
+        lines.append(f"{player} ({team}) — Score: {data['score']:+.1f}")
+
+        negative_signals = [
+            signal for signal in data["signals"]
+            if signal["value"] < 0
+        ]
+
+        for signal in negative_signals[:3]:
+            lines.append(f"- {signal['headline']} [{signal['source']}]")
+
         lines.append("Draft Outlook: Risk increasing. Monitor closely before moving up draft boards.")
         lines.append("")
 

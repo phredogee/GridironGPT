@@ -1,33 +1,18 @@
-from collections import defaultdict
-
-from gridiron_gpt.data_ingest.news_loader import load_news
-from gridiron_gpt.data_ingest.roster_loader import load_roster_moves
-
-
-def get_risers():
-    grouped = defaultdict(list)
-
-    for item in load_news():
-        if item.get("player", "Unknown") == "Unknown":
-            continue
-
-        if item.get("fantasy_impact", "").lower() == "positive":
-            key = (item.get("player", "Unknown"), item.get("team", "UNK"))
-            grouped[key].append(item.get("headline", "No headline"))
-
-    for item in load_roster_moves():
-        if item.get("player", "Unknown") == "Unknown":
-            continue
-
-        if item.get("fantasy_impact", "").lower() == "positive":
-            key = (item.get("player", "Unknown"), item.get("team", "UNK"))
-            grouped[key].append(item.get("headline", "No headline"))
-
-    return grouped
+from gridiron_gpt.data_ingest.player_scores import calculate_player_scores
 
 
 def build_risers_report() -> str:
-    risers = get_risers()
+    scores = calculate_player_scores()
+
+    risers = sorted(
+        [
+            ((player, team), data)
+            for (player, team), data in scores.items()
+            if data["score"] > 0
+        ],
+        key=lambda item: item[1]["score"],
+        reverse=True,
+    )
 
     lines = []
     lines.append("⬆ CAMP RISERS")
@@ -37,10 +22,17 @@ def build_risers_report() -> str:
         lines.append("- No camp risers found.")
         return "\n".join(lines)
 
-    for (player, team), headlines in risers.items():
-        lines.append(f"{player} ({team})")
-        for headline in headlines:
-            lines.append(f"- {headline}")
+    for (player, team), data in risers[:10]:
+        lines.append(f"{player} ({team}) — Score: {data['score']:+.1f}")
+
+        positive_signals = [
+            signal for signal in data["signals"]
+            if signal["value"] > 0
+        ]
+
+        for signal in positive_signals[:3]:
+            lines.append(f"+ {signal['headline']} [{signal['source']}]")
+
         lines.append("Draft Outlook: Trending up. Monitor for repeated positive reports.")
         lines.append("")
 
