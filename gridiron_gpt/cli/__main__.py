@@ -13,6 +13,7 @@ from gridiron_gpt.data_ingest.injury_fetcher import create_injury_item, save_inj
 from gridiron_gpt.data_ingest.rss_news_fetcher import fetch_and_save_from_env
 from gridiron_gpt.data_ingest.player_matcher import extract_player_and_team
 from gridiron_gpt.data_ingest.team_report import build_team_report
+from gridiron_gpt.data_ingest.player_compare import build_player_comparison
 from gridiron_gpt.data_ingest.player_scores import (
     build_draft_watch_report,
     build_player_scorecard,
@@ -197,6 +198,13 @@ def draft_watch():
 def score(player):
     """Show fantasy signal scorecard for a player."""
     click.echo(build_player_scorecard(player))
+
+@cli.command()
+@click.option("--player1", required=True, help="First player to compare.")
+@click.option("--player2", required=True, help="Second player to compare.")
+def compare(player1, player2):
+    """Compare two players using current fantasy signal scores."""
+    click.echo(build_player_comparison(player1, player2))
 
 cli.add_command(ask)
 
