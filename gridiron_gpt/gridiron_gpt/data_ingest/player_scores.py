@@ -160,7 +160,7 @@ def build_player_scorecard(player_name: str) -> str:
 
     return "\n".join(lines)
 
-def build_signal_rankings(limit: int = 25) -> str:
+def build_signal_rankings(limit: int = 25, team_filter: str | None = None) -> str:
     scores = calculate_player_scores()
 
     ranked = sorted(
@@ -175,8 +175,21 @@ def build_signal_rankings(limit: int = 25) -> str:
         if data["score"] != 0
     ]
 
+    if team_filter:
+        team_filter = team_filter.upper()
+        ranked = [
+            ((player, team), data)
+            for (player, team), data in ranked
+            if team.upper() == team_filter
+        ]
+
     lines = []
-    lines.append("🏆 SIGNAL RANKINGS")
+
+    if team_filter:
+        lines.append(f"🏆 SIGNAL RANKINGS — {team_filter}")
+    else:
+        lines.append("🏆 SIGNAL RANKINGS")
+
     lines.append("")
 
     if not ranked:

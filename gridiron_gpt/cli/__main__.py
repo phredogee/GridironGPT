@@ -209,9 +209,10 @@ def compare(player1, player2):
 
 @cli.command()
 @click.option("--limit", default=25, show_default=True, help="Number of players to show.")
-def rankings(limit):
+@click.option("--team", default=None, help="Filter by NFL team abbreviation, e.g. HOU.")
+def rankings(limit, team):
     """Show ranked players by current fantasy signal score."""
-    click.echo(build_signal_rankings(limit=limit))
+    click.echo(build_signal_rankings(limit=limit, team_filter=team))
 
 cli.add_command(ask)
 
