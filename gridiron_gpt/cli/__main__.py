@@ -12,6 +12,7 @@ from gridiron_gpt.data_ingest.news_fetcher import create_news_item, save_news_it
 from gridiron_gpt.data_ingest.injury_fetcher import create_injury_item, save_injury_item
 from gridiron_gpt.data_ingest.rss_news_fetcher import fetch_and_save_from_env
 from gridiron_gpt.data_ingest.player_matcher import extract_player_and_team
+from gridiron_gpt.data_ingest.player_scores import build_draft_watch_report
 from gridiron_gpt.data_ingest.team_report import build_team_report
 from gridiron_gpt.data_ingest.roster_fetcher import (
     create_roster_item,
@@ -182,6 +183,11 @@ def report_team(team):
 def timeline(player):
     """Show dated camp updates for a player."""
     click.echo(build_player_timeline(player))
+
+@cli.command("draft-watch")
+def draft_watch():
+    """Show players with the strongest positive and negative fantasy signals."""
+    click.echo(build_draft_watch_report())
 
 cli.add_command(ask)
 
