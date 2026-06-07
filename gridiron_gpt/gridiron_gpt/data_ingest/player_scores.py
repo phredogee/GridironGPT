@@ -3,6 +3,7 @@ from collections import defaultdict
 from gridiron_gpt.data_ingest.news_loader import load_news
 from gridiron_gpt.data_ingest.injury_loader import load_injuries
 from gridiron_gpt.data_ingest.roster_loader import load_roster_moves
+from gridiron_gpt.data_ingest.player_catalog import load_player_catalog
 
 
 IMPACT_SCORES = {
@@ -27,6 +28,22 @@ def recommendation_from_score(score: float) -> str:
         return "MONITOR"
 
     return "SELL"
+
+def _position_lookup() -> dict[str, str]:
+    catalog = load_player_catalog()
+
+    positions = {
+        item["player"]: item.get("position", "UNK")
+        for item in catalog
+    }
+
+    positions.update({
+        "Tank Dell": "WR",
+        "Joe Mixon": "RB",
+        "Christian Watson": "WR",
+    })
+
+    return positions
 
 def _add_signal(scores, item, source):
     player = item.get("player", "Unknown")
@@ -160,7 +177,11 @@ def build_player_scorecard(player_name: str) -> str:
 
     return "\n".join(lines)
 
-def build_signal_rankings(limit: int = 25, team_filter: str | None = None) -> str:
+def build_signal_rankings(
+    limit: int = 25,
+    team_filter: str | None = None,
+    position_filter: str | None = None,
+) -> str:
     scores = calculate_player_scores()
 
     ranked = sorted(
@@ -183,14 +204,26 @@ def build_signal_rankings(limit: int = 25, team_filter: str | None = None) -> st
             if team.upper() == team_filter
         ]
 
+    if position_filter:
+        position_filter = position_filter.upper()
+        positions = _position_lookup()
+        ranked = [
+            ((player, team), data)
+            for (player, team), data in ranked
+            if positions.get(player, "UNK").upper() == position_filter
+        ]
+
     lines = []
 
-    if team_filter:
-        lines.append(f"🏆 SIGNAL RANKINGS — {team_filter}")
-    else:
-        lines.append("🏆 SIGNAL RANKINGS")
+    title = "🏆 SIGNAL RANKINGS"
 
-    lines.append("")
+    if team_filter:
+        title += f" — {team_filter}"
+
+    if position_filter:
+        title += f" — {position_filter}"
+
+    lines.append(title)
 
     if not ranked:
         lines.append("- No scored players found.")
