@@ -247,3 +247,59 @@ def build_signal_rankings(
         )
 
     return "\n".join(lines)
+
+def build_recommendations_report(limit: int = 10) -> str:
+    scores = calculate_player_scores()
+
+    buckets = {
+        "BUY": [],
+        "WATCH": [],
+        "HOLD": [],
+        "MONITOR": [],
+        "SELL": [],
+    }
+
+    for (player, team), data in scores.items():
+        score = data["score"]
+
+        if score == 0:
+            continue
+
+        recommendation = recommendation_from_score(score)
+        buckets[recommendation].append(((player, team), data))
+
+    for recommendation in buckets:
+        buckets[recommendation].sort(
+            key=lambda item: item[1]["score"],
+            reverse=True,
+        )
+
+    lines = []
+    lines.append("🎯 FANTASY RECOMMENDATIONS")
+    lines.append("")
+
+    sections = [
+        ("🟢 BUY", "BUY"),
+        ("🟡 WATCH", "WATCH"),
+        ("⚪ HOLD", "HOLD"),
+        ("🟠 MONITOR", "MONITOR"),
+        ("🔴 SELL", "SELL"),
+    ]
+
+    for title, key in sections:
+        lines.append(title)
+
+        players = buckets[key][:limit]
+
+        if players:
+            for (player, team), data in players:
+                lines.append(
+                    f"- {player} ({team}) — "
+                    f"Score: {data['score']:+.1f}"
+                )
+        else:
+            lines.append("- None")
+
+        lines.append("")
+
+    return "\n".join(lines).strip()

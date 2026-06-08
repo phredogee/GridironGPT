@@ -19,6 +19,7 @@ from gridiron_gpt.data_ingest.player_scores import (
     build_draft_watch_report,
     build_player_scorecard,
     build_signal_rankings,
+    build_recommendations_report,
 )
 from gridiron_gpt.data_ingest.roster_fetcher import (
     create_roster_item,
@@ -233,6 +234,12 @@ def rankings(limit, team, position, recommendation):
 def trend(player):
     """Show daily fantasy signal trend for a player."""
     click.echo(build_player_trend(player))
+
+@cli.command()
+@click.option("--limit", default=10, show_default=True, help="Players per recommendation group.")
+def recommendations(limit):
+    """Show BUY/WATCH/HOLD/MONITOR/SELL recommendation groups."""
+    click.echo(build_recommendations_report(limit=limit))
 
 
 cli.add_command(ask)
