@@ -1,5 +1,5 @@
 from collections import defaultdict
-
+from datetime import date, datetime
 from gridiron_gpt.data_ingest.news_loader import load_news
 from gridiron_gpt.data_ingest.injury_loader import load_injuries
 from gridiron_gpt.data_ingest.roster_loader import load_roster_moves
@@ -13,6 +13,28 @@ IMPACT_SCORES = {
     "monitor": -0.5,
     "negative": -1.0,
 }
+
+def recency_weight(signal_date: str) -> float:
+    try:
+        event_date = datetime.fromisoformat(signal_date).date()
+    except Exception:
+        return 1.0
+
+    days_old = (date.today() - event_date).days
+
+    if days_old <= 1:
+        return 1.0
+
+    if days_old <= 7:
+        return 0.85
+
+    if days_old <= 14:
+        return 0.65
+
+    if days_old <= 30:
+        return 0.40
+
+    return 0.20
 
 def recommendation_from_score(score: float) -> str:
     if score >= 2:
@@ -75,7 +97,10 @@ def _add_signal(scores, item, source):
         return
 
     impact = item.get("fantasy_impact", "unknown").lower()
-    value = IMPACT_SCORES.get(impact, 0.0)
+    base_value = IMPACT_SCORES.get(impact, 0.0)
+    signal_date = item.get("date", date.today().isoformat())
+    weight = recency_weight(signal_date)
+    value = base_value * weight
 
     key = (player, team)
     headline = item.get("headline", "No headline")
@@ -94,6 +119,9 @@ def _add_signal(scores, item, source):
         "headline": headline,
         "impact": impact,
         "value": value,
+        "date": signal_date,
+        "base_value": base_value,
+        "weight": weight,
     })
 
 def calculate_player_scores():
@@ -199,8 +227,9 @@ def build_player_scorecard(player_name: str) -> str:
         value = signal["value"]
         prefix = "+" if value > 0 else ""
         lines.append(
-            f"{prefix}{value:.1f}  {signal['headline']} "
-            f"[{signal['source']}; Impact: {signal['impact']}]"
+            f"{prefix}{value:.2f}  {signal['headline']} "
+            f"[{signal['source']}; Impact: {signal['impact']}; "
+            f"Weight: {signal.get('weight', 1.0):.2f}]"
         )
 
     return "\n".join(lines)
