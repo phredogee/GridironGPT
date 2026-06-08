@@ -26,6 +26,12 @@ from gridiron_gpt.data_ingest.roster_fetcher import (
     save_roster_item,
 )
 
+from gridiron_gpt.data_ingest.player_trends import (
+    build_player_trend,
+    build_hot_players_report,
+    build_cold_players_report,
+)
+
 @click.group()
 def cli():
     """GridironGPT command line interface."""
@@ -241,8 +247,20 @@ def recommendations(limit):
     """Show BUY/WATCH/HOLD/MONITOR/SELL recommendation groups."""
     click.echo(build_recommendations_report(limit=limit))
 
+@cli.command()
+@click.option("--limit", default=10, show_default=True)
+def hot(limit):
+    """Show players gaining momentum."""
+    click.echo(build_hot_players_report(limit))
+
+@cli.command()
+@click.option("--limit", default=10, show_default=True)
+def cold(limit):
+    """Show players losing momentum."""
+    click.echo(build_cold_players_report(limit))
 
 cli.add_command(ask)
+
 
 
 if __name__ == "__main__":
