@@ -29,6 +29,28 @@ def recommendation_from_score(score: float) -> str:
 
     return "SELL"
 
+def confidence_from_signals(signals: list[dict]) -> int:
+    if not signals:
+        return 0
+
+    positive = sum(
+        1 for signal in signals
+        if signal["value"] > 0
+    )
+
+    negative = sum(
+        1 for signal in signals
+        if signal["value"] < 0
+    )
+
+    total = len(signals)
+
+    agreement = max(positive, negative) / total
+
+    confidence = 50 + int(agreement * 50)
+
+    return min(confidence, 99)
+
 def _position_lookup() -> dict[str, str]:
     catalog = load_player_catalog()
 
@@ -110,10 +132,12 @@ def build_draft_watch_report() -> str:
         for (player, team), data in risers[:10]:
             rating = recommendation_from_score(data["score"])
 
+            confidence = confidence_from_signals(data["signals"])
+            
             lines.append(
                 f"{player} ({team}) — "
                 f"Score: {data['score']:+.1f} "
-                f"[{rating}]"
+                f"[{rating}; {confidence}%]"
             )
 
             for signal in data["signals"][:3]:
@@ -162,8 +186,12 @@ def build_player_scorecard(player_name: str) -> str:
     lines.append(f"🏈 {player} Scorecard")
     lines.append("")
     lines.append(f"Team: {team}")
+    confidence = confidence_from_signals(data["signals"])
+
     lines.append(f"Current Score: {score:+.1f}")
     lines.append(f"Recommendation: {recommendation}")
+    lines.append(f"Confidence: {confidence}%")
+
     lines.append("")
     lines.append("Signals")
 
@@ -225,8 +253,9 @@ def build_signal_rankings(
         title += f" — {position_filter}"
 
     if recommendation_filter:
-        title += f" — {recommendation_filter}"
         recommendation_filter = recommendation_filter.upper()
+        title += f" — {recommendation_filter}"
+
         ranked = [
             ((player, team), data)
             for (player, team), data in ranked
@@ -241,9 +270,12 @@ def build_signal_rankings(
 
     for idx, ((player, team), data) in enumerate(ranked[:limit], start=1):
         rating = recommendation_from_score(data["score"])
+        confidence = confidence_from_signals(data["signals"])
+
         lines.append(
             f"{idx}. {player} ({team}) — "
-            f"Score: {data['score']:+.1f} [{rating}]"
+            f"Score: {data['score']:+.1f} "
+            f"[{rating}; {confidence}%]"
         )
 
     return "\n".join(lines)
@@ -266,6 +298,7 @@ def build_recommendations_report(limit: int = 10) -> str:
             continue
 
         recommendation = recommendation_from_score(score)
+        confidence = confidence_from_signals(data["signals"])
         buckets[recommendation].append(((player, team), data))
 
     for recommendation in buckets:
@@ -293,9 +326,12 @@ def build_recommendations_report(limit: int = 10) -> str:
 
         if players:
             for (player, team), data in players:
+                confidence = confidence_from_signals(data["signals"])
+
                 lines.append(
                     f"- {player} ({team}) — "
-                    f"Score: {data['score']:+.1f}"
+                    f"Score: {data['score']:+.1f} "
+                    f"({confidence}%)"
                 )
         else:
             lines.append("- None")
@@ -303,3 +339,4 @@ def build_recommendations_report(limit: int = 10) -> str:
         lines.append("")
 
     return "\n".join(lines).strip()
+
