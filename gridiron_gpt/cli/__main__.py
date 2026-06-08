@@ -4,6 +4,7 @@ import click
 
 from gridiron_gpt.cli.ask import ask
 from gridiron_gpt.data_ingest.timeline import build_player_timeline
+from gridiron_gpt.data_ingest.player_trends import build_player_trend
 from gridiron_gpt.data_ingest.digest_loader import build_digest
 from gridiron_gpt.data_ingest.risers import build_risers_report
 from gridiron_gpt.data_ingest.fallers import build_fallers_report
@@ -226,6 +227,13 @@ def rankings(limit, team, position, recommendation):
             recommendation_filter=recommendation,
         )
     )
+
+@cli.command()
+@click.option("--player", required=True, help="Player name to trend.")
+def trend(player):
+    """Show daily fantasy signal trend for a player."""
+    click.echo(build_player_trend(player))
+
 
 cli.add_command(ask)
 
