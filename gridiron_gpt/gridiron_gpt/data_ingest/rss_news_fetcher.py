@@ -90,41 +90,60 @@ def fetch_rss_news(feed_url: str, source: str = "RSS Feed") -> list[dict]:
 
     return items
 
-
 def save_rss_news(items: list[dict]) -> Path:
     NEWS_PATH.mkdir(parents=True, exist_ok=True)
 
-    file_path = NEWS_PATH / f"{date.today().isoformat()}.json"
+    today_path = NEWS_PATH / f"{date.today().isoformat()}.json"
 
-    if file_path.exists():
-        with open(file_path) as f:
-            existing = json.load(f)
-    else:
-        existing = []
+    existing_by_key = {}
 
-    by_key = {}
+    for file_path in NEWS_PATH.glob("*.json"):
+        try:
+            with open(file_path) as f:
+                existing_items = json.load(f)
+        except Exception:
+            existing_items = []
 
-    for item in existing:
-        key = (
+        for item in existing_items:
+            key = (
+                item.get("headline", "").strip().lower(),
+                item.get("url", "").strip().lower(),
+            )
+            existing_by_key[key] = item
+
+    today_items = []
+
+    if today_path.exists():
+        with open(today_path) as f:
+            today_items = json.load(f)
+
+    today_keys = {
+        (
             item.get("headline", "").strip().lower(),
             item.get("url", "").strip().lower(),
         )
-        by_key[key] = item
+        for item in today_items
+    }
 
     for item in items:
         key = (
             item.get("headline", "").strip().lower(),
             item.get("url", "").strip().lower(),
         )
-        by_key[key] = item
 
-    deduped = list(by_key.values())
+        if key in existing_by_key:
+            continue
 
-    with open(file_path, "w") as f:
-        json.dump(deduped, f, indent=2)
+        if key in today_keys:
+            continue
 
-    return file_path
+        today_items.append(item)
+        today_keys.add(key)
 
+    with open(today_path, "w") as f:
+        json.dump(today_items, f, indent=2)
+
+    return today_path
 
 def fetch_and_save_from_env() -> tuple[int, Path]:
     feed_url = os.environ.get("GRIDIRON_RSS_URL")
