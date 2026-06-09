@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Dict, List
-
+from intelligence.relationships_loader import load_relationships
 
 @dataclass
 class Relationship:
@@ -30,7 +30,18 @@ ENTITY_RELATIONSHIPS: Dict[str, List[Relationship]] = {
 
 
 def get_related_entities(entity_name: str) -> List[Relationship]:
-    return ENTITY_RELATIONSHIPS.get(entity_name, [])
+    relationships = load_relationships()
+    raw_relationships = relationships.get(entity_name, [])
+
+    return [
+        Relationship(
+            target=r["target"],
+            relationship_type=r["relationship_type"],
+            multiplier=r["multiplier"],
+            note=r.get("note", "")
+        )
+        for r in raw_relationships
+    ]
 
 
 def propagate_impact(entity_name: str, signal_score: float) -> List[dict]:
