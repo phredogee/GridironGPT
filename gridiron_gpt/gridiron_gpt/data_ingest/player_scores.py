@@ -4,7 +4,7 @@ from gridiron_gpt.data_ingest.news_loader import load_news
 from gridiron_gpt.data_ingest.injury_loader import load_injuries
 from gridiron_gpt.data_ingest.roster_loader import load_roster_moves
 from gridiron_gpt.data_ingest.player_catalog import load_player_catalog
-
+from gridiron_gpt.intelligence.signal_impact_api import generate_signal_impacts
 
 IMPACT_SCORES = {
     "positive": 1.0,
@@ -309,6 +309,14 @@ def build_signal_rankings(
 
     return "\n".join(lines)
 
+def adjusted_score_for_player(player: str, score: float) -> tuple[float, list]:
+    impact_report = generate_signal_impacts(player, score)
+
+    return (
+        impact_report["total_system_impact"],
+        impact_report["propagated_impacts"],
+    )
+
 def build_recommendations_report(limit: int = 10) -> str:
     scores = calculate_player_scores()
 
@@ -326,13 +334,21 @@ def build_recommendations_report(limit: int = 10) -> str:
         if score == 0:
             continue
 
-        recommendation = recommendation_from_score(score)
-        confidence = confidence_from_signals(data["signals"])
+        adjusted_score, propagated_impacts = adjusted_score_for_player(
+            player,
+            score,
+        )
+
+        data["base_score"] = score
+        data["adjusted_score"] = adjusted_score
+        data["propagated_impacts"] = propagated_impacts
+
+        recommendation = recommendation_from_score(adjusted_score)
         buckets[recommendation].append(((player, team), data))
 
     for recommendation in buckets:
         buckets[recommendation].sort(
-            key=lambda item: item[1]["score"],
+            key=lambda item: item[1].get("adjusted_score", item[1]["score"]),
             reverse=True,
         )
 
@@ -357,15 +373,27 @@ def build_recommendations_report(limit: int = 10) -> str:
             for (player, team), data in players:
                 confidence = confidence_from_signals(data["signals"])
 
-                lines.append(
-                    f"- {player} ({team}) — "
-                    f"Score: {data['score']:+.1f} "
-                    f"({confidence}%)"
-                )
+                base_score = data.get("base_score", data["score"])
+                adjusted_score = data.get("adjusted_score", data["score"])
+                propagated_count = len(data.get("propagated_impacts", []))
+
+                if propagated_count:
+                    lines.append(
+                        f"- {player} ({team}) — "
+                        f"Score: {adjusted_score:+.1f} "
+                        f"(base {base_score:+.1f}, "
+                        f"{propagated_count} related impacts, "
+                        f"{confidence}%)"
+                    )
+                else:
+                    lines.append(
+                        f"- {player} ({team}) — "
+                        f"Score: {adjusted_score:+.1f} "
+                        f"({confidence}%)"
+                    )
         else:
             lines.append("- None")
 
         lines.append("")
 
     return "\n".join(lines).strip()
-
