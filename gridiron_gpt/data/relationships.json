@@ -1,0 +1,21 @@
+{
+  "Joe Burrow": [
+    {
+      "target": "Ja'Marr Chase",
+      "relationship_type": "qb_to_wr1",
+      "multiplier": 0.35
+    },
+    {
+      "target": "Tee Higgins",
+      "relationship_type": "qb_to_wr2",
+      "multiplier": 0.30
+    }
+  ],
+  "Jalen Hurts": [
+    {
+      "target": "A.J. Brown",
+      "relationship_type": "qb_to_wr1",
+      "multiplier": 0.35
+    }
+  ]
+}
