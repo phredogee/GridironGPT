@@ -36,7 +36,7 @@ def validate_relationships(data):
 def load_relationships():
 
     data_file = (
-        Path(__file__).resolve().parent.parent
+        Path(__file__).resolve().parents[2]
         / "data"
         / "relationships.json"
     )

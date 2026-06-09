@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Dict, List
-from intelligence.relationships_loader import load_relationships
+from gridiron_gpt.intelligence.relationships_loader import load_relationships
 
 @dataclass
 class Relationship:
