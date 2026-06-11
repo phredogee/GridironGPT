@@ -1,6 +1,6 @@
 import pandas as pd
 import streamlit as st
-
+from gridiron_gpt.intelligence.signal_impact_api import generate_signal_impacts
 from gridiron_gpt.data_ingest.player_catalog import load_player_catalog
 from gridiron_gpt.data_ingest.player_scores import (
     build_player_scorecard,
@@ -13,6 +13,22 @@ from gridiron_gpt.data_ingest.player_trends import (
     get_player_trend_points,
 )
 
+def apply_adjusted_scores(scores_dict):
+    adjusted = {}
+
+    for (player, team), data in scores_dict.items():
+        score = data["score"]
+
+        impact_report = generate_signal_impacts(player, score)
+
+        updated_data = dict(data)
+        updated_data["base_score"] = score
+        updated_data["adjusted_score"] = impact_report["total_system_impact"]
+        updated_data["propagated_impacts"] = impact_report["propagated_impacts"]
+
+        adjusted[(player, team)] = updated_data
+
+    return adjusted
 
 st.set_page_config(
     page_title="GridironGPT",
@@ -30,11 +46,13 @@ st.caption("Fantasy Football Intelligence Platform")
 catalog = load_player_catalog()
 player_names = sorted({item["player"] for item in catalog})
 
-scores = calculate_player_scores()
+scores = apply_adjusted_scores(
+    calculate_player_scores()
+)
 
 ranked_players = sorted(
     scores.items(),
-    key=lambda item: item[1]["score"],
+    key=lambda item: item[1].get("adjusted_score", item[1]["score"]),
     reverse=True,
 )
 
@@ -47,19 +65,25 @@ ranked_players = [
 buy_players = [
     ((player, team), data)
     for (player, team), data in ranked_players
-    if recommendation_from_score(data["score"]) == "BUY"
+    if recommendation_from_score(
+        data.get("adjusted_score", data["score"])
+    ) == "BUY"
 ]
 
 watch_players = [
     ((player, team), data)
     for (player, team), data in ranked_players
-    if recommendation_from_score(data["score"]) == "WATCH"
+    if recommendation_from_score(
+        data.get("adjusted_score", data["score"])
+    ) == "WATCH"
 ]
 
 risk_players = [
     ((player, team), data)
     for (player, team), data in ranked_players
-    if recommendation_from_score(data["score"]) in ["MONITOR", "SELL"]
+    if recommendation_from_score(
+        data.get("adjusted_score", data["score"])
+    ) in ["MONITOR", "SELL"]
 ]
 
 
