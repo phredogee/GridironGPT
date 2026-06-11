@@ -2,7 +2,8 @@ import json
 import os
 from datetime import date
 from pathlib import Path
-from gridiron_gpt.data_ingest.player_matcher import extract_player_and_team
+from gridiron_gpt.data_ingest.player_matcher import extract_players_from_text
+from gridiron_gpt.data_ingest.news_persistence import persist_news_items
 
 import feedparser
 
@@ -76,17 +77,37 @@ def fetch_rss_news(feed_url: str, source: str = "RSS Feed") -> list[dict]:
         title = entry.get("title", "No headline")
         summary = entry.get("summary", "")
 
-        player, team = extract_player_and_team(title)
+        text = f"{title} {summary}"
+        matches = extract_players_from_text(text)
+        fantasy_impact = _guess_impact(title, summary)
 
-        items.append({
-            "date": date.today().isoformat(),
-            "player": player,
-            "team": team,
-            "headline": title,
-            "source": source,
-            "fantasy_impact": _guess_impact(title, summary),
-            "url": entry.get("link", ""),
-        })
+        if matches:
+            for match in matches:
+                items.append({
+                    "date": date.today().isoformat(),
+                    "player": match["player"],
+                    "team": match["team"],
+                    "position": match.get("position", "Unknown"),
+                    "match_confidence": match.get("confidence", 1.0),
+                    "matched_alias": match.get("matched_alias"),
+                    "headline": title,
+                    "source": source,
+                    "fantasy_impact": fantasy_impact,
+                    "url": entry.get("link", ""),
+                })
+        else:
+            items.append({
+                "date": date.today().isoformat(),
+                "player": "Unknown",
+                "team": "UNK",
+                "position": "Unknown",
+                "match_confidence": 0.0,
+                "matched_alias": None,
+                "headline": title,
+                "source": source,
+                "fantasy_impact": fantasy_impact,
+                "url": entry.get("link", ""),
+            })
 
     return items
 
@@ -156,3 +177,22 @@ def fetch_and_save_from_env() -> tuple[int, Path]:
     path = save_rss_news(items)
 
     return len(items), path
+
+def fetch_and_persist_from_env() -> dict:
+    feed_url = os.environ.get("GRIDIRON_RSS_URL")
+
+    if not feed_url:
+        raise RuntimeError("GRIDIRON_RSS_URL is not set.")
+
+    source = os.environ.get("GRIDIRON_RSS_SOURCE", "RSS Feed")
+
+    items = fetch_rss_news(feed_url, source=source)
+
+    result = persist_news_items(
+        items,
+        source_name=source,
+    )
+
+    result["items_fetched"] = len(items)
+
+    return result
