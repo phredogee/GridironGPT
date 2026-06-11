@@ -40,3 +40,26 @@
 ### Status
 
 Phase 1 of the Impact Propagation Engine completed.
+
+---
+
+## 2026-06-11
+
+### Added
+- Added Supabase cloud storage foundation.
+- Added `ingestion_runs` table for tracking ingestion job status.
+- Added `raw_articles` table for storing ingested articles.
+- Added `signals` table for direct fantasy-relevant player signals.
+- Added `propagated_signals` table for relationship-generated downstream impacts.
+- Added Supabase storage client.
+- Added article repository with `content_hash` deduplication.
+- Added signal repository.
+- Added propagated signal repository.
+- Added signal persistence service that saves direct and propagated signals together.
+
+### Changed
+- Began moving GridironGPT from JSON-only storage toward Supabase/Postgres-backed persistence.
+- V4 architecture now treats signals as persistent, auditable data instead of temporary in-memory calculations.
+
+### Status
+- V4A Signal Persistence Layer completed.
