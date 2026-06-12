@@ -19,6 +19,10 @@ def persist_news_items(news_items: list[dict], source_name: str = "news_json") -
     articles_saved = 0
     signals_saved = 0
     skipped = 0
+    skipped_no_headline = 0
+    skipped_no_player = 0
+    skipped_unknown_impact = 0
+    skipped_zero_value = 0
 
     try:
         for item in news_items:
@@ -32,6 +36,7 @@ def persist_news_items(news_items: list[dict], source_name: str = "news_json") -
 
             if not headline:
                 skipped += 1
+                skipped_no_headline  += 1
                 continue
 
             article = save_raw_article(
@@ -46,12 +51,19 @@ def persist_news_items(news_items: list[dict], source_name: str = "news_json") -
 
             if player == "Unknown":
                 skipped += 1
+                skipped_no_player  += 1
+                continue
+
+            if impact == "unknown":
+                skipped += 1
+                skipped_unknown_impact += 1
                 continue
 
             value = IMPACT_VALUE_MAP.get(impact, 0.0)
 
             if value == 0.0:
                 skipped += 1
+                skipped_zero_value += 1 
                 continue
 
             process_signal(
@@ -84,6 +96,10 @@ def persist_news_items(news_items: list[dict], source_name: str = "news_json") -
             "articles_saved": articles_saved,
             "signals_saved": signals_saved,
             "skipped": skipped,
+            "skipped_no_headline": skipped_no_headline,
+            "skipped_no_player": skipped_no_player,
+            "skipped_unknown_impact": skipped_unknown_impact,
+            "skipped_zero_value": skipped_zero_value,
         }
 
     except Exception as exc:
