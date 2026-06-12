@@ -27,7 +27,7 @@ def save_player_score_snapshot(
 
     result = (
         client.table("player_score_snapshots")
-        .insert(payload)
+        .upsert(payload, on_conflict="player, snapshot_date")
         .execute()
     )
 
