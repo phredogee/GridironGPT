@@ -5,6 +5,10 @@ from gridiron_gpt.data_ingest.injury_loader import load_injuries
 from gridiron_gpt.data_ingest.roster_loader import load_roster_moves
 from gridiron_gpt.data_ingest.player_catalog import load_player_catalog
 from gridiron_gpt.intelligence.signal_impact_api import generate_signal_impacts
+from gridiron_gpt.intelligence.signal_decay import (
+    apply_signal_decay,
+    decay_weight,
+)
 
 IMPACT_SCORES = {
     "positive": 1.0,
@@ -99,8 +103,8 @@ def _add_signal(scores, item, source):
     impact = item.get("fantasy_impact", "unknown").lower()
     base_value = IMPACT_SCORES.get(impact, 0.0)
     signal_date = item.get("date", date.today().isoformat())
-    weight = recency_weight(signal_date)
-    value = base_value * weight
+    weight = decay_weight(signal_date)
+    value = apply_signal_decay(base_value, signal_date)
 
     key = (player, team)
     headline = item.get("headline", "No headline")
