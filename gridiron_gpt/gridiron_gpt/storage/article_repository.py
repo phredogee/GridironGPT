@@ -27,6 +27,7 @@ def save_raw_article(
     source_url: Optional[str] = None,
     summary: Optional[str] = None,
     published_at: Optional[str] = None,
+    story_hash: Optional[str] = None,
 ) -> dict:
     client = get_supabase_client()
 
@@ -42,6 +43,7 @@ def save_raw_article(
         "headline": headline,
         "summary": summary,
         "published_at": published_at,
+        "story_hash": story_hash,
         "fetched_at": datetime.now(timezone.utc).isoformat(),
         "content_hash": content_hash,
     }

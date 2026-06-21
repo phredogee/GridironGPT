@@ -45,6 +45,7 @@ def persist_news_items(news_items: list[dict], source_name: str = "news_json") -
                 source_url=url,
                 summary=None,
                 published_at=event_date,
+                story_hash=item.get("story_hash"),
             )
 
             articles_saved += 1
