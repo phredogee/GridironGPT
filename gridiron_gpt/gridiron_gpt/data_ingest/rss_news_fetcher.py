@@ -2,10 +2,13 @@ import json
 import os
 from datetime import date
 from pathlib import Path
-from gridiron_gpt.data_ingest.player_matcher import extract_players_from_text
-from gridiron_gpt.data_ingest.news_persistence import persist_news_items
 
 import feedparser
+
+from gridiron_gpt.data_ingest.article_relevance import classify_article_relevance
+from gridiron_gpt.data_ingest.news_persistence import persist_news_items
+from gridiron_gpt.data_ingest.player_matcher import extract_players_from_text
+from gridiron_gpt.intelligence.story_dedup import story_hash
 
 NEWS_PATH = Path("data/news")
 
@@ -76,6 +79,7 @@ def fetch_rss_news(feed_url: str, source: str = "RSS Feed") -> list[dict]:
     for entry in feed.entries:
         title = entry.get("title", "No headline")
         summary = entry.get("summary", "")
+        url = entry.get("link", "")
 
         text = f"{title} {summary}"
         matches = extract_players_from_text(text)
@@ -83,33 +87,62 @@ def fetch_rss_news(feed_url: str, source: str = "RSS Feed") -> list[dict]:
 
         if matches:
             for match in matches:
-                items.append({
+                items.append(
+                    {
+                        "date": date.today().isoformat(),
+                        "player": match["player"],
+                        "team": match["team"],
+                        "position": match.get("position", "Unknown"),
+                        "match_confidence": match.get("confidence", 1.0),
+                        "matched_alias": match.get("matched_alias"),
+                        "headline": title,
+                        "source": source,
+
+                        "story_hash": story_hash(
+                            headline=title,
+                            player=match["player"],
+                            event_date=date.today().isoformat(),
+                        ),
+
+                        "fantasy_impact": fantasy_impact,
+                        "article_relevance": classify_article_relevance(
+                            title,
+                            summary,
+                            match["player"],
+                        ),
+                        "url": url,
+                    }
+                )
+        else:
+            items.append(
+                {
                     "date": date.today().isoformat(),
-                    "player": match["player"],
-                    "team": match["team"],
-                    "position": match.get("position", "Unknown"),
-                    "match_confidence": match.get("confidence", 1.0),
-                    "matched_alias": match.get("matched_alias"),
+                    "player": "Unknown",
+                    "team": "UNK",
+                    "position": "Unknown",
+                    "match_confidence": 0.0,
+                    "matched_alias": None,
                     "headline": title,
                     "source": source,
+
+                    "story_hash": story_hash(
+                        headline=title,
+                        player="Unknown",
+                        event_date=date.today().isoformat(),
+                    ),
+
                     "fantasy_impact": fantasy_impact,
-                    "url": entry.get("link", ""),
-                })
-        else:
-            items.append({
-                "date": date.today().isoformat(),
-                "player": "Unknown",
-                "team": "UNK",
-                "position": "Unknown",
-                "match_confidence": 0.0,
-                "matched_alias": None,
-                "headline": title,
-                "source": source,
-                "fantasy_impact": fantasy_impact,
-                "url": entry.get("link", ""),
-            })
+                    "article_relevance": classify_article_relevance(
+                        title,
+                        summary,
+                        "Unknown",
+                    ),
+                    "url": url,
+                }
+            )
 
     return items
+
 
 def save_rss_news(items: list[dict]) -> Path:
     NEWS_PATH.mkdir(parents=True, exist_ok=True)
@@ -166,6 +199,7 @@ def save_rss_news(items: list[dict]) -> Path:
 
     return today_path
 
+
 def fetch_and_save_from_env() -> tuple[int, Path]:
     feed_url = os.environ.get("GRIDIRON_RSS_URL")
 
@@ -178,6 +212,7 @@ def fetch_and_save_from_env() -> tuple[int, Path]:
 
     return len(items), path
 
+
 def fetch_and_persist_from_env() -> dict:
     feed_url = os.environ.get("GRIDIRON_RSS_URL")
 
@@ -185,7 +220,6 @@ def fetch_and_persist_from_env() -> dict:
         raise RuntimeError("GRIDIRON_RSS_URL is not set.")
 
     source = os.environ.get("GRIDIRON_RSS_SOURCE", "RSS Feed")
-
     items = fetch_rss_news(feed_url, source=source)
 
     result = persist_news_items(
