@@ -1,6 +1,7 @@
 import pandas as pd
 import streamlit as st
 from gridiron_gpt.intelligence.signal_impact_api import generate_signal_impacts
+from gridiron_gpt.intelligence.momentum_engine import build_momentum_rankings
 from gridiron_gpt.data_ingest.player_catalog import load_player_catalog
 from gridiron_gpt.data_ingest.player_scores import (
     build_player_scorecard,
@@ -90,11 +91,12 @@ risk_players = [
 # -----------------------------
 # Tabs
 # -----------------------------
-tab1, tab2, tab3 = st.tabs(
+tab1, tab2, tab3, tab4 = st.tabs(
     [
         "📊 Dashboard",
         "🏈 Player",
         "🔥 Trends",
+        "🚀 Momentum",
     ]
 )
 
@@ -249,3 +251,54 @@ with tab3:
                 )
         else:
             st.info("No cooling players found.")
+
+# -----------------------------
+# Momentum Tab
+# -----------------------------
+with tab4:
+    st.subheader("🚀 Momentum Report")
+
+    rankings = build_momentum_rankings(limit=10)
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("### 🔥 Top Risers")
+
+        if rankings["risers"]:
+            for item in rankings["risers"]:
+                st.metric(
+                    label=f"{item['player']} ({item.get('team') or 'UNK'})",
+                    value=f"{item['current_score']:+.2f}",
+                    delta=f"{item['change']:+.2f}",
+                )
+                st.caption(f"Velocity: {item['velocity']:+.2f}")
+        else:
+            st.info("No risers yet. More score snapshots are needed.")
+
+    with col2:
+        st.markdown("### 🧊 Top Fallers")
+
+        if rankings["fallers"]:
+            for item in rankings["fallers"]:
+                st.metric(
+                    label=f"{item['player']} ({item.get('team') or 'UNK'})",
+                    value=f"{item['current_score']:+.2f}",
+                    delta=f"{item['change']:+.2f}",
+                )
+                st.caption(f"Velocity: {item['velocity']:+.2f}")
+        else:
+            st.info("No fallers yet. More score snapshots are needed.")
+
+    st.divider()
+
+    st.markdown("### 🆕 First Snapshots")
+
+    if rankings["first_snapshots"]:
+        for item in rankings["first_snapshots"]:
+            st.write(
+                f"- **{item['player']} ({item.get('team') or 'UNK'})** — "
+                f"Current Score: `{float(item.get('current_score') or 0):+.2f}`"
+            )
+    else:
+        st.info("No first snapshots found.")
