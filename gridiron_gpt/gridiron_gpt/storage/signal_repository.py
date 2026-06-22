@@ -16,6 +16,7 @@ def save_signal(
     confidence: float = 1.0,
     article_id: Optional[int] = None,
     event_date: Optional[str] = None,
+    signal_event_hash: Optional[str] = None,
 ) -> dict:
     client = get_supabase_client()
 
@@ -31,9 +32,14 @@ def save_signal(
         "confidence": confidence,
         "article_id": article_id,
         "event_date": event_date or datetime.now(timezone.utc).isoformat(),
+        "signal_event_hash": signal_event_hash,
     }
 
-    result = client.table("signals").insert(payload).execute()
+    result = (
+        client.table("signals")
+        .upsert(payload, on_conflict="signal_event_hash")
+        .execute()
+    )
 
     return result.data[0]
 

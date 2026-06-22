@@ -1,5 +1,8 @@
 from gridiron_gpt.storage.article_repository import save_raw_article
 from gridiron_gpt.intelligence.signal_persistence import process_signal
+from gridiron_gpt.intelligence.signal_event_hash import (
+    build_signal_event_hash_from_article,
+)
 from gridiron_gpt.storage.ingestion_repository import (
     start_ingestion_run,
     finish_ingestion_run,
@@ -66,6 +69,7 @@ def persist_news_items(news_items: list[dict], source_name: str = "news_json") -
                 skipped += 1
                 skipped_zero_value += 1 
                 continue
+            signal_event_hash = build_signal_event_hash_from_article(item)
 
             process_signal(
                 player=player,
@@ -77,6 +81,7 @@ def persist_news_items(news_items: list[dict], source_name: str = "news_json") -
                 value=value,
                 confidence=1.0,
                 article_id=article["id"],
+                signal_event_hash=signal_event_hash,
                 event_date=event_date,
             )
 
