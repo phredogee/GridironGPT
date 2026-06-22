@@ -41,25 +41,95 @@
 
 Phase 1 of the Impact Propagation Engine completed.
 
+### V4 Foundation Milestone Reached
+
+- Supabase migration started
+- Event persistence implemented
+- Historical score tracking implemented
+- RSS ingestion operational
+- Article classification operational
+
 ---
 
 ## 2026-06-11
 
 ### Added
-- Added Supabase cloud storage foundation.
-- Added `ingestion_runs` table for tracking ingestion job status.
-- Added `raw_articles` table for storing ingested articles.
-- Added `signals` table for direct fantasy-relevant player signals.
-- Added `propagated_signals` table for relationship-generated downstream impacts.
-- Added Supabase storage client.
-- Added article repository with `content_hash` deduplication.
-- Added signal repository.
-- Added propagated signal repository.
-- Added signal persistence service that saves direct and propagated signals together.
+
+Supabase integration
+raw_articles repository
+signals repository
+propagated_signals repository
+ingestion_runs repository
+signal persistence service
+news persistence service
+ingestion tracking
+
+Improved:
+
+Player matcher accuracy
+Alias handling
+Catalog caching
+RSS ingestion pipeline
+
+RSS Improvements:
+
+Multi-player matching
+Summary-aware extraction
+Confidence tracking
+Expanded signal generation
+
+Infrastructure:
+
+Cloud-backed persistence
+Event-driven architecture
+Historical audit capability
+
+Current Pipeline:
+
+RSS Feed
+↓
+raw_articles
+↓
+signals
+↓
+propagated_signals
+↓
+recommendations
+
+Status:
+V4 Foundation Complete
+
+---
+
+## 2026-06-12
+
+### Added
+
+Article relevance classification
+Player score snapshots
+Snapshot service
+Daily snapshot deduplication
+
+---
+
+## 2026-06-21
+
+### Added
+- Added `story_dedup.py` for duplicate story detection.
+- Added headline normalization for comparing similar news stories.
+- Added stable `story_hash` generation for RSS article records.
+- Added `story_hash` persistence to `raw_articles`.
+- Added `signal_event_hash.py` for signal-level event identity.
+- Added `signal_event_hash` wiring through the signal persistence flow.
+- Added signal-level deduplication using the existing `unique_signal_event_hash` index.
 
 ### Changed
-- Began moving GridironGPT from JSON-only storage toward Supabase/Postgres-backed persistence.
-- V4 architecture now treats signals as persistent, auditable data instead of temporary in-memory calculations.
+- RSS article records now include `story_hash`.
+- Raw articles continue to upsert by `content_hash`, while also storing `story_hash` for future event-level analysis.
+- Signals now upsert by `signal_event_hash` to prevent duplicate player-impact events from inflating scores.
 
-### Status
-- V4A Signal Persistence Layer completed.
+### Fixed / Improved
+- Prevented repeated ingestion runs from creating duplicate fantasy signals for the same story, player, impact, and date.
+- Improved data-quality foundation for future multi-source ingestion.
+
+---
