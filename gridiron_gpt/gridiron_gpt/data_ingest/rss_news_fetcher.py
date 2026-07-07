@@ -212,21 +212,56 @@ def fetch_and_save_from_env() -> tuple[int, Path]:
 
     return len(items), path
 
+def get_rss_feeds_from_env() -> list[tuple[str, str]]:
+    feeds_raw = os.environ.get("GRIDIRON_RSS_FEEDS")
 
-def fetch_and_persist_from_env() -> dict:
+    if feeds_raw:
+        feeds = []
+
+        for feed_config in feeds_raw.split(","):
+            source, url = feed_config.split("|", 1)
+            feeds.append((source.strip(), url.strip()))
+
+        return feeds
+
     feed_url = os.environ.get("GRIDIRON_RSS_URL")
 
     if not feed_url:
-        raise RuntimeError("GRIDIRON_RSS_URL is not set.")
+        raise RuntimeError("GRIDIRON_RSS_URL or GRIDIRON_RSS_FEEDS is not set.")
 
     source = os.environ.get("GRIDIRON_RSS_SOURCE", "RSS Feed")
-    items = fetch_rss_news(feed_url, source=source)
+    return [(source, feed_url)]
 
-    result = persist_news_items(
-        items,
-        source_name=source,
-    )
+def fetch_and_persist_from_env() -> dict:
+    feeds = get_rss_feeds_from_env()
 
-    result["items_fetched"] = len(items)
+    combined_result = {
+        "sources": [],
+        "articles_found": 0,
+        "articles_saved": 0,
+        "signals_saved": 0,
+        "skipped": 0,
+        "items_fetched": 0,
+    }
 
-    return result
+    for source, feed_url in feeds:
+        items = fetch_rss_news(feed_url, source=source)
+
+        result = persist_news_items(
+            items,
+            source_name=source,
+        )
+
+        combined_result["sources"].append({
+            "source": source,
+            "items_fetched": len(items),
+            **result,
+        })
+
+        combined_result["articles_found"] += result.get("articles_found", 0)
+        combined_result["articles_saved"] += result.get("articles_saved", 0)
+        combined_result["signals_saved"] += result.get("signals_saved", 0)
+        combined_result["skipped"] += result.get("skipped", 0)
+        combined_result["items_fetched"] += len(items)
+
+    return combined_result
