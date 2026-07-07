@@ -1,3 +1,78 @@
+IGNORE_TERMS = [
+    "super bowl rings",
+    "kelce-swift",
+    "world cup",
+    "fans",
+    "celebrity",
+    "celebrities bring style",
+    "ceremony",
+    "marry",
+    "murder",
+    "guilty",
+    "ice bucket challenge",
+    "mother dead",
+    "city",
+    "history",
+    "parole",
+]
+
+DRAFT_TERMS = [
+    "draft rankings",
+    "nfl draft",
+    "mock draft",
+    "rookie progress",
+]
+
+ROSTER_TERMS = [
+    "clears waivers",
+    "free agent",
+    "to sign with",
+    "sign with",
+    "signs with",
+    "released",
+    "waived",
+    "claimed",
+]
+
+FANTASY_TERMS = [
+    "best ball",
+    "fantasy football",
+    "value picks",
+    "draft guide",
+    "sleepers",
+    "waiver wire",
+]
+
+TEAM_CONTEXT_TERMS = [
+    "qb battles",
+    "best nfl offenses",
+    "team",
+    "personnel",
+    "depth chart",
+    "trades",
+    "playoff run",
+    "sean payton",
+    "fake punt",
+    "rosters",
+    "trade fireworks",
+    "cap casualties",
+]
+
+LEAGUE_CONTEXT_TERMS = [
+    "nfl season",
+    "fpi projections",
+    "100 things to know",
+    "league",
+    "best cornerbacks",
+    "best running backs",
+    "execs",
+    "coaches and scouts",
+    "discipline",
+]
+
+def _contains_any(text: str, terms: list[str]) -> bool:
+    return any(term in text for term in terms)
+
 def classify_article_relevance(
     headline: str,
     summary: str = "",
@@ -8,93 +83,22 @@ def classify_article_relevance(
     if player != "Unknown":
         return "player_signal"
 
-    ignore_terms = [
-        "super bowl rings",
-        "kelce-swift",
-        "world cup",
-        "fans",
-        "celebrity",
-        "ceremony",
-        "marry",
-        "murder",
-        "guilty",
-        "ice bucket challenge",
-        "mother dead",
-        "city",
-        "celebrities bring style",
-        "history",
-        "parole",
-    ]
-
-    draft_terms = [
-        "draft rankings",
-        "nfl draft",
-        "mock draft",
-        "rookie progress",
-    ]
-
-    roster_terms = [
-        "clears waivers",
-        "free agent",
-        "to sign with",
-        "sign with",
-        "signs with",
-        "released",
-        "waived",
-        "claimed",
-    ]
-
-    fantasy_terms = [
-        "best ball",
-        "fantasy football",
-        "value picks",
-        "draft guide",
-        "sleepers",
-        "waiver wire",
-    ]
-    if any(term in text for term in roster_terms):
-        return "roster_context"
-
-    if any(term in text for term in fantasy_terms):
-        return "fantasy_context"
-
-    team_context_terms = [
-        "qb battles",
-        "best nfl offenses",
-        "team",
-        "personnel",
-        "depth chart",
-        "trades",
-        "playoff run",
-        "sean payton",
-        "fake punt",
-        "rosters",
-        "trade fireworks",
-        "cap casualties",
-    ]
-
-    league_context_terms = [
-        "nfl season",
-        "fpi projections",
-        "100 things to know",
-        "league",
-        "best cornerbacks",
-        "best running backs",
-        "execs",
-        "coaches and scouts",
-        "discipline",
-    ]
-
-    if any(term in text for term in ignore_terms):
+    if _contains_any(text, IGNORE_TERMS):
         return "ignore"
 
-    if any(term in text for term in draft_terms):
+    if _contains_any(text, ROSTER_TERMS):
+        return "roster_context"
+
+    if _contains_any(text, FANTASY_TERMS):
+        return "fantasy_context"
+
+    if _contains_any(text, DRAFT_TERMS):
         return "draft_context"
 
-    if any(term in text for term in team_context_terms):
+    if _contains_any(text, TEAM_CONTEXT_TERMS):
         return "team_context"
 
-    if any(term in text for term in league_context_terms):
+    if _contains_any(text, LEAGUE_CONTEXT_TERMS):
         return "league_context"
 
     return "unknown_context"
