@@ -2,6 +2,7 @@ import pandas as pd
 import streamlit as st
 from gridiron_gpt.intelligence.signal_impact_api import generate_signal_impacts
 from gridiron_gpt.intelligence.momentum_engine import build_momentum_rankings
+from gridiron_gpt.intelligence.player_intelligence import build_player_intelligence
 from gridiron_gpt.data_ingest.player_catalog import load_player_catalog
 from gridiron_gpt.data_ingest.player_scores import (
     build_player_scorecard,
@@ -162,6 +163,9 @@ with tab1:
 # -----------------------------
 # Player Tab
 # -----------------------------
+# -----------------------------
+# Player Tab
+# -----------------------------
 with tab2:
     st.subheader("🏈 Player Intelligence")
 
@@ -173,26 +177,81 @@ with tab2:
         index=player_names.index(default_player),
     )
 
-    trend_points = get_player_trend_points(selected_player)
+    intel = build_player_intelligence(selected_player)
 
-    st.markdown(f"### {selected_player} Trend")
-
-    if trend_points:
-        df = pd.DataFrame(trend_points)
-        df["date"] = pd.to_datetime(df["date"])
-
-        st.line_chart(
-            df,
-            x="date",
-            y="cumulative_score",
-        )
-
-        st.markdown("### Scorecard")
-        st.text(build_player_scorecard(selected_player))
+    if intel["status"] == "not_found":
+        st.warning(f"No intelligence found for {selected_player}.")
     else:
-        st.info(f"No trend data found for {selected_player}.")
+        col1, col2, col3 = st.columns(3)
 
+        with col1:
+            st.metric(
+                "Recommendation",
+                intel["recommendation"],
+            )
 
+        with col2:
+            st.metric(
+                "Score",
+                f"{intel['score']:+.2f}",
+            )
+
+        with col3:
+            st.metric(
+                "Confidence",
+                f"{intel['confidence']}%",
+            )
+
+        st.divider()
+
+        st.markdown("### 🚀 Momentum")
+
+        momentum = intel["momentum"]
+
+        if momentum.get("status") == "first_snapshot":
+            st.info("First snapshot recorded. More history is needed for momentum.")
+        elif momentum.get("status") == "ok":
+            st.metric(
+                "Momentum Score",
+                f"{momentum.get('momentum_score', 0):+.2f}",
+                delta=momentum.get("direction", "stable"),
+            )
+            st.write(f"Direction: **{momentum.get('direction', 'stable').upper()}**")
+        else:
+            st.info("No momentum history available yet.")
+
+        st.divider()
+
+        st.markdown("### 📈 Trend")
+
+        trend = intel["trend"]
+
+        if trend.get("status") == "first_snapshot":
+            st.info("First trend snapshot recorded. More history is needed.")
+        elif trend.get("status") == "ok":
+            st.write(f"Current Score: `{trend.get('current_score')}`")
+            st.write(f"Previous Score: `{trend.get('previous_score')}`")
+            st.write(f"Change: `{trend.get('change'):+.2f}`")
+            st.write(f"Direction: **{trend.get('direction', 'stable').upper()}**")
+        else:
+            st.info("No trend history available yet.")
+
+        st.divider()
+
+        st.markdown("### 📰 Recent Signals")
+
+        recent_signals = intel.get("recent_signals", [])
+
+        if recent_signals:
+            for signal in recent_signals:
+                st.write(
+                    f"- **[{signal.get('source')}]** "
+                    f"`{signal.get('impact')}` "
+                    f"`{signal.get('value'):+.2f}` — "
+                    f"{signal.get('headline')}"
+                )
+        else:
+            st.info("No recent signals found.")
 # -----------------------------
 # Trends Tab
 # -----------------------------
