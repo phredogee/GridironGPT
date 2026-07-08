@@ -41,3 +41,26 @@ logs/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local project folders not part of GridironGPT
+IncidentIQ-AI/
+newsbot_v2/
+
+# Local/generated data outside GridironGPT
+data/clean/
+data/index/
+
+# Python environments
+venv/
+.venv/
+gridiron_gpt/venv/
+
+# Media / junk
+*.mp3
+?
+
+# Secrets
+.env
+id_ed25519*
+gridiron_gpt/id_ed25519*
+gridiron_gpt/config/api_keys.yaml
