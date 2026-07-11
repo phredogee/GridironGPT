@@ -16,6 +16,10 @@ from gridiron_cortex.storage.json_player_scorecard_repository import (
 from gridiron_cortex.storage.json_relationship_repository import (
     JsonRelationshipRepository,
 )
+from gridiron_cortex.knowledge.knowledge_graph_manager import (
+    KnowledgeGraphManager,
+)
+
 
 
 class CortexFacade:
@@ -52,6 +56,10 @@ class CortexFacade:
             relationship_repository=relationship_repository,
         )
 
+        self.knowledge_graph = KnowledgeGraphManager(
+            knowledge_service=self.knowledge
+        )
+
         self.engine = CortexEngine(
             entity_resolver=EntityResolver(),
             signal_processor=SignalProcessor(),
@@ -84,3 +92,37 @@ class CortexFacade:
                 entity_id
             ),
         }
+
+    def get_entity_graph(
+        self,
+        entity_id: str,
+        max_depth: int = 2,
+        direction: str = "outgoing",
+    ):
+        return self.knowledge_graph.build_graph(
+            root_entity_id=entity_id,
+            max_depth=max_depth,
+            direction=direction,
+        )
+
+    def get_affected_entities(
+        self,
+        entity_id: str,
+        max_depth: int = 2,
+    ):
+        return self.knowledge_graph.get_affected_entities(
+            source_entity_id=entity_id,
+            max_depth=max_depth,
+        )
+
+    def find_relationship_paths(
+        self,
+        source_entity_id: str,
+        target_entity_id: str,
+        max_depth: int = 3,
+    ):
+        return self.knowledge_graph.find_paths(
+            source_entity_id=source_entity_id,
+            target_entity_id=target_entity_id,
+            max_depth=max_depth,
+        )

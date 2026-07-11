@@ -66,10 +66,6 @@ ranked_players = [
     if data["score"] != 0
 ]
 
-scorecard_repository = JsonPlayerScorecardRepository(
-    "data/cortex/player_scorecards.jsonl"
-)
-
 cortex = CortexFacade()
 
 buy_players = [

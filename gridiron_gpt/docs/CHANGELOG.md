@@ -1,7 +1,113 @@
 # Changelog
 
 ---
+## 2026-07-11
 
+### Added
+
+* Added `PropagationCandidate` model in:
+
+  ```text
+  gridiron_cortex/models/propagation.py
+  ```
+
+* Added `PropagationPlanner` in:
+
+  ```text
+  gridiron_cortex/propagation/propagation_planner.py
+  ```
+
+* Added graph-based multi-hop signal propagation using `KnowledgeGraphManager`.
+
+* Added configurable hop decay:
+
+  ```text
+  hop 0 = 1.00
+  hop 1 = 0.85
+  hop 2 = 0.65
+  hop 3 = 0.40
+  hop 4+ = 0.20
+  ```
+
+* Added cumulative relationship strength and confidence calculations across multi-hop paths.
+
+* Added cycle-safe graph traversal.
+
+* Added strongest-path selection when an entity is reachable through multiple propagation routes.
+
+* Added relationship-chain reasoning to each propagation candidate.
+
+### Changed
+
+* Updated `RelationshipEngine` to support `PropagationPlanner`.
+
+* Updated propagated impact calculation to use:
+
+  ```text
+  signal impact
+  × propagation weight
+  ```
+
+* Preserved `RelationshipRepository` propagation as a fallback for backward compatibility.
+
+* Added team information to `PropagationCandidate` so propagated candidates can be converted into complete `Impact` objects.
+
+### Fixed
+
+* Fixed incomplete `PropagationPlanner.plan()` implementation that caused:
+
+  ```text
+  IndentationError: expected an indented block
+  ```
+
+* Corrected propagation import paths:
+
+  ```text
+  gridiron_cortex.models.propagation
+  gridiron_cortex.propagation.propagation_planner
+  ```
+
+* Corrected the expected model name from `PropagationRule` to `PropagationCandidate`.
+
+### Verified
+
+* Verified `PropagationCandidate` imports successfully.
+
+* Verified `PropagationPlanner` imports successfully.
+
+* Verified hop-decay calculations.
+
+* Verified propagation-weight calculations.
+
+* Verified one-hop propagation.
+
+* Verified two-hop propagation.
+
+* Verified cycle protection.
+
+* Verified strongest-path candidate selection logic.
+
+* Verified the propagation planner with an isolated fake knowledge graph.
+
+* Confirmed the test result:
+
+  ```text
+  Real propagation planner test passed.
+  ```
+
+### Current Limitations
+
+* Propagation behavior does not yet vary by signal category.
+
+* Relationship types currently use generic strength and confidence values.
+
+* Positive and negative signals currently use the same relationship multipliers.
+
+* Propagation chains are not yet displayed in Cortex Inspector.
+
+* Full engine-level integration with persistent knowledge data still requires testing.
+
+---
 ## Version 0.2.0
 ### 2026-07-10
 

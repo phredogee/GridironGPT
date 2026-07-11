@@ -81,6 +81,210 @@ The long-term goal is to create a platform where Gridiron Cortex serves as the c
 
 ---
 
+# Phase 4 – Intelligent Graph Propagation
+
+## Status
+
+**In Progress**
+
+The graph-based propagation framework has been completed and validated. Signals can now traverse the knowledge graph using configurable multi-hop propagation, cumulative relationship weighting, and cycle-safe traversal.
+
+---
+
+## Completed
+
+### Knowledge Graph
+
+* Persistent entity relationship storage
+* Graph traversal
+* Neighbor discovery
+* Relationship path discovery
+* Cycle-safe graph construction
+
+### Propagation Engine
+
+* PropagationCandidate model
+* Graph-based PropagationPlanner
+* Hop-decay weighting
+* Multi-hop traversal
+* Strongest-path selection
+* Relationship reasoning chain generation
+* RelationshipEngine integration
+
+---
+
+# Next Milestone
+
+## Semantic Relationship Propagation
+
+Current propagation treats every relationship using the same mathematical model.
+
+The next phase introduces relationship-specific propagation behavior.
+
+Examples:
+
+```text
+Quarterback
+    ↓
+Wide Receiver
+
+Positive Practice
+        ↓
++100%
+
+Minor Injury
+        ↓
+-80%
+```
+
+```text
+Running Back
+    ↓
+Offensive Line
+
+Offensive Line Injury
+        ↓
+-90%
+
+Positive Camp Reports
+        ↓
++40%
+```
+
+Each relationship type will define independent propagation rules.
+
+---
+
+## Planned Relationship Types
+
+* quarterback_receiver
+* quarterback_running_back
+* running_back_offensive_line
+* receiver_offensive_line
+* offensive_line_team
+* defense_secondary
+* defense_pass_rush
+* coach_team
+* coordinator_offense
+* coordinator_defense
+* rookie_team
+* teammate
+* target_competition
+* depth_chart
+* injury_replacement
+
+---
+
+## Signal Categories
+
+Signals will propagate differently based on their category.
+
+Examples:
+
+* Injury
+* Recovery
+* Contract
+* Trade
+* Suspension
+* Camp Performance
+* Coaching Change
+* Scheme Change
+* Depth Chart Movement
+* Rookie Development
+* Fantasy Hype
+* Team Performance
+
+---
+
+## Future Propagation Rules
+
+Propagation rules will become directional.
+
+Example:
+
+```text
+QB
+ ↓
+WR
+
+Positive Signal
+100%
+
+Negative Signal
+85%
+```
+
+while
+
+```text
+WR
+ ↓
+QB
+
+Positive Signal
+40%
+
+Negative Signal
+20%
+```
+
+The same relationship may therefore produce different outcomes depending on:
+
+* signal category
+* sentiment
+* propagation direction
+
+---
+
+## Long-Term Vision
+
+Replace generic weighted graph traversal with a domain-aware reasoning engine capable of understanding:
+
+* football relationships
+* organizational relationships
+* positional dependencies
+* offensive and defensive systems
+* coaching hierarchy
+* roster construction
+* draft capital
+* opportunity shifts
+* fantasy football impact
+
+The objective is for Gridiron Cortex to reason about football events instead of simply propagating numeric scores.
+
+---
+
+## Future Cortex Features
+
+* Relationship confidence learning
+* Automatic relationship discovery
+* Graph visualization
+* Explainable propagation paths
+* Time-decay of relationships
+* Historical relationship effectiveness
+* Confidence calibration
+* Signal conflict resolution
+* Multiple simultaneous signal propagation
+* Team-level reasoning
+* League-wide cascading impacts
+
+---
+
+## Success Criteria
+
+A completed propagation engine should be able to explain answers such as:
+
+> "Tank Dell is a BUY because his recovery improves the Texans passing offense, increases projected target share, and raises confidence in Houston's offensive efficiency."
+
+rather than simply reporting:
+
+```text
+Tank Dell +2.3
+```
+
+This marks the transition from a weighted scoring engine to an explainable football intelligence engine.
+
+---
 # Phase 3 — Gridiron Codex
 
 Create the long-term football knowledge repository.
