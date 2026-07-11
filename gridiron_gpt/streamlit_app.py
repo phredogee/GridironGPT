@@ -1,5 +1,8 @@
 import pandas as pd
 import streamlit as st
+from gridiron_cortex.facade import CortexFacade
+from apps.streamlit.components.branding import render_branding
+from apps.streamlit.pages.cortex_inspector import render_cortex_inspector
 from gridiron_gpt.intelligence.signal_impact_api import generate_signal_impacts
 from gridiron_gpt.intelligence.momentum_engine import build_momentum_rankings
 from gridiron_gpt.intelligence.player_intelligence import build_player_intelligence
@@ -38,8 +41,7 @@ st.set_page_config(
     layout="wide",
 )
 
-st.title("🏈 GridironGPT")
-st.caption("Fantasy Football Intelligence Platform")
+render_branding()
 
 
 # -----------------------------
@@ -63,6 +65,12 @@ ranked_players = [
     for (player, team), data in ranked_players
     if data["score"] != 0
 ]
+
+scorecard_repository = JsonPlayerScorecardRepository(
+    "data/cortex/player_scorecards.jsonl"
+)
+
+cortex = CortexFacade()
 
 buy_players = [
     ((player, team), data)
@@ -92,8 +100,9 @@ risk_players = [
 # -----------------------------
 # Tabs
 # -----------------------------
-tab1, tab2, tab3, tab4 = st.tabs(
+cortex_tab, dashboard_tab, player_tab, trends_tab, momentum_tab = st.tabs(
     [
+        "🧠 Cortex Inspector",
         "📊 Dashboard",
         "🏈 Player",
         "🔥 Trends",
@@ -105,7 +114,7 @@ tab1, tab2, tab3, tab4 = st.tabs(
 # -----------------------------
 # Dashboard Tab
 # -----------------------------
-with tab1:
+with dashboard_tab:
     st.subheader("📊 Fantasy Signal Dashboard")
 
     col1, col2, col3 = st.columns(3)
@@ -163,10 +172,7 @@ with tab1:
 # -----------------------------
 # Player Tab
 # -----------------------------
-# -----------------------------
-# Player Tab
-# -----------------------------
-with tab2:
+with player_tab:
     st.subheader("🏈 Player Intelligence")
 
     default_player = "Tank Dell" if "Tank Dell" in player_names else player_names[0]
@@ -255,7 +261,7 @@ with tab2:
 # -----------------------------
 # Trends Tab
 # -----------------------------
-with tab3:
+with trends_tab:
     st.subheader("🔥 Momentum Tracker")
 
     hot_players = []
@@ -314,7 +320,7 @@ with tab3:
 # -----------------------------
 # Momentum Tab
 # -----------------------------
-with tab4:
+with momentum_tab:
     st.subheader("🚀 Momentum Report")
 
     rankings = build_momentum_rankings(limit=10)
@@ -361,3 +367,9 @@ with tab4:
             )
     else:
         st.info("No first snapshots found.")
+
+# -----------------------------
+# Cortex Inspector Tab
+# -----------------------------
+with cortex_tab:
+    render_cortex_inspector(cortex)

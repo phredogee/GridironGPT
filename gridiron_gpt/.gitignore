@@ -28,3 +28,7 @@ env_usage_log.txt
 # local env folders
 phredenv/
 
+# Cortex runtime data
+data/cortex/*.jsonl
+!data/cortex/.gitkeep
+client-python/
