@@ -7,7 +7,7 @@ from gridiron_gpt.data_ingest.player_catalog import load_player_catalog
 
 logger = logging.getLogger(__name__)
 
-MANUAL_ALIASES = {
+MANUAL_ALIASES: dict[str, list[str]] = {
     "Christian Watson": ["WR Watson", "C. Watson"],
     "Jonathon Cooper": ["LB Cooper", "J. Cooper"],
 }
@@ -27,107 +27,317 @@ def get_cached_catalog() -> list[dict]:
     return load_player_catalog()
 
 
-def calculate_confidence(alias: str) -> float:
-    """Calculate confidence based on alias specificity."""
-    alias = alias.strip()
+def clear_catalog_cache() -> None:
+    """Clear the cached catalog, primarily for tests or catalog refreshes."""
+    get_cached_catalog.cache_clear()
 
-    if not alias:
+
+def normalize_text(value: str) -> str:
+    """
+    Normalize text for player-name comparison.
+
+    Examples:
+        "D.K. Metcalf" -> "dk metcalf"
+        "Ja'Marr Chase" -> "jamarr chase"
+        "  Tank   Dell " -> "tank dell"
+    """
+    normalized = value.casefold()
+    normalized = re.sub(r"[.'’`-]", "", normalized)
+    normalized = re.sub(r"[^a-z0-9\s]", " ", normalized)
+    normalized = re.sub(r"\s+", " ", normalized)
+    return normalized.strip()
+
+
+def calculate_confidence(alias: str) -> float:
+    """Calculate a base confidence score from alias specificity."""
+    normalized_alias = normalize_text(alias)
+    parts = normalized_alias.split()
+
+    if not normalized_alias:
         return 0.0
 
-    score = min(1.0, len(alias) / 15)
+    if len(parts) >= 2:
+        first_part = parts[0]
 
-    if " " in alias:
-        score += 0.2
+        # Initial plus last name, such as "C Watson".
+        if len(first_part) == 1:
+            return 0.90
 
-    if len(alias) <= 3:
-        score -= 0.3
+        # Position plus last name, such as "WR Watson".
+        if first_part.upper() in {
+            "QB",
+            "RB",
+            "WR",
+            "TE",
+            "K",
+            "DST",
+            "DL",
+            "DE",
+            "DT",
+            "LB",
+            "CB",
+            "S",
+        }:
+            return 0.88
 
-    return max(0.0, min(1.0, score))
+        # Full player name.
+        return 1.0
+
+    # Last-name-only aliases are inherently more ambiguous.
+    return 0.72
 
 
-def extract_players_from_text(text: Optional[str]) -> list[PlayerMatch]:
+def build_default_aliases(player: dict) -> set[str]:
+    """Build common aliases for a catalog player."""
+    player_name = get_player_name(player)
+
+    if not player_name:
+        return set()
+
+    name_parts = player_name.split()
+    aliases = {player_name}
+
+    if len(name_parts) >= 2:
+        first_name = name_parts[0]
+        last_name = name_parts[-1]
+        position = get_player_position(player)
+
+        aliases.add(last_name)
+        aliases.add(f"{first_name[0]}. {last_name}")
+        aliases.add(f"{first_name[0]} {last_name}")
+
+        if position:
+            aliases.add(f"{position} {last_name}")
+
+    aliases.update(MANUAL_ALIASES.get(player_name, []))
+
+    return {alias.strip() for alias in aliases if alias.strip()}
+
+
+def get_player_name(player: dict) -> str:
+    """Return the player's display name across supported catalog schemas."""
+    return str(
+        player.get("player")
+        or player.get("name")
+        or player.get("full_name")
+        or player.get("player_name")
+        or ""
+    ).strip()
+
+
+def get_player_team(player: dict) -> str:
+    """Return the player's team abbreviation."""
+    return str(
+        player.get("team")
+        or player.get("team_abbr")
+        or player.get("team_abbreviation")
+        or ""
+    ).strip().upper()
+
+
+def get_player_position(player: dict) -> str:
+    """Return the player's position abbreviation."""
+    return str(
+        player.get("position")
+        or player.get("pos")
+        or ""
+    ).strip().upper()
+
+
+def text_contains_alias(text: str, alias: str) -> bool:
+    """Return True when a normalized alias appears as a complete phrase."""
+    normalized_text = normalize_text(text)
+    normalized_alias = normalize_text(alias)
+
+    if not normalized_text or not normalized_alias:
+        return False
+
+    pattern = rf"(?<![a-z0-9]){re.escape(normalized_alias)}(?![a-z0-9])"
+    return re.search(pattern, normalized_text) is not None
+
+
+def score_match(
+    *,
+    alias: str,
+    player_name: str,
+    team: str,
+    position: str,
+    team_hint: Optional[str],
+    position_hint: Optional[str],
+) -> float:
+    """Score a candidate match using alias specificity and optional hints."""
+    confidence = calculate_confidence(alias)
+
+    if normalize_text(alias) == normalize_text(player_name):
+        confidence = 1.0
+
+    if team_hint:
+        normalized_team_hint = team_hint.strip().upper()
+
+        if team == normalized_team_hint:
+            confidence += 0.05
+        elif team:
+            confidence -= 0.12
+
+    if position_hint:
+        normalized_position_hint = position_hint.strip().upper()
+
+        if position == normalized_position_hint:
+            confidence += 0.04
+        elif position:
+            confidence -= 0.08
+
+    return round(max(0.0, min(confidence, 1.0)), 3)
+
+
+def find_player_matches(
+    text: str,
+    *,
+    team_hint: Optional[str] = None,
+    position_hint: Optional[str] = None,
+    minimum_confidence: float = 0.70,
+) -> list[PlayerMatch]:
     """
-    Extract all player mentions from text.
+    Find all player references contained in a piece of text.
 
-    Returns matches with player, team, position, confidence, and matched alias.
+    Args:
+        text:
+            Headline, article text, injury report, or other source text.
+        team_hint:
+            Optional team abbreviation used to improve disambiguation.
+        position_hint:
+            Optional position abbreviation used to improve disambiguation.
+        minimum_confidence:
+            Lowest confidence score included in the result.
+
+    Returns:
+        Matches ordered from highest to lowest confidence.
     """
-    if not text or not isinstance(text, str):
-        logger.warning("Invalid input to extract_players_from_text: %r", text)
+    if not text or not text.strip():
         return []
 
-    lowered = text.lower()
     catalog = get_cached_catalog()
-    matches: list[PlayerMatch] = []
-    seen_players = set()
+    best_matches: dict[str, PlayerMatch] = {}
 
-    for item in catalog:
-        player = item.get("player")
+    for player in catalog:
+        player_name = get_player_name(player)
 
-        if not player or player in seen_players:
+        if not player_name:
             continue
 
-        team = item.get("team", "UNK")
-        position = item.get("position", "Unknown")
+        team = get_player_team(player)
+        position = get_player_position(player)
 
-        aliases = [player]
-        aliases.extend(item.get("aliases", []))
-        aliases.extend(MANUAL_ALIASES.get(player, []))
-
-        unique_aliases = []
-        seen_aliases = set()
-
-        for alias in aliases:
-            if not alias or not isinstance(alias, str):
+        for alias in build_default_aliases(player):
+            if not text_contains_alias(text, alias):
                 continue
 
-            alias_lower = alias.lower().strip()
-
-            if alias_lower not in seen_aliases:
-                seen_aliases.add(alias_lower)
-                unique_aliases.append(alias_lower)
-
-        best_match = None
-        best_confidence = 0.0
-
-        for alias in unique_aliases:
-            pattern = r"\b" + re.escape(alias) + r"\b"
-
-            if re.search(pattern, lowered):
-                confidence = calculate_confidence(alias)
-
-                if confidence > best_confidence:
-                    best_confidence = confidence
-                    best_match = alias
-
-        if best_match and best_confidence >= 0.5:
-            matches.append(
-                {
-                    "player": player,
-                    "team": team,
-                    "position": position,
-                    "confidence": best_confidence,
-                    "matched_alias": best_match,
-                }
+            confidence = score_match(
+                alias=alias,
+                player_name=player_name,
+                team=team,
+                position=position,
+                team_hint=team_hint,
+                position_hint=position_hint,
             )
-            seen_players.add(player)
 
-    matches.sort(key=lambda match: match["confidence"], reverse=True)
+            if confidence < minimum_confidence:
+                continue
 
-    if not matches:
-        logger.debug("No player matches found in text: %s", text[:100])
+            candidate: PlayerMatch = {
+                "player": player_name,
+                "team": team,
+                "position": position,
+                "confidence": confidence,
+                "matched_alias": alias,
+            }
+
+            current = best_matches.get(player_name)
+
+            if current is None or candidate["confidence"] > current["confidence"]:
+                best_matches[player_name] = candidate
+
+    matches = list(best_matches.values())
+    matches.sort(
+        key=lambda match: (
+            match["confidence"],
+            len(normalize_text(match["matched_alias"])),
+        ),
+        reverse=True,
+    )
 
     return matches
 
 
-def extract_player_and_team(text: str) -> tuple[str, str]:
+def resolve_player(
+    text: str,
+    *,
+    team_hint: Optional[str] = None,
+    position_hint: Optional[str] = None,
+    minimum_confidence: float = 0.70,
+    ambiguity_threshold: float = 0.03,
+) -> Optional[PlayerMatch]:
     """
-    Legacy single-player extraction.
+    Resolve the strongest player match from text.
 
-    Prefer extract_players_from_text() for new code.
+    Returns None when:
+        - no candidate exceeds the minimum confidence;
+        - the top candidates are too close and cannot be disambiguated.
     """
-    matches = extract_players_from_text(text)
+    matches = find_player_matches(
+        text,
+        team_hint=team_hint,
+        position_hint=position_hint,
+        minimum_confidence=minimum_confidence,
+    )
 
-    if matches:
-        return matches[0]["player"], matches[0]["team"]
+    if not matches:
+        return None
 
-    return "Unknown", "UNK"
+    top_match = matches[0]
+
+    if len(matches) == 1:
+        return top_match
+
+    second_match = matches[1]
+    confidence_gap = top_match["confidence"] - second_match["confidence"]
+
+    if confidence_gap < ambiguity_threshold:
+        logger.warning(
+            "Ambiguous player match for text=%r: %s and %s",
+            text,
+            top_match["player"],
+            second_match["player"],
+        )
+        return None
+
+    return top_match
+
+
+def match_player(
+    text: str,
+    team_hint: Optional[str] = None,
+    position_hint: Optional[str] = None,
+) -> Optional[PlayerMatch]:
+    """
+    Backward-compatible entry point for resolving one player.
+
+    New code may call resolve_player() directly.
+    """
+    return resolve_player(
+        text,
+        team_hint=team_hint,
+        position_hint=position_hint,
+    )
+
+def extract_players_from_text(
+    text: str,
+    team_hint: str | None = None,
+    position_hint: str | None = None,
+) -> list[PlayerMatch]:
+    """Backward-compatible wrapper for existing RSS ingestion code."""
+    return find_player_matches(
+        text,
+        team_hint=team_hint,
+        position_hint=position_hint,
+    )

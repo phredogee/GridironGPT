@@ -197,6 +197,24 @@ Before production, benchmark:
 * Graph analytics dashboard
 * Multi-event conflict resolution
 
+## Migration Status
+
+Completed
+
+✔ Cortex Facade
+✔ Knowledge Service
+✔ Knowledge Graph Manager
+✔ Propagation Planner
+✔ Relationship Engine integration
+✔ Persistent repositories
+
+Remaining
+
+- Retire legacy semantic pipeline
+- Retire duplicate CLI modules
+- Complete PHRED migration
+- Split Cortex into standalone repository
+
 ---
 
 ## Overall Status

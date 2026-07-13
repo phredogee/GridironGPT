@@ -93,6 +93,18 @@ The graph-based propagation framework has been completed and validated. Signals 
 
 ## Completed
 
+✔ Knowledge Service
+
+✔ Knowledge Graph Manager
+
+✔ Propagation Planner
+
+✔ Graph traversal
+
+✔ Relationship path discovery
+
+✔ Propagation candidates
+
 ### Knowledge Graph
 
 * Persistent entity relationship storage
@@ -115,43 +127,13 @@ The graph-based propagation framework has been completed and validated. Signals 
 
 # Next Milestone
 
-## Semantic Relationship Propagation
+## Relationship-aware scoring
 
-Current propagation treats every relationship using the same mathematical model.
-
-The next phase introduces relationship-specific propagation behavior.
-
-Examples:
-
-```text
-Quarterback
-    ↓
-Wide Receiver
-
-Positive Practice
-        ↓
-+100%
-
-Minor Injury
-        ↓
--80%
-```
-
-```text
-Running Back
-    ↓
-Offensive Line
-
-Offensive Line Injury
-        ↓
--90%
-
-Positive Camp Reports
-        ↓
-+40%
-```
-
-Each relationship type will define independent propagation rules.
+- Position modifiers
+- Team modifiers
+- Coach influence
+- Injury cascades
+- Offensive line effects
 
 ---
 

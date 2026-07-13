@@ -1,6 +1,7 @@
 import pandas as pd
 import streamlit as st
 from gridiron_cortex.facade import CortexFacade
+from gridiron_cortex.advisor.roster_advisor import RosterAdvisor
 from apps.streamlit.components.branding import render_branding
 from apps.streamlit.pages.cortex_inspector import render_cortex_inspector
 from gridiron_gpt.intelligence.signal_impact_api import generate_signal_impacts
@@ -17,6 +18,10 @@ from gridiron_gpt.data_ingest.player_trends import (
     calculate_velocity,
     get_player_trend_points,
 )
+from apps.streamlit.components.command_center import (
+    render_command_center,
+)
+
 
 def apply_adjusted_scores(scores_dict):
     adjusted = {}
@@ -66,6 +71,12 @@ ranked_players = [
     if data["score"] != 0
 ]
 
+roster_advisor = RosterAdvisor(
+    ranked_players=ranked_players,
+    recommendation_from_score=recommendation_from_score,
+    confidence_from_signals=confidence_from_signals,
+)
+
 cortex = CortexFacade()
 
 buy_players = [
@@ -96,10 +107,11 @@ risk_players = [
 # -----------------------------
 # Tabs
 # -----------------------------
-cortex_tab, dashboard_tab, player_tab, trends_tab, momentum_tab = st.tabs(
+cortex_tab, dashboard_tab, advisor_tab, player_tab, trends_tab, momentum_tab = st.tabs(
     [
         "🧠 Cortex Inspector",
         "📊 Dashboard",
+        "🤖 Roster Advisor",
         "🏈 Player",
         "🔥 Trends",
         "🚀 Momentum",
@@ -111,6 +123,17 @@ cortex_tab, dashboard_tab, player_tab, trends_tab, momentum_tab = st.tabs(
 # Dashboard Tab
 # -----------------------------
 with dashboard_tab:
+    render_command_center(
+        ranked_players=ranked_players,
+        buy_players=buy_players,
+        watch_players=watch_players,
+        risk_players=risk_players,
+        player_count=len(player_names),
+        recommendation_from_score=recommendation_from_score,
+        confidence_from_signals=confidence_from_signals,
+        passing_tests=13,
+    )
+
     st.subheader("📊 Fantasy Signal Dashboard")
 
     col1, col2, col3 = st.columns(3)
@@ -164,6 +187,72 @@ with dashboard_tab:
     else:
         st.info("No scored players found.")
 
+# -----------------------------
+# Roster Advisor
+# -----------------------------
+with advisor_tab:
+
+    st.title("🤖 Roster Advisor")
+
+    st.caption(
+        "Ask football questions in natural language."
+    )
+
+    question = st.text_area(
+        "Ask Gridiron Cortex",
+        placeholder=(
+            "Examples:\n"
+            "• Who should I start this week?\n"
+            "• Best waiver pickup over the next 3 weeks?\n"
+            "• Should I trade Tank Dell?\n"
+            "• Best DST to stream next week?"
+        ),
+        height=140,
+    )
+
+    if st.button(
+        "Ask Cortex",
+        use_container_width=True,
+    ):
+
+        if question.strip():
+
+            response = roster_advisor.answer(question)
+
+            st.markdown("### Cortex Response")
+            st.write(response["answer"])
+
+            st.metric(
+                "Confidence",
+                f"{response['confidence']}%",
+            )
+
+            if response["details"]:
+                with st.expander("Reasoning", expanded=True):
+                    for detail in response["details"]:
+                        st.write(f"• {detail}")
+
+            st.markdown("### Your Question")
+
+            st.write(question)
+
+            st.markdown("### Planned Cortex Workflow")
+
+            workflow = [
+                "Interpret question",
+                "Identify players/teams",
+                "Search scorecards",
+                "Expand knowledge graph",
+                "Evaluate propagation",
+                "Generate recommendation",
+                "Explain reasoning",
+            ]
+
+            for step in workflow:
+                st.write(f"• {step}")
+
+        else:
+            st.warning("Enter a question first.")
 
 # -----------------------------
 # Player Tab

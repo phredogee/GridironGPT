@@ -19,7 +19,9 @@ from gridiron_cortex.storage.json_relationship_repository import (
 from gridiron_cortex.knowledge.knowledge_graph_manager import (
     KnowledgeGraphManager,
 )
-
+from gridiron_cortex.propagation.propagation_planner import (
+    PropagationPlanner,
+)
 
 
 class CortexFacade:
@@ -60,11 +62,16 @@ class CortexFacade:
             knowledge_service=self.knowledge
         )
 
+        self.propagation_planner = PropagationPlanner(
+            knowledge_graph=self.knowledge_graph,
+        )
+
         self.engine = CortexEngine(
             entity_resolver=EntityResolver(),
             signal_processor=SignalProcessor(),
             relationship_engine=RelationshipEngine(
                 repository=relationship_repository,
+                propagation_planner=self.propagation_planner,
             ),
             score_engine=ScoreEngine(
                 repository=player_scorecard_repository,

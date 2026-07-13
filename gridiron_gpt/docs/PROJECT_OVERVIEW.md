@@ -37,6 +37,33 @@ GridironGPT is one application built on top of the Cortex engine.
 - Timeline Generation
 
 ---
+### Live Intelligence Ingestion
+
+GridironGPT can fetch football news from configured RSS feeds and send
+matched stories through the complete Gridiron Cortex pipeline.
+
+The ingestion path is:
+
+```text
+RSS Feed
+    ↓
+Article Fetching
+    ↓
+Player Matching
+    ↓
+RawEvent Normalization
+    ↓
+Event Deduplication
+    ↓
+CortexFacade
+    ↓
+Knowledge Graph and Propagation
+    ↓
+Scorecard Updates
+    ↓
+Recommendations and Explanations
+
+---
 
 ## Design Principles
 
@@ -81,6 +108,28 @@ Applications
 
     • Future Mobile Clients
 ```
+Signal Processing
+        │
+        ▼
+Knowledge Service
+        │
+        ▼
+Knowledge Graph Manager
+        │
+        ▼
+Propagation Planner
+        │
+        ▼
+Relationship Engine
+        │
+        ▼
+Score Engine
+        │
+        ▼
+Recommendation Engine
+        │
+        ▼
+Explanation Engine 
 
 ---
 
@@ -88,21 +137,21 @@ Applications
 
 ### Completed
 
-- Modular engine architecture
-- Typed domain models
-- Persistent scorecard history
-- Event fingerprinting
-- Duplicate event detection
-- Explainable recommendations
-- Modular Streamlit interface
-- Player timeline visualization
+- Live multi-feed RSS ingestion
+- RSS item normalization into `RawEvent`
+- End-to-end Cortex processing of live news
+- Persistent event history
+- Persistent player scorecard snapshots
+- Duplicate-event protection across repeated ingestion runs
+- Live-data updates visible through the Streamlit application
 
 ### In Progress
 
-- Relationship memory
-- Knowledge graph
-- Confidence tracking
-- Historical analytics
+- Improving player and alias matching
+- Team-level and DST event support
+- Multi-player headline handling
+- Automated ingestion scheduling
+- Live ingestion metrics in the Command Center
 
 ### Planned
 

@@ -1,5 +1,78 @@
 # Changelog
 
+## 2026-07-13
+
+### Major Milestone
+
+Gridiron Cortex now processes live RSS news through the complete intelligence pipeline.
+
+### Added
+
+- RSS-to-Cortex event bridge in `gridiron_cortex/intake/event_pipeline.py`
+- Live Cortex RSS pipeline in `gridiron_gpt/pipelines/cortex_rss_pipeline.py`
+- Command-line RSS pipeline runner
+- Normalization of RSS records into typed `RawEvent` objects
+- Live event processing through `CortexFacade`
+- Persistent scorecard updates from live news
+- Focused ingestion pipeline tests
+
+### Changed
+
+- RSS ingestion now sends matched player stories directly into Gridiron Cortex
+- Dashboard terminology now distinguishes catalog players from scored players
+- Signal processing vocabulary was refined so neutral words such as `practice` are not treated as automatically positive
+- Relationship propagation now uses the `PropagationPlanner`
+
+### Verified
+
+- Three RSS feeds successfully processed
+- 51 RSS items fetched
+- 16 matched items processed by Cortex
+- 35 unmatched items safely skipped
+- Second pipeline run identified all 16 previously processed items as duplicates
+- 20 events persisted in `data/cortex/events.jsonl`
+- 27 scorecard snapshots persisted
+- 16 unique players received scorecard updates
+- Cortex regression suite passing
+- Streamlit dashboard operational after live ingestion
+
+### Current Limitations
+
+- Player matching recognized 16 of 51 fetched stories
+- Team-only and DST stories are not yet normalized into Cortex events
+- Multi-player stories may require stronger entity matching
+- RSS ingestion currently requires manual or externally scheduled execution
+
+---
+## 2026-07-12
+
+### Added
+
+- Propagation Planner subsystem
+- PropagationCandidate model
+- Knowledge graph path planning
+- Graph-driven relationship propagation
+- Dedicated Cortex regression tests
+
+### Changed
+
+- RelationshipEngine now consumes
+  PropagationPlanner.
+
+- CortexFacade now owns planner
+  construction and dependency wiring.
+
+- SignalProcessor keyword handling
+  refined.
+
+### Verified
+
+- 13 dedicated Cortex tests passing
+- Knowledge graph traversal
+- Multi-hop propagation
+- Planner integration
+- Streamlit operational
+
 ---
 ## 2026-07-11
 

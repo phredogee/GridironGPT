@@ -9,12 +9,11 @@ class SignalProcessor:
     POSITIVE_KEYWORDS = [
         "returns",
         "returned",
-        "practicing",
-        "practice",
         "first-team",
         "starter",
         "cleared",
         "healthy",
+        "full participant",
         "active",
         "breakout",
     ]
@@ -27,6 +26,8 @@ class SignalProcessor:
         "doubtful",
         "limited",
         "missed",
+        "misses practice",
+        "setback",
         "suspended",
         "bench",
         "benched",
@@ -46,17 +47,29 @@ class SignalProcessor:
             if word in headline_lower
         ]
 
-        if positive_hits and not negative_hits:
-            sentiment = "positive"
-            impact_score = 1.0
-        elif negative_hits and not positive_hits:
+        if positive_hits and negative_hits:
+            if len(negative_hits) > len(positive_hits):
+                sentiment = "negative"
+            elif len(positive_hits) > len(negative_hits):
+                sentiment = "positive"
+            else:
+                sentiment = "mixed"
+
+        elif negative_hits:
             sentiment = "negative"
-            impact_score = -1.0
-        elif positive_hits and negative_hits:
-            sentiment = "mixed"
-            impact_score = 0.0
+
+        elif positive_hits:
+            sentiment = "positive"
+
         else:
             sentiment = "neutral"
+
+
+        if sentiment == "positive":
+            impact_score = 1.0
+        elif sentiment == "negative":
+            impact_score = -1.0
+        else:
             impact_score = 0.0
 
         return Signal(
