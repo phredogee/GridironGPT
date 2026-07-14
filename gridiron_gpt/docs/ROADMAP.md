@@ -8,86 +8,77 @@ The long-term goal is to create a platform where Gridiron Cortex serves as the c
 
 ---
 
-# Phase 1 — Foundation ✅ Completed
+# Roadmap
 
-## Core Infrastructure
+## Phase 1 — Foundation ✅
 
-* Project architecture established
-* CLI application
-* Streamlit interface
-* Ollama integration
-* Local LLM support
-* Configuration management
-* ESPN news ingestion
-* RSS ingestion pipeline
-* Vector search
-* Semantic search
-* Player profile generation
+- Cortex Engine
+- Relationship Engine
+- Score Engine
+- Recommendation Engine
+- Explanation Engine
+- Persistent Player Scorecards
+- Multi-source RSS ingestion
+- nflverse adapter
+- Statistical signal generation
 
-## Documentation
+Status
 
-* PROJECT_OVERVIEW
-* ARCHITECTURE
-* CHANGELOG
-* COMMANDS
-* KNOWN_ISSUES
-* ROADMAP
+COMPLETE
 
 ---
 
-# Phase 2 — Gridiron Cortex 🚧 Current Phase
+## Phase 2 — Intelligence (Current)
 
-## Cortex Facade
+### In Progress
 
-* [x] Create Cortex package
-* [x] Establish stable Cortex interface
-* [ ] Move all new development behind Cortex
-* [ ] Reduce direct dependencies on intelligence modules
-
-## Signal Engine
-
-* [x] Signal persistence
-* [x] Signal hashing
-* [x] Story deduplication
-* [x] Signal propagation
-* [ ] Signal weighting improvements
-* [ ] Confidence calculations
-* [ ] Signal lifecycle tracking
-
-## Recommendation Engine
-
-* [x] Player scoring
-* [x] BUY / HOLD / SELL recommendations
-* [x] Momentum calculations
-* [ ] Explainable recommendation output
-* [ ] Recommendation confidence scoring
-
-## Relationship Engine
-
-* [x] Player relationship graph
-* [x] Signal propagation
-* [ ] Team-level propagation
-* [ ] Coaching impact propagation
-* [ ] Offensive scheme impacts
-
-## Historical Intelligence
-
-* [x] Score snapshots
-* [x] Trend reports
-* [x] Momentum tracking
-* [ ] Long-term score history
-* [ ] Recommendation history
-* [ ] Historical comparisons
+- Rolling statistical baselines
+- Signal aggregation
+- Multi-source evidence fusion
+- Confidence calibration
+- Structured event generation
 
 ---
 
-# Phase 4 – Intelligent Graph Propagation
+## Phase 3
 
-## Status
+### Planned
 
-**In Progress**
+Knowledge Graph Manager
 
-The graph-based propagation framework has been completed and validated. Signals can now traverse the knowledge graph using configurable multi-hop propagation, cumulative relationship weighting, and cycle-safe traversal.
+- Dynamic relationships
+- Editable graph
+- Relationship versioning
+
+Propagation Engine v2
+
+- Multi-hop propagation
+- Confidence decay
+- Multiple propagation strategies
+
+Player Intelligence API
+
+- Why is Player X a BUY?
+- Explain score changes
+- Explain propagated impacts
+
+Draft Intelligence
+
+- Rookie ingestion
+- Draft capital modeling
+- Opportunity competition
+
+Sleeper Integration
+
+- Fantasy metadata
+- Rosters
+- League information
+
+Historical Trend Analysis
+
+- Multi-week momentum
+- Seasonal trajectories
+- Historical comparisons
 
 ---
 

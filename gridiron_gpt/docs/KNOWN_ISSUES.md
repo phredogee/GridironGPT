@@ -1,34 +1,72 @@
 # Known Issues
 
-## Current
+# Known Issues
 
-- RSS ingestion currently generates relatively few signals.
-- Player catalog coverage is incomplete.
-- Some valid players are not detected.
-- Duplicate article handling exists but duplicate signal detection does not.
-- Signal decay has not been implemented.
-- Recency weighting has not been implemented.
-- Score history persistence has not been implemented.
-- Source reliability scoring has not been implemented.
+## Statistical Signal Generation
 
-## Metrics Snapshot
+Current implementation compares adjacent weekly appearances.
 
-Latest RSS Run:
+Future improvements
 
-Articles Found: 27
-Signals Saved: 5
-Skipped: 22
+- Rolling 3-game baselines
+- Rolling seasonal averages
+- Position-specific thresholds
+- Strength-of-schedule adjustments
+- Opponent normalization
 
-Primary Bottleneck:
-Player detection and impact classification.
+---
 
-# Graph Propagation Engine
+## News Ingestion
 
-## Status
+Current RSS feeds
 
-**Partially Implemented**
+- ESPN
+- NBC
+- RotoWire
 
-The graph-based propagation framework is operational and tested. Several enhancements remain before it is considered production-ready.
+Future improvements
+
+- Additional team feeds
+- Beat writer aggregation
+- Duplicate headline clustering
+- Source reliability scoring
+
+---
+
+## Player Matching
+
+Current matcher prioritizes precision over recall.
+
+Known limitations
+
+- Ambiguous surnames are intentionally ignored.
+- Headlines without identifiable player names are skipped.
+- Nickname coverage is still expanding.
+
+---
+
+## Signal Confidence
+
+Current confidence values are heuristic.
+
+Future work
+
+- Bayesian confidence
+- Historical accuracy tracking
+- Source weighting
+- Multi-source agreement scoring
+
+---
+
+## Knowledge Graph
+
+Relationship propagation currently relies on static graph definitions.
+
+Future work
+
+- Editable graph
+- Graph persistence
+- Automatic relationship discovery
 
 ---
 

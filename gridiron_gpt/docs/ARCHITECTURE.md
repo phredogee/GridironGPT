@@ -1204,3 +1204,80 @@ Discord or chat bots
 Mobile applications
 Public or private APIs
 Commercial fantasy football products
+
+---
+
+# Structured Data Intelligence Pipeline
+
+Gridiron Cortex now consumes two categories of information.
+
+## News Signals
+
+```
+RSS
+    ↓
+Entity Matching
+    ↓
+RawEvent
+    ↓
+Signal Processor
+    ↓
+Relationship Engine
+    ↓
+Score Engine
+```
+
+Current sources
+
+- ESPN NFL RSS
+- NBC ProFootballTalk
+- RotoWire NFL
+
+---
+
+## Structured Data Signals
+
+```
+nflreadpy
+        ↓
+Adapter
+        ↓
+Normalizer
+        ↓
+Weekly Signal Factory
+        ↓
+RawEvent (future)
+        ↓
+Signal Processor
+        ↓
+Relationship Engine
+        ↓
+Score Engine
+```
+
+Current capabilities
+
+- Player identities
+- Rosters
+- Weekly player statistics
+
+Signal generation currently supports
+
+- Targets
+- Receptions
+- Carries
+- Passing yards
+- Rushing yards
+- Receiving yards
+- Passing TDs
+- Rushing TDs
+- Receiving TDs
+
+Signals are emitted only when configurable thresholds are exceeded.
+
+The Signal Factory distinguishes between
+
+- Opportunity Signals
+- Production Signals
+
+Opportunity signals receive higher confidence because they are generally more predictive of future fantasy value than single-game production.

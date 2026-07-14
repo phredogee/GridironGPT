@@ -1,5 +1,52 @@
 # Changelog
 
+# Changelog
+
+## 2026-07-14 — Intelligence Engine Stabilization & nflverse Integration
+
+### Added
+
+- Added multi-source RSS ingestion support.
+- Integrated ESPN NFL RSS.
+- Integrated NBC ProFootballTalk RSS.
+- Integrated RotoWire NFL RSS.
+- Added nflreadpy adapter for structured NFL data.
+- Added nflverse normalization pipeline.
+- Added weekly statistical signal generation.
+- Added opportunity and production signal classification.
+- Added confidence scoring for generated statistical signals.
+- Added week-gap detection to avoid comparing non-consecutive appearances.
+- Added normalization tests.
+- Added nflreadpy adapter tests.
+- Added signal factory tests.
+
+### Improved
+
+- Player matcher now favors precision over recall.
+- Removed surname-only aliases that produced false positives.
+- Increased confidence thresholds for ambiguous matches.
+- RSS matching now avoids incorrect matches such as:
+  - Hall → Breece Hall
+  - Likely → Isaiah Likely
+  - Jackson → every player named Jackson
+
+### Fixed
+
+- Restored legacy compatibility imports.
+- Fixed pipeline compatibility wrappers.
+- Fixed onboarding virtual environment detection.
+- Eliminated obsolete phredenv assumptions.
+- Suppressed third-party SWIG deprecation warnings.
+- Modernized pytest configuration.
+
+### Verification
+
+- 99 automated tests passing.
+- ESPN RSS verified.
+- NBC RSS verified.
+- RotoWire RSS verified.
+- nflverse adapter verified.
+---
 ## 2026-07-13
 
 ### Major Milestone

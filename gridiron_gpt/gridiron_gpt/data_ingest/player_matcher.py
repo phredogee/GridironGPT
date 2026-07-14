@@ -86,9 +86,17 @@ def calculate_confidence(alias: str) -> float:
     # Last-name-only aliases are inherently more ambiguous.
     return 0.72
 
-
 def build_default_aliases(player: dict) -> set[str]:
-    """Build common aliases for a catalog player."""
+    """
+    Build safe aliases for a catalog player.
+
+    Single-word last names are intentionally excluded because they create
+    false positives in ordinary article text, such as:
+
+        "Hall of Fame" -> Breece Hall
+        "would likely" -> Isaiah Likely
+        "Jackson" -> every player named Jackson
+    """
     player_name = get_player_name(player)
 
     if not player_name:
@@ -102,7 +110,7 @@ def build_default_aliases(player: dict) -> set[str]:
         last_name = name_parts[-1]
         position = get_player_position(player)
 
-        aliases.add(last_name)
+        # Safe abbreviated forms.
         aliases.add(f"{first_name[0]}. {last_name}")
         aliases.add(f"{first_name[0]} {last_name}")
 
@@ -111,8 +119,11 @@ def build_default_aliases(player: dict) -> set[str]:
 
     aliases.update(MANUAL_ALIASES.get(player_name, []))
 
-    return {alias.strip() for alias in aliases if alias.strip()}
-
+    return {
+        alias.strip()
+        for alias in aliases
+        if alias and alias.strip()
+    }
 
 def get_player_name(player: dict) -> str:
     """Return the player's display name across supported catalog schemas."""
@@ -195,7 +206,7 @@ def find_player_matches(
     *,
     team_hint: Optional[str] = None,
     position_hint: Optional[str] = None,
-    minimum_confidence: float = 0.70,
+    minimum_confidence: float = 0.85,
 ) -> list[PlayerMatch]:
     """
     Find all player references contained in a piece of text.
@@ -274,7 +285,7 @@ def resolve_player(
     *,
     team_hint: Optional[str] = None,
     position_hint: Optional[str] = None,
-    minimum_confidence: float = 0.70,
+    minimum_confidence: float = 0.85,
     ambiguity_threshold: float = 0.03,
 ) -> Optional[PlayerMatch]:
     """
@@ -335,9 +346,10 @@ def extract_players_from_text(
     team_hint: str | None = None,
     position_hint: str | None = None,
 ) -> list[PlayerMatch]:
-    """Backward-compatible wrapper for existing RSS ingestion code."""
+    """Extract high-confidence player references from article text."""
     return find_player_matches(
         text,
         team_hint=team_hint,
         position_hint=position_hint,
+        minimum_confidence=0.85,
     )
