@@ -4,6 +4,12 @@
 
 ## 2026-07-14 — Intelligence Engine Stabilization & nflverse Integration
 
+## Version 0.7.0 — Statistical Intelligence Engine
+
+### Testing
+
+111 automated tests passing
+
 ### Added
 
 - Added multi-source RSS ingestion support.
@@ -19,6 +25,14 @@
 - Added normalization tests.
 - Added nflreadpy adapter tests.
 - Added signal factory tests.
+- nflreadpy / nflverse integration
+- Weekly statistical signal generation
+- Rolling baseline analysis
+- Signal aggregation
+- Trend classification (Emerging, Confirmed, Sustained, Volatile)
+- Aggregated signal → RawEvent adapter
+- Multi-source RSS ingestion (ESPN, NBC ProFootballTalk, RotoWire)
+- demo_cortex.py for end-to-end statistical pipeline demonstrations
 
 ### Improved
 
@@ -26,9 +40,13 @@
 - Removed surname-only aliases that produced false positives.
 - Increased confidence thresholds for ambiguous matches.
 - RSS matching now avoids incorrect matches such as:
-  - Hall → Breece Hall
-  - Likely → Isaiah Likely
-  - Jackson → every player named Jackson
+- Hall → Breece Hall
+- Likely → Isaiah Likely
+- Jackson → every player named Jackson
+- Position-aware thresholds
+- Player matching accuracy
+- Regular-season filtering
+- Signal confidence calculations
 
 ### Fixed
 

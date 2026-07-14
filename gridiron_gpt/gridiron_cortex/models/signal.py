@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List
+from typing import Any, List
 
 from gridiron_cortex.models.entity import Entity
 
@@ -25,3 +25,5 @@ class Signal:
     confidence: float = 1.0
 
     signal_type: str = "news"
+
+    evidence: dict[str, Any] = field(default_factory=dict)

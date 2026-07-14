@@ -1,6 +1,6 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from hashlib import sha256
-from typing import Optional
+from typing import Any, Optional
 
 
 @dataclass
@@ -16,6 +16,10 @@ class RawEvent:
     event_type: Optional[str] = None
     published_at: Optional[str] = None
     url: Optional[str] = None
+    sentiment: Optional[str] = None
+    impact_score: Optional[float] = None
+    confidence: Optional[float] = None
+    evidence: dict[str, Any] = field(default_factory=dict)
 
     def fingerprint(self) -> str:
         """

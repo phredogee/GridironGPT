@@ -1,3 +1,61 @@
+                    Cortex Engine
+────────────────────────────────────────────────────
+
+Evidence Sources
+    │
+    ├── RSS
+    ├── Statistics
+    ├── Historical Data
+    ├── Relationships
+    ├── APIs
+    └── Future Sources
+
+           │
+           ▼
+
+    Event Normalization
+
+           │
+           ▼
+
+    Signal Generation
+
+           │
+           ▼
+
+    Evidence Aggregation
+
+           │
+           ▼
+
+    Relationship Propagation
+
+           │
+           ▼
+
+    Score Engine
+
+           │
+           ▼
+
+    Recommendation Engine
+
+           │
+           ▼
+
+    Explanation Engine
+
+────────────────────────────────────────────────────
+
+Domain Implementations
+
+• Gridiron Cortex
+• (Future domains)
+
+
+
+
+
 # GridironGPT Architecture
 
 ## 1. Purpose

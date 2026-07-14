@@ -36,3 +36,9 @@ def test_aggregate_to_raw_event():
     assert event.event_type == "production_trend"
     assert event.published_at is None
     assert event.url is None
+    assert event.sentiment == "positive"
+    assert event.impact_score == 0.84
+    assert event.confidence == 0.93
+    assert event.evidence["metric"] == "passing_yards"
+    assert event.evidence["classification"] == "confirmed"
+    assert event.evidence["evidence_count"] == 4

@@ -70,8 +70,32 @@ def aggregate_to_raw_event(
             else None
         ),
         url=None,
+        sentiment=sentiment,
+        impact_score=float(
+            aggregate.get("impact_score") or 0.0
+        ),
+        confidence=float(
+            aggregate.get("confidence") or 0.0
+        ),
+        evidence={
+            "metric": aggregate.get("metric"),
+            "classification": aggregate.get(
+                "trend_classification"
+            ),
+            "direction": aggregate.get("direction"),
+            "weeks": aggregate.get("weeks", []),
+            "methods": aggregate.get("methods", []),
+            "evidence_count": aggregate.get(
+                "evidence_count",
+                0,
+            ),
+            "reasons": aggregate.get("reasons", []),
+            "source_count": 1,
+            "sources": [
+                aggregate.get("source", "nflverse")
+            ],
+        },
     )
-
 
 def aggregates_to_events(
     aggregates: list[dict[str, Any]],
