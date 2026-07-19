@@ -27,3 +27,20 @@ class Signal:
     signal_type: str = "news"
 
     evidence: dict[str, Any] = field(default_factory=dict)
+
+def make_signal(
+    impact_score: float,
+    player_name: str = "CJ Stroud",
+) -> Signal:
+    return Signal(
+        headline=f"Test signal for {player_name}",
+        sentiment="positive" if impact_score > 0 else "negative",
+        impact_score=impact_score,
+        entities=[
+            Entity(
+                entity_type="player",
+                name=player_name,
+                team="HOU",
+            )
+        ],
+    )

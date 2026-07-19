@@ -1,19 +1,20 @@
 from pathlib import Path
 
 from gridiron_cortex.engine.cortex_engine import CortexEngine
-from gridiron_cortex.engine.entity_resolver import EntityResolver
-from gridiron_cortex.engine.explanation_engine import ExplanationEngine
-from gridiron_cortex.engine.recommendation_engine import RecommendationEngine
-from gridiron_cortex.engine.relationship_engine import RelationshipEngine
-from gridiron_cortex.engine.score_engine import ScoreEngine
-from gridiron_cortex.engine.signal_processor import SignalProcessor
+from gridiron_cortex.understand.entity_resolver import EntityResolver
+from gridiron_cortex.explain.explanation_engine import ExplanationEngine
+from gridiron_cortex.decide.recommendation_engine import RecommendationEngine
+from gridiron_cortex.reason.relationship_engine import RelationshipEngine
+from gridiron_cortex.evaluate.score_engine import ScoreEngine
+from gridiron_cortex.understand.signal_processor import SignalProcessor
 from gridiron_cortex.knowledge.knowledge_service import KnowledgeService
 from gridiron_cortex.models.raw_event import RawEvent
-from gridiron_cortex.storage.json_event_repository import JsonEventRepository
-from gridiron_cortex.storage.json_player_scorecard_repository import (
+from gridiron_cortex.predict.prediction_engine import PredictionEngine
+from gridiron_cortex.remember.json_event_repository import JsonEventRepository
+from gridiron_cortex.remember.json_player_scorecard_repository import (
     JsonPlayerScorecardRepository,
 )
-from gridiron_cortex.storage.json_relationship_repository import (
+from gridiron_cortex.remember.json_relationship_repository import (
     JsonRelationshipRepository,
 )
 from gridiron_cortex.knowledge.knowledge_graph_manager import (
@@ -79,6 +80,7 @@ class CortexFacade:
             recommendation_engine=RecommendationEngine(),
             explanation_engine=ExplanationEngine(),
             event_repository=event_repository,
+            prediction_engine=PredictionEngine(),
         )
 
     def process_event(self, event: RawEvent):

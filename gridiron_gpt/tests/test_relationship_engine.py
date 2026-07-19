@@ -5,6 +5,10 @@ from gridiron_cortex.engine.relationship_engine import RelationshipEngine
 from gridiron_cortex.models.entity import Entity
 from gridiron_cortex.models.entity_relationship import EntityRelationship
 from gridiron_cortex.models.signal import Signal
+from gridiron_cortex.reason.relationship_engine import RelationshipEngine
+from gridiron_cortex.remember.json_relationship_repository import (
+    JsonRelationshipRepository,
+)
 from gridiron_cortex.storage.json_relationship_repository import (
     JsonRelationshipRepository,
 )
@@ -140,3 +144,148 @@ def test_relationship_engine_uses_propagation_planner(
     assert abs(
         propagated.impact_score - 0.686375
     ) < 0.000001
+
+def make_signal(
+    impact_score: float,
+    player_name: str = "CJ Stroud",
+) -> Signal:
+    return Signal(
+        headline=f"Test signal for {player_name}",
+        sentiment="positive" if impact_score > 0 else "negative",
+        impact_score=impact_score,
+        entities=[
+            Entity(
+                entity_type="player",
+                name=player_name,
+                team="HOU",
+            )
+        ],
+    )
+
+def save_relationship(
+    repository,
+    relationship_type: str,
+) -> None:
+    repository.save(
+        EntityRelationship(
+            source_entity_id="cj_stroud",
+            source_entity_name="CJ Stroud",
+            source_entity_type="player",
+            target_entity_id="tank_dell",
+            target_entity_name="Tank Dell",
+            target_entity_type="player",
+            relationship_type=relationship_type,
+            strength=1.0,
+            confidence=1.0,
+            reason="Test relationship.",
+            source_team="HOU",
+            target_team="HOU",
+        )
+    )
+
+
+def test_passes_to_preserves_positive_direction(tmp_path) -> None:
+    repository = JsonRelationshipRepository(
+        tmp_path / "relationships.jsonl"
+    )
+
+    save_relationship(
+        repository,
+        relationship_type="passes_to",
+    )
+
+    engine = RelationshipEngine(repository=repository)
+
+    impacts = engine.propagate(
+        make_signal(impact_score=1.0)
+    )
+
+    propagated = [
+        impact
+        for impact in impacts
+        if impact.impact_type == "propagated"
+    ]
+
+    assert len(propagated) == 1
+    assert propagated[0].entity_name == "Tank Dell"
+    assert propagated[0].impact_score == 1.0
+
+
+def test_competes_with_reverses_positive_direction(tmp_path) -> None:
+    repository = JsonRelationshipRepository(
+        tmp_path / "relationships.jsonl"
+    )
+
+    save_relationship(
+        repository,
+        relationship_type="competes_with",
+    )
+
+    engine = RelationshipEngine(repository=repository)
+
+    impacts = engine.propagate(
+        make_signal(impact_score=1.0)
+    )
+
+    propagated = [
+        impact
+        for impact in impacts
+        if impact.impact_type == "propagated"
+    ]
+
+    assert len(propagated) == 1
+    assert propagated[0].impact_score == -0.45
+
+
+def test_competes_with_reverses_negative_direction(tmp_path) -> None:
+    repository = JsonRelationshipRepository(
+        tmp_path / "relationships.jsonl"
+    )
+
+    save_relationship(
+        repository,
+        relationship_type="competes_with",
+    )
+
+    engine = RelationshipEngine(repository=repository)
+
+    impacts = engine.propagate(
+        make_signal(impact_score=-1.0)
+    )
+
+    propagated = [
+        impact
+        for impact in impacts
+        if impact.impact_type == "propagated"
+    ]
+
+    assert len(propagated) == 1
+    assert propagated[0].impact_score == 0.45
+
+
+def test_unknown_relationship_preserves_legacy_behavior(
+    tmp_path,
+) -> None:
+    repository = JsonRelationshipRepository(
+        tmp_path / "relationships.jsonl"
+    )
+
+    save_relationship(
+        repository,
+        relationship_type="unknown_relationship",
+    )
+
+    engine = RelationshipEngine(repository=repository)
+
+    impacts = engine.propagate(
+        make_signal(impact_score=1.0)
+    )
+
+    propagated = [
+        impact
+        for impact in impacts
+        if impact.impact_type == "propagated"
+    ]
+
+    assert len(propagated) == 1
+    assert propagated[0].impact_score == 1.0

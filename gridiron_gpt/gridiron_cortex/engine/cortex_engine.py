@@ -11,6 +11,7 @@ class CortexEngine:
         recommendation_engine,
         explanation_engine,
         event_repository=None,
+        prediction_engine=None,
     ):
         self.entity_resolver = entity_resolver
         self.signal_processor = signal_processor
@@ -19,6 +20,7 @@ class CortexEngine:
         self.recommendation_engine = recommendation_engine
         self.explanation_engine = explanation_engine
         self.event_repository = event_repository
+        self.prediction_engine = prediction_engine
 
     def process_event(self, event):
         if self.event_repository is not None:
@@ -50,14 +52,42 @@ class CortexEngine:
             impacts,
         )
 
+        predictions = []
+
+        if self.prediction_engine is not None:
+            predictions = [
+                self.prediction_engine.predict(scorecard)
+                for scorecard in player_scorecards
+            ]
+
         recommendations = self.recommendation_engine.generate(
-            score_updates
+            score_updates,
+            predictions=predictions,
         )
 
         explanation = self.explanation_engine.explain(
             signal,
             impacts,
             recommendations,
+            predictions=predictions,
+        )
+
+        evidence_chains = (
+            self.explanation_engine.build_evidence_chains(
+                signal=signal,
+                impacts=impacts,
+                predictions=predictions,
+                recommendations=recommendations,
+            )
+        )
+
+        evidence_graphs = (
+            self.explanation_engine.build_evidence_graphs(
+                signal=signal,
+                impacts=impacts,
+                predictions=predictions,
+                recommendations=recommendations,
+            )
         )
 
         return EngineResult(
@@ -67,7 +97,10 @@ class CortexEngine:
             impacts=impacts,
             score_updates=score_updates,
             player_scorecards=player_scorecards,
-            scorecard_history=scorecard_history,    
+            scorecard_history=scorecard_history,
+            predictions=predictions,
             recommendations=recommendations,
+            evidence_chains=evidence_chains,
+            evidence_graphs=evidence_graphs,
             explanation=explanation,
         )

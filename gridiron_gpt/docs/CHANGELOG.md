@@ -1,7 +1,82 @@
 # Changelog
 
-# Changelog
+### Added
 
+- Training-camp football concepts.
+- Depth-chart concepts.
+- Whole-phrase matching to prevent substring false positives.
+- Role ownership rules to prevent concept overlap and double-counting.
+
+### Verified
+
+- 169 automated tests passing.
+
+---
+
+## Unreleased
+
+### Added
+
+- EvidenceChain model
+- EvidenceGraph model
+- Structured reasoning traces
+- Causal evidence graphs
+- Explain v2 and Explain v2.5
+- Semantic multi-hop propagation
+- Relationship semantics
+- Predict faculty integration
+
+### Changed
+
+- Refactored Cortex into cognitive faculty packages.
+- PropagationPlanner now applies relationship semantics.
+- ExplanationEngine now generates:
+  - Plain explanations
+  - Evidence chains
+  - Evidence graphs
+
+### Verified
+
+- 152 automated tests passing.
+
+
+### Changed
+
+- Introduced the eight Cortex cognitive faculty packages:
+  Observe, Understand, Reason, Evaluate, Predict, Decide, Explain, and Remember.
+- Moved entity resolution and signal processing into Understand.
+- Moved relationship processing into Reason.
+- Moved score processing into Evaluate.
+- Moved recommendation generation into Decide.
+- Moved explanation generation into Explain.
+- Added compatibility imports under `gridiron_cortex.engine`.
+- Preserved existing behavior with all targeted tests passing.
+
+### Changed
+
+- Moved the RSS event pipeline into the Cortex Observe faculty.
+- Established `gridiron_cortex.observe` as the permanent home for data acquisition and normalization components.
+- Retained `gridiron_cortex.intake` as a temporary backward-compatibility package.
+- Preserved all existing behavior with 114 tests passing.
+
+### Added
+
+### Added
+
+- Added the Cortex Predict faculty.
+- Added the `Prediction` domain model.
+- Added a deterministic rule-based `PredictionEngine`.
+- Integrated Predict into `CortexEngine` after Evaluate and before Decide.
+- Added predictions to `EngineResult`.
+- Added isolated prediction and pipeline test coverage.
+
+### Changed
+
+- Wired `PredictionEngine` into the Cortex facade.
+- Updated the engine pipeline to produce short-term player forecasts.
+- Preserved all existing behavior with 120 tests passing.
+
+---
 ## 2026-07-14 — Intelligence Engine Stabilization & nflverse Integration
 
 ## Version 0.7.0 — Statistical Intelligence Engine

@@ -64,4 +64,4 @@ def test_facade_reads_player_scorecard(tmp_path: Path):
 
     assert scorecard is not None
     assert scorecard.player_name == "Scorecard Test Player"
-    assert scorecard.overall_score == 51.0
+    assert abs(scorecard.overall_score - 50.9) < 0.000001

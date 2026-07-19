@@ -150,7 +150,7 @@ Displays:
 
 ---
 
-### Momentum Reports
+### Trend  Reports
 
 ```bash
 gg hot
@@ -179,7 +179,7 @@ Features:
 
 ---
 
-### Player Tab
+### Players Page
 
 Features:
 

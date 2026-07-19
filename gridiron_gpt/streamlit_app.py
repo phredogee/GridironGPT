@@ -1,8 +1,12 @@
-import pandas as pd
 import streamlit as st
+from apps.streamlit.components.theme import apply_cortex_theme
+from apps.streamlit.pages.dashboard import render_dashboard
+from apps.streamlit.pages.dashboard import render_dashboard
+from gridiron_cortex.presentation.builders.dashboard_builder import (
+    build_dashboard_view_model,
+)
 from gridiron_cortex.facade import CortexFacade
 from gridiron_cortex.advisor.roster_advisor import RosterAdvisor
-from apps.streamlit.components.branding import render_branding
 from apps.streamlit.pages.cortex_inspector import render_cortex_inspector
 from gridiron_gpt.intelligence.signal_impact_api import generate_signal_impacts
 from gridiron_gpt.intelligence.momentum_engine import build_momentum_rankings
@@ -21,6 +25,13 @@ from gridiron_gpt.data_ingest.player_trends import (
 from apps.streamlit.components.command_center import (
     render_command_center,
 )
+from apps.streamlit.components.app_shell import (
+    NAVIGATION_ITEMS,
+    render_shell_header,
+    render_sidebar,
+)
+from apps.streamlit.components.branding import get_project_version
+
 
 
 def apply_adjusted_scores(scores_dict):
@@ -41,12 +52,13 @@ def apply_adjusted_scores(scores_dict):
     return adjusted
 
 st.set_page_config(
-    page_title="GridironGPT",
-    page_icon="🏈",
+    page_title="GridironGPT | Cortex Engine",
+    page_icon="C",
     layout="wide",
+    initial_sidebar_state="expanded",
 )
 
-render_branding()
+apply_cortex_theme()
 
 
 # -----------------------------
@@ -105,25 +117,35 @@ risk_players = [
 
 
 # -----------------------------
-# Tabs
+# Navigation
 # -----------------------------
-cortex_tab, dashboard_tab, advisor_tab, player_tab, trends_tab, momentum_tab = st.tabs(
-    [
-        "🧠 Cortex Inspector",
-        "📊 Dashboard",
-        "🤖 Roster Advisor",
-        "🏈 Player",
-        "🔥 Trends",
-        "🚀 Momentum",
-    ]
+version = get_project_version()
+
+selected_page = render_sidebar(
+    version=version,
 )
 
+page_metadata = NAVIGATION_ITEMS[selected_page]
+
+render_shell_header(
+    page_name=page_metadata["label"],
+    description=page_metadata["description"],
+)
+
+st.divider()
 
 # -----------------------------
-# Dashboard Tab
+# Inspector
 # -----------------------------
-with dashboard_tab:
-    render_command_center(
+if selected_page == "Inspector":
+    render_cortex_inspector(cortex)
+
+# -----------------------------
+# Dashboard
+# -----------------------------
+if selected_page == "Dashboard":
+
+    dashboard = build_dashboard_view_model(
         ranked_players=ranked_players,
         buy_players=buy_players,
         watch_players=watch_players,
@@ -134,65 +156,14 @@ with dashboard_tab:
         passing_tests=13,
     )
 
-    st.subheader("📊 Fantasy Signal Dashboard")
-
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.metric("BUY candidates", len(buy_players))
-        if buy_players:
-            player, team = buy_players[0][0]
-            score = buy_players[0][1]["score"]
-            confidence = confidence_from_signals(buy_players[0][1]["signals"])
-            st.write(f"Top: **{player} ({team})**")
-            st.write(f"Score: `{score:+.1f}`")
-            st.write(f"Confidence: `{confidence}%`")
-
-    with col2:
-        st.metric("WATCH candidates", len(watch_players))
-        if watch_players:
-            player, team = watch_players[0][0]
-            score = watch_players[0][1]["score"]
-            confidence = confidence_from_signals(watch_players[0][1]["signals"])
-            st.write(f"Top: **{player} ({team})**")
-            st.write(f"Score: `{score:+.1f}`")
-            st.write(f"Confidence: `{confidence}%`")
-
-    with col3:
-        st.metric("Risk candidates", len(risk_players))
-        if risk_players:
-            player, team = risk_players[0][0]
-            score = risk_players[0][1]["score"]
-            confidence = confidence_from_signals(risk_players[0][1]["signals"])
-            st.write(f"Top: **{player} ({team})**")
-            st.write(f"Score: `{score:+.1f}`")
-            st.write(f"Confidence: `{confidence}%`")
-        else:
-            st.write("No major risk candidates currently.")
-
-    st.divider()
-
-    st.subheader("🏆 Top Signal Rankings")
-
-    if ranked_players:
-        for idx, ((player, team), data) in enumerate(ranked_players[:10], start=1):
-            rating = recommendation_from_score(data["score"])
-            confidence = confidence_from_signals(data["signals"])
-
-            st.write(
-                f"**{idx}. {player} ({team})** — "
-                f"Score: `{data['score']:+.1f}` "
-                f"[{rating}; {confidence}%]"
-            )
-    else:
-        st.info("No scored players found.")
+    render_dashboard(dashboard)
 
 # -----------------------------
-# Roster Advisor
+# Advisor
 # -----------------------------
-with advisor_tab:
+if selected_page == "Advisor":
 
-    st.title("🤖 Roster Advisor")
+    st.markdown("### Ask Cortex")
 
     st.caption(
         "Ask football questions in natural language."
@@ -255,10 +226,10 @@ with advisor_tab:
             st.warning("Enter a question first.")
 
 # -----------------------------
-# Player Tab
+# Players
 # -----------------------------
-with player_tab:
-    st.subheader("🏈 Player Intelligence")
+if selected_page == "Players":
+    st.markdown("### Player Intelligence")
 
     default_player = "Tank Dell" if "Tank Dell" in player_names else player_names[0]
 
@@ -344,10 +315,10 @@ with player_tab:
         else:
             st.info("No recent signals found.")
 # -----------------------------
-# Trends Tab
+# Trends
 # -----------------------------
-with trends_tab:
-    st.subheader("🔥 Momentum Tracker")
+if selected_page == "Trends":
+    st.markdown("### Trending Players")
 
     hot_players = []
     cold_players = []
@@ -403,17 +374,17 @@ with trends_tab:
             st.info("No cooling players found.")
 
 # -----------------------------
-# Momentum Tab
+# Trajectory
 # -----------------------------
-with momentum_tab:
-    st.subheader("🚀 Momentum Report")
+if selected_page == "Trajectory":
+    st.subheader("🚀 Trajectory")
 
     rankings = build_momentum_rankings(limit=10)
 
     col1, col2 = st.columns(2)
 
     with col1:
-        st.markdown("### 🔥 Top Risers")
+        st.markdown("### Top Risers")
 
         if rankings["risers"]:
             for item in rankings["risers"]:
@@ -427,7 +398,7 @@ with momentum_tab:
             st.info("No risers yet. More score snapshots are needed.")
 
     with col2:
-        st.markdown("### 🧊 Top Fallers")
+        st.markdown("### Top Fallers")
 
         if rankings["fallers"]:
             for item in rankings["fallers"]:
@@ -452,9 +423,3 @@ with momentum_tab:
             )
     else:
         st.info("No first snapshots found.")
-
-# -----------------------------
-# Cortex Inspector Tab
-# -----------------------------
-with cortex_tab:
-    render_cortex_inspector(cortex)

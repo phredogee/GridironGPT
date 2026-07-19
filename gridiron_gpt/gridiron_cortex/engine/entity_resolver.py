@@ -1,37 +1,5 @@
-from gridiron_cortex.models.entity import Entity
+"""Compatibility import for the Understand faculty."""
 
+from gridiron_cortex.understand.entity_resolver import EntityResolver
 
-class EntityResolver:
-    """
-    Resolves fantasy-relevant entities from an event.
-    """
-
-    def resolve(self, event):
-        entities = []
-
-        player = getattr(event, "player", None)
-        team = getattr(event, "team", None)
-
-        if player:
-            entities.append(
-                Entity(
-                    entity_type="player",
-                    name=player,
-                    team=team,
-                    confidence=1.0,
-                    source="event.player",
-                )
-            )
-
-        if team:
-            entities.append(
-                Entity(
-                    entity_type="team",
-                    name=team,
-                    team=team,
-                    confidence=1.0,
-                    source="event.team",
-                )
-            )
-
-        return entities
+__all__ = ["EntityResolver"]

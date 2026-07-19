@@ -3,81 +3,78 @@ from pathlib import Path
 import streamlit as st
 
 
-def get_project_version():
+ASSET_DIRECTORY = (
+    Path(__file__).resolve().parents[1]
+    / "assets"
+)
+
+CORTEX_LOGO = (
+    ASSET_DIRECTORY
+    / "cortex_engine_wallpaper.png"
+)
+
+
+def get_project_version() -> str:
     version_file = Path("VERSION")
 
     if version_file.exists():
-        return version_file.read_text(encoding="utf-8").strip()
+        return version_file.read_text(
+            encoding="utf-8"
+        ).strip()
 
     return "unknown"
 
 
-def render_branding():
+def render_branding(
+    application_name: str = "GridironGPT",
+) -> None:
+    """Render the shared Cortex-powered application header."""
+
     version = get_project_version()
 
-    st.title("🧠 GRIDIRON CORTEX")
-
-    st.subheader(
-        "The football intelligence implementation of Cortex Engine"
+    left_spacer, center_col, status_col = st.columns(
+        [1.2, 5, 1.2],
+        vertical_alignment="center",
     )
 
-    st.caption(
-        f"Running inside GridironGPT · "
-        f"Engine v{version} · Typed pipeline enabled"
-    )
+    with left_spacer:
+        st.empty()
 
-    st.info(
-        "Gridiron Cortex transforms NFL news, structured statistics, "
-        "historical trends, and player relationships into scored, "
-        "explainable fantasy-football recommendations."
-    )
-
-    st.markdown("### Platform Architecture")
-
-    application_col, domain_col, engine_col = st.columns(3)
-
-    with application_col:
-        st.markdown("#### GridironGPT")
-        st.caption("Application")
-        st.write(
-            "The user-facing fantasy football experience for dashboards, "
-            "player intelligence, roster advice, and recommendations."
+    with center_col:
+        st.html(
+            f"""
+            <div class="cortex-brand-header">
+                <div class="cortex-app-name">{application_name}</div>
+                <div class="cortex-powered-label">Powered by</div>
+                <div class="cortex-engine-name">Cortex Engine</div>
+                <div class="cortex-brand-line"></div>
+            </div>
+             """
         )
 
-    with domain_col:
-        st.markdown("#### Gridiron Cortex")
-        st.caption("Domain intelligence")
-        st.write(
-            "The football-specific layer that understands NFL players, "
-            "teams, usage, news, statistics, and relationships."
+
+    with status_col:
+        logo_col, status_text_col = st.columns(
+            [1, 1.8],
+            vertical_alignment="center",
         )
 
-    with engine_col:
-        st.markdown("#### Cortex Engine")
-        st.caption("Core platform")
-        st.write(
-            "The reusable evidence and decision intelligence architecture "
-            "behind signal generation, aggregation, propagation, scoring, "
-            "recommendations, and explanations."
-        )
+        with logo_col:
+            if CORTEX_LOGO.exists():
+                st.image(
+                    str(CORTEX_LOGO),
+                    width=78,
+                )
 
-    with st.expander("About Cortex Engine"):
-        st.markdown(
-            """
-            Cortex Engine is the broader intelligence architecture behind
-            this project.
-
-            It is designed to:
-
-            - ingest evidence from multiple sources;
-            - normalize events and entities;
-            - generate structured signals;
-            - aggregate supporting or conflicting evidence;
-            - propagate effects through relationships;
-            - update scores and recommendations;
-            - explain how each conclusion was reached.
-
-            Gridiron Cortex is the first domain implementation of Cortex
-            Engine, and GridironGPT is the application built on top of it.
-            """
-        )
+        with status_text_col:
+            st.html(
+                f"""
+                <div class="cortex-status-wrapper">
+                    <div class="cortex-status-pill">
+                        <span class="cortex-status-dot"></span>
+                        Online
+                    </div>
+                    <div class="cortex-version">v{version}</div>
+                </div>
+                """
+            )

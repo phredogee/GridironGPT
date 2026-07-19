@@ -1,21 +1,21 @@
 from dataclasses import dataclass, field
-from typing import List
-from typing import Dict
+from typing import Dict, List
 
-from gridiron_cortex.models.raw_event import RawEvent
 from gridiron_cortex.models.entity import Entity
-from gridiron_cortex.models.signal import Signal
+from gridiron_cortex.models.evidence_chain import EvidenceChain
+from gridiron_cortex.models.evidence_graph import EvidenceGraph
 from gridiron_cortex.models.impact import Impact
-from gridiron_cortex.models.score_update import ScoreUpdate
-from gridiron_cortex.models.recommendation import Recommendation
 from gridiron_cortex.models.player_scorecard import PlayerScorecard
+from gridiron_cortex.models.prediction import Prediction
+from gridiron_cortex.models.raw_event import RawEvent
+from gridiron_cortex.models.recommendation import Recommendation
+from gridiron_cortex.models.score_update import ScoreUpdate
+from gridiron_cortex.models.signal import Signal
 
 
 @dataclass
 class EngineResult:
-    """
-    Final output of the Cortex engine pipeline.
-    """
+    """Final output of the Cortex Engine pipeline."""
 
     event: RawEvent
 
@@ -33,6 +33,12 @@ class EngineResult:
         default_factory=dict
     )
 
+    predictions: List[Prediction] = field(default_factory=list)
+
     recommendations: List[Recommendation] = field(default_factory=list)
+
+    evidence_chains: List[EvidenceChain] = field(default_factory=list)
+
+    evidence_graphs: List[EvidenceGraph] = field(default_factory=list)
 
     explanation: str = ""

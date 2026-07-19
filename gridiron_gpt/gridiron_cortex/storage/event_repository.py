@@ -1,19 +1,5 @@
-from abc import ABC, abstractmethod
+"""Compatibility import for the Cortex Remember faculty."""
 
-from gridiron_cortex.models.raw_event import RawEvent
+from gridiron_cortex.remember.event_repository import EventRepository
 
-
-class EventRepository(ABC):
-    """
-    Persistence contract for normalized events.
-    """
-
-    @abstractmethod
-    def contains(self, fingerprint: str) -> bool:
-        """Return whether an event has already been stored."""
-        raise NotImplementedError
-
-    @abstractmethod
-    def save(self, event: RawEvent) -> None:
-        """Persist a new event."""
-        raise NotImplementedError
+__all__ = ["EventRepository"]

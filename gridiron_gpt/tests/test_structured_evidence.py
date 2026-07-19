@@ -35,10 +35,9 @@ def test_signal_processor_uses_structured_intelligence():
     assert signal.confidence == 0.94
     assert signal.evidence["evidence_count"] == 2
 
-
 def test_signal_processor_preserves_keyword_fallback():
     event = RawEvent(
-        headline="Test Player returned healthy and active",
+        headline="Test Player healthy and active",
         source="test",
     )
 

@@ -1,36 +1,72 @@
+from dataclasses import asdict, is_dataclass
+
 import streamlit as st
 
 
 def render_engine_diagnostics(result):
-    st.markdown("### 🔧 Engine Diagnostics")
+    st.markdown("### Engine Diagnostics")
     st.caption("Internal Cortex objects and pipeline output.")
 
-    with st.expander("📥 Raw Event"):
-        st.json(result.event.__dict__)
+    with st.expander("Raw Event"):
+        st.json(_serialize(result.event))
 
-    with st.expander("👥 Resolved Entities"):
-        st.json([entity.__dict__ for entity in result.entities])
+    with st.expander("Resolved Entities"):
+        st.json(_serialize(result.entities))
 
-    with st.expander("📡 Signal"):
+    with st.expander("Signal"):
         if result.signal:
-            st.json(
-                {
-                    **result.signal.__dict__,
-                    "entities": [
-                        entity.__dict__
-                        for entity in result.signal.entities
-                    ],
-                }
-            )
+            st.json(_serialize(result.signal))
+        else:
+            st.info("No signal generated.")
 
-    with st.expander("🔗 Impacts"):
-        st.json([impact.__dict__ for impact in result.impacts])
+    with st.expander("Impacts"):
+        st.json(_serialize(result.impacts))
 
-    with st.expander("📈 Score Updates"):
-        st.json([update.__dict__ for update in result.score_updates])
+    with st.expander("Score Updates"):
+        st.json(_serialize(result.score_updates))
 
-    with st.expander("🎯 Recommendations"):
-        st.json([rec.__dict__ for rec in result.recommendations])
+    with st.expander("Player Scorecards"):
+        st.json(_serialize(result.player_scorecards))
 
-    with st.expander("🧠 Engine Result"):
-        st.write(result)
+    with st.expander("Scorecard History"):
+        st.json(_serialize(result.scorecard_history))
+
+    with st.expander("Predictions"):
+        st.json(_serialize(result.predictions))
+
+    with st.expander("Recommendations"):
+        st.json(_serialize(result.recommendations))
+
+    with st.expander("Evidence Chains"):
+        st.json(_serialize(result.evidence_chains))
+
+    with st.expander("Evidence Graphs"):
+        st.json(_serialize(result.evidence_graphs))
+
+    with st.expander("Complete Engine Result"):
+        st.json(_serialize(result))
+
+
+def _serialize(value):
+    if is_dataclass(value):
+        return asdict(value)
+
+    if isinstance(value, list):
+        return [
+            _serialize(item)
+            for item in value
+        ]
+
+    if isinstance(value, tuple):
+        return [
+            _serialize(item)
+            for item in value
+        ]
+
+    if isinstance(value, dict):
+        return {
+            key: _serialize(item)
+            for key, item in value.items()
+        }
+
+    return value

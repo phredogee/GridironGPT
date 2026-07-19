@@ -1,11 +1,11 @@
 from gridiron_cortex.models.entity_relationship import EntityRelationship
 from gridiron_cortex.models.player_scorecard import PlayerScorecard
 from gridiron_cortex.models.raw_event import RawEvent
-from gridiron_cortex.storage.event_repository import EventRepository
-from gridiron_cortex.storage.player_scorecard_repository import (
+from gridiron_cortex.remember.event_repository import EventRepository
+from gridiron_cortex.remember.player_scorecard_repository import (
     PlayerScorecardRepository,
 )
-from gridiron_cortex.storage.relationship_repository import (
+from gridiron_cortex.remember.relationship_repository import (
     RelationshipRepository,
 )
 
