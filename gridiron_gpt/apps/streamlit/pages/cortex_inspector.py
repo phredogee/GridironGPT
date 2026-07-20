@@ -18,8 +18,8 @@ from apps.streamlit.components.explanation_panel import (
 from apps.streamlit.components.pipeline_status import (
     render_pipeline_status,
 )
-from apps.streamlit.components.player_scorecard import (
-    render_player_scorecard,
+from apps.streamlit.components.player_snapshot import (
+    render_player_snapshot,
 )
 from apps.streamlit.components.player_timeline import (
     render_player_timeline,
@@ -161,7 +161,7 @@ def render_cortex_inspector(cortex):
     with intelligence_tab:
         render_prediction_panel(result)
         st.divider()
-        render_player_scorecard(result)
+        render_player_snapshot(result)
         st.divider()
         render_player_timeline(result)
 

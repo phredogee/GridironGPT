@@ -6,6 +6,7 @@ from gridiron_cortex.models.evidence_chain import EvidenceChain
 from gridiron_cortex.models.evidence_graph import EvidenceGraph
 from gridiron_cortex.models.impact import Impact
 from gridiron_cortex.models.player_scorecard import PlayerScorecard
+from gridiron_cortex.models.player_snapshot import PlayerSnapshot
 from gridiron_cortex.models.prediction import Prediction
 from gridiron_cortex.models.raw_event import RawEvent
 from gridiron_cortex.models.recommendation import Recommendation
@@ -28,6 +29,8 @@ class EngineResult:
     score_updates: List[ScoreUpdate] = field(default_factory=list)
 
     player_scorecards: List[PlayerScorecard] = field(default_factory=list)
+    
+    player_snapshots: List[PlayerSnapshot] = field(default_factory=list)
 
     scorecard_history: Dict[str, List[PlayerScorecard]] = field(
         default_factory=dict

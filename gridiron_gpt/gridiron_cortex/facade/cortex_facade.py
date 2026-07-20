@@ -17,6 +17,9 @@ from gridiron_cortex.remember.json_player_scorecard_repository import (
 from gridiron_cortex.remember.json_relationship_repository import (
     JsonRelationshipRepository,
 )
+from gridiron_cortex.transforms.player_snapshot_factory import (
+    PlayerSnapshotFactory,
+)
 from gridiron_cortex.knowledge.knowledge_graph_manager import (
     KnowledgeGraphManager,
 )
@@ -79,6 +82,7 @@ class CortexFacade:
             ),
             recommendation_engine=RecommendationEngine(),
             explanation_engine=ExplanationEngine(),
+            player_snapshot_factory=PlayerSnapshotFactory(),
             event_repository=event_repository,
             prediction_engine=PredictionEngine(),
         )

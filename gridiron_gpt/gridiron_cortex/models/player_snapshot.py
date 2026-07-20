@@ -1,18 +1,38 @@
 from dataclasses import dataclass
+from gridiron_cortex.models.prediction import Prediction
 
-
-@dataclass(frozen=True, slots=True)
+@dataclass(slots=True)
 class PlayerSnapshot:
-    """Generic player presentation model."""
-
+    # Identity
+    player_id: str
     name: str
-    team: str
-    score: float
-    confidence: float
-    recommendation: str
 
-    position: str | None = None
+    # NFL metadata
+    team: str
+    position: str
     bye_week: int | None = None
-    trend: str | None = None
+
+    # Engine scores
+    overall_score: float = 50.0
+    opportunity_score: float = 50.0
+    health_score: float = 50.0
+    momentum_score: float = 50.0
+    risk_score: float = 50.0
+
+    # Recommendation
+    recommendation: str = "WATCH"
+    confidence: float = 50.0
+
+    # Runtime intelligence
+    prediction: Prediction | None = None
+
+    active_signal_count: int = 0
+    strongest_signal: str | None = None
+    latest_event: str | None = None
+
+    # Status
     injury_status: str | None = None
-    subtitle: str | None = None
+    trend: str | None = None
+
+    # Audit
+    last_updated: str | None = None

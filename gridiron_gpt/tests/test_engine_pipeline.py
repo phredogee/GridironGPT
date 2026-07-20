@@ -16,6 +16,10 @@ from gridiron_cortex.storage.json_player_scorecard_repository import (
 from gridiron_cortex.storage.json_relationship_repository import (
     JsonRelationshipRepository,
 )
+from gridiron_cortex.transforms.player_snapshot_factory import (
+    PlayerSnapshotFactory,
+)
+
 
 def test_engine_pipeline_produces_prediction(tmp_path):
     event_repository = JsonEventRepository(
@@ -39,6 +43,7 @@ def test_engine_pipeline_produces_prediction(tmp_path):
         ),
         recommendation_engine=RecommendationEngine(),
         explanation_engine=ExplanationEngine(),
+        player_snapshot_factory=PlayerSnapshotFactory(), 
         event_repository=event_repository,
         prediction_engine=PredictionEngine(),
     )

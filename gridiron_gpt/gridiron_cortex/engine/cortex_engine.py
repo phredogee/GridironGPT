@@ -1,5 +1,7 @@
 from gridiron_cortex.models.engine_result import EngineResult
-
+from gridiron_cortex.transforms.player_intelligence_builder import (
+    PlayerIntelligenceBuilder,
+)
 
 class CortexEngine:
     def __init__(
@@ -9,6 +11,7 @@ class CortexEngine:
         relationship_engine,
         score_engine,
         recommendation_engine,
+        player_snapshot_factory,
         explanation_engine,
         event_repository=None,
         prediction_engine=None,
@@ -21,6 +24,8 @@ class CortexEngine:
         self.explanation_engine = explanation_engine
         self.event_repository = event_repository
         self.prediction_engine = prediction_engine
+        self.player_intelligence_builder = PlayerIntelligenceBuilder() 
+        self.player_snapshot_factory = player_snapshot_factory
 
     def process_event(self, event):
         if self.event_repository is not None:
@@ -65,6 +70,36 @@ class CortexEngine:
             predictions=predictions,
         )
 
+        predictions_by_name = {
+            prediction.entity_name.strip().casefold(): prediction
+            for prediction in predictions
+        }
+
+        recommendations_by_name = {
+            recommendation.entity_name.strip().casefold(): recommendation
+            for recommendation in recommendations
+        }
+
+        player_intelligence = [
+            self.player_intelligence_builder.build(
+                scorecard=scorecard,
+                prediction=predictions_by_name.get(
+                    scorecard.player_name.strip().casefold()
+                ),
+                recommendation=recommendations_by_name.get(
+                    scorecard.player_name.strip().casefold()
+                ),
+            )
+            for scorecard in player_scorecards
+        ]
+
+        player_snapshots = [
+            self.player_snapshot_factory.from_intelligence(
+                intelligence
+            )
+            for intelligence in player_intelligence
+        ]
+
         explanation = self.explanation_engine.explain(
             signal,
             impacts,
@@ -96,11 +131,16 @@ class CortexEngine:
             signal=signal,
             impacts=impacts,
             score_updates=score_updates,
+
             player_scorecards=player_scorecards,
+            player_snapshots=player_snapshots,
             scorecard_history=scorecard_history,
+
             predictions=predictions,
             recommendations=recommendations,
+
             evidence_chains=evidence_chains,
             evidence_graphs=evidence_graphs,
+
             explanation=explanation,
         )

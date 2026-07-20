@@ -8,7 +8,7 @@ class RecommendationEngine:
     def generate(
         self,
         score_updates,
-        predictions: list[Prediction] | None = None,
+        predictions: list[Prediction] | None =None,
     ):
         predictions_by_name = {
             prediction.entity_name.strip().casefold(): prediction
@@ -82,17 +82,6 @@ class RecommendationEngine:
         score_delta: float,
         prediction: Prediction,
     ) -> tuple[str, float]:
-        """Adjust a recommendation using forecast direction.
-
-        The first implementation is intentionally conservative:
-
-        - Supporting forecasts increase confidence.
-        - Conflicting forecasts decrease confidence.
-        - Neutral evaluations may move from HOLD to WATCH or MONITOR.
-        - Strong current BUY or SELL actions are not reversed solely by a
-          heuristic forecast.
-        """
-
         prediction_weight = self._prediction_weight(
             prediction.confidence
         )
@@ -118,7 +107,8 @@ class RecommendationEngine:
                 confidence += prediction_weight / 2
 
         elif trend == "STABLE":
-            confidence += 2.0 if action == "HOLD" else 0.0
+            if action == "HOLD":
+                confidence += 2.0
 
         confidence = max(40.0, min(confidence, 95.0))
 
@@ -128,8 +118,6 @@ class RecommendationEngine:
     def _prediction_weight(
         prediction_confidence: float,
     ) -> float:
-        """Convert Predict's 0-1 confidence into a modest 0-10 adjustment."""
-
         bounded_confidence = max(
             0.0,
             min(prediction_confidence, 1.0),
