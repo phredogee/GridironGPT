@@ -62,7 +62,6 @@ def build_player_catalog(
     players: dict[str, dict] = {}
 
     for row in roster.iter_rows(named=True):
-
         gsis_id = row.get("gsis_id")
 
         if not gsis_id:
@@ -70,16 +69,37 @@ def build_player_catalog(
 
         players[gsis_id] = {
             "player": row["full_name"],
-            "team": row["team"],
-            "position": row["position"],
+            "football_name": row.get("football_name"),
+            "first_name": row.get("first_name"),
+            "last_name": row.get("last_name"),
+
+            "team": row.get("team"),
+            "position": row.get("position"),
+            "depth_chart_position": row.get("depth_chart_position"),
+            "status": row.get("status"),
+
+            "jersey_number": row.get("jersey_number"),
+            "years_exp": row.get("years_exp"),
+            "college": row.get("college"),
+
+            "rookie_year": row.get("rookie_year"),
+            "entry_year": row.get("entry_year"),
+            "draft_club": row.get("draft_club"),
+            "draft_number": row.get("draft_number"),
+
             "gsis_id": gsis_id,
             "espn_id": row.get("espn_id"),
             "sleeper_id": row.get("sleeper_id"),
             "pfr_id": row.get("pfr_id"),
+            "yahoo_id": row.get("yahoo_id"),
+            "rotowire_id": row.get("rotowire_id"),
+
+            "headshot_url": row.get("headshot_url"),
+
             "aliases": build_player_aliases(
-                row["full_name"],
-                row["team"],
-                row["position"],
+                player_name=row["full_name"],
+                team=row.get("team") or "",
+                position=row.get("position") or "",
             ),
         }
 
@@ -94,7 +114,6 @@ def build_player_catalog(
         json.dump(catalog, f, indent=2)
 
     return catalog
-
 
 def load_player_catalog(
     catalog_path: Path = CATALOG_PATH,
