@@ -23,13 +23,30 @@ class PlayerMatch(TypedDict):
 
 @lru_cache(maxsize=1)
 def get_cached_catalog() -> list[dict]:
-    """Load and cache the player catalog once per process."""
     return load_player_catalog()
 
+@lru_cache(maxsize=1)
+def get_alias_index() -> dict[str, list[dict]]:
+
+    alias_index: dict[str, list[dict]] = {}
+
+    for player in get_cached_catalog():
+        for alias in build_default_aliases(player):
+            normalized = normalize_text(alias)
+
+            alias_index.setdefault(normalized, []).append(
+                {
+                    "player": player,
+                    "alias": alias,
+                }
+            )
+
+    return alias_index
 
 def clear_catalog_cache() -> None:
-    """Clear the cached catalog, primarily for tests or catalog refreshes."""
+    """Clear cached catalog and alias index."""
     get_cached_catalog.cache_clear()
+    get_alias_index.cache_clear()
 
 
 def normalize_text(value: str) -> str:
@@ -88,34 +105,45 @@ def calculate_confidence(alias: str) -> float:
 
 def build_default_aliases(player: dict) -> set[str]:
     """
-    Build safe aliases for a catalog player.
+    Return stored catalog aliases plus safe generated fallbacks.
 
-    Single-word last names are intentionally excluded because they create
-    false positives in ordinary article text, such as:
-
-        "Hall of Fame" -> Breece Hall
-        "would likely" -> Isaiah Likely
-        "Jackson" -> every player named Jackson
+    Catalog aliases are preferred so alias construction happens during
+    preprocessing rather than repeatedly during matching.
     """
     player_name = get_player_name(player)
 
     if not player_name:
         return set()
 
+    aliases = {
+        str(alias).strip()
+        for alias in player.get("aliases", [])
+        if alias and str(alias).strip()
+    }
+
+    aliases.add(player_name)
+
     name_parts = player_name.split()
-    aliases = {player_name}
 
     if len(name_parts) >= 2:
         first_name = name_parts[0]
         last_name = name_parts[-1]
         position = get_player_position(player)
+        team = get_player_team(player)
 
-        # Safe abbreviated forms.
         aliases.add(f"{first_name[0]}. {last_name}")
         aliases.add(f"{first_name[0]} {last_name}")
 
         if position:
             aliases.add(f"{position} {last_name}")
+            aliases.add(f"{position} {player_name}")
+
+        if team:
+            aliases.add(f"{team} {player_name}")
+
+            if position:
+                aliases.add(f"{team} {position} {last_name}")
+                aliases.add(f"{team} {position} {player_name}")
 
     aliases.update(MANUAL_ALIASES.get(player_name, []))
 
@@ -124,6 +152,7 @@ def build_default_aliases(player: dict) -> set[str]:
         for alias in aliases
         if alias and alias.strip()
     }
+
 
 def get_player_name(player: dict) -> str:
     """Return the player's display name across supported catalog schemas."""
@@ -200,6 +229,21 @@ def score_match(
 
     return round(max(0.0, min(confidence, 1.0)), 3)
 
+def find_alias_span(
+    normalized_text: str,
+    normalized_alias: str,
+) -> tuple[int, int] | None:
+    """Return the first complete-phrase span for an alias."""
+    if not normalized_text or not normalized_alias:
+        return None
+
+    pattern = rf"(?<![a-z0-9]){re.escape(normalized_alias)}(?![a-z0-9])"
+    match = re.search(pattern, normalized_text)
+
+    if match is None:
+        return None
+
+    return match.span()
 
 def find_player_matches(
     text: str,
@@ -227,21 +271,49 @@ def find_player_matches(
     if not text or not text.strip():
         return []
 
-    catalog = get_cached_catalog()
+    normalized_text = normalize_text(text)
     best_matches: dict[str, PlayerMatch] = {}
+    accepted_spans: list[tuple[int, int]] = []
 
-    for player in catalog:
-        player_name = get_player_name(player)
+    alias_items = sorted(
+        get_alias_index().items(),
+        key=lambda item: len(item[0]),
+        reverse=True,
+    )
 
-        if not player_name:
+    for normalized_alias, alias_entries in alias_items:
+        if not normalized_alias:
             continue
 
-        team = get_player_team(player)
-        position = get_player_position(player)
+        span = find_alias_span(normalized_text, normalized_alias)
 
-        for alias in build_default_aliases(player):
-            if not text_contains_alias(text, alias):
+        if span is None:
+            continue
+
+        span_start, span_end = span
+
+        is_contained_by_stronger_match = any(
+            accepted_start <= span_start
+            and span_end <= accepted_end
+            and (accepted_start, accepted_end) != span
+            for accepted_start, accepted_end in accepted_spans
+        )
+
+        if is_contained_by_stronger_match:
+            continue
+        alias_accepted = False
+
+        for entry in alias_entries:
+            player = entry["player"]
+            alias = entry["alias"]
+
+            player_name = get_player_name(player)
+
+            if not player_name:
                 continue
+
+            team = get_player_team(player)
+            position = get_player_position(player)
 
             confidence = score_match(
                 alias=alias,
@@ -267,6 +339,10 @@ def find_player_matches(
 
             if current is None or candidate["confidence"] > current["confidence"]:
                 best_matches[player_name] = candidate
+                alias_accepted = True
+
+        if alias_accepted:
+            accepted_spans.append(span)
 
     matches = list(best_matches.values())
     matches.sort(
@@ -278,7 +354,6 @@ def find_player_matches(
     )
 
     return matches
-
 
 def resolve_player(
     text: str,
