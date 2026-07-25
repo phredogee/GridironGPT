@@ -26,6 +26,12 @@ class Signal:
 
     signal_type: str = "news"
 
+    source_count: int = 1
+
+    sources: list[str] | None = None
+
+    corroboration_confidence: float | None = None
+
     evidence: dict[str, Any] = field(default_factory=dict)
 
 def make_signal(

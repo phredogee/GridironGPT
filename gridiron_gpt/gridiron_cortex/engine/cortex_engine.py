@@ -31,7 +31,6 @@ class CortexEngine:
         self.player_snapshot_factory = player_snapshot_factory
 
     def process_event(self, event):
-        canonical_event = None
         if self.event_repository is not None:
             fingerprint = event.fingerprint()
 
@@ -48,8 +47,19 @@ class CortexEngine:
 
             self.event_repository.save(event)
 
+
+        canonical_event = None
+
+        if self.evidence_aggregator is not None:
+            canonical_event = self.evidence_aggregator.add(event)
+
         entities = self.entity_resolver.resolve(event)
-        signal = self.signal_processor.process(event, entities)
+        signal = self.signal_processor.process(
+            event,
+            entities,
+            canonical_event=canonical_event,
+        )
+
         impacts = self.relationship_engine.propagate(signal)
 
         (
@@ -110,9 +120,6 @@ class CortexEngine:
             recommendations,
             predictions=predictions,
         )
-
-        if self.evidence_aggregator is not None:
-            canonical_event = self.evidence_aggregator.add(event)
 
         evidence_chains = (
             self.explanation_engine.build_evidence_chains(

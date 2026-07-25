@@ -1,11 +1,13 @@
 import re
+from gridiron_cortex.models.canonical_event import CanonicalEvent
+from gridiron_cortex.models.entity import Entity
+from gridiron_cortex.models.raw_event import RawEvent
 from gridiron_cortex.models.signal import Signal
 from gridiron_cortex.understand.football_language import (
     CONCEPTS,
     FootballConcept,
 )
 from gridiron_cortex.understand.event_classifier import EventClassifier
-
 
 class SignalProcessor:
     """Convert a resolved event into a fantasy-relevant signal."""
@@ -40,7 +42,12 @@ class SignalProcessor:
         "benched",
     ]
 
-    def process(self, event, entities):
+    def process(
+        self,
+        event: RawEvent,
+        entities: list[Entity],
+        canonical_event: CanonicalEvent | None = None,
+    ):
         classification = self.classifier.classify(event)
 
         headline = event.headline
@@ -135,6 +142,15 @@ class SignalProcessor:
                 "matched_rules": classification.matched_rules,
             }
 
+        if canonical_event is not None:
+            source_count = len(canonical_event.sources)
+            sources = list(canonical_event.sources)
+            corroboration_confidence = canonical_event.confidence
+        else:
+            source_count = 1
+            sources = [event.source] if event.source else []
+            corroboration_confidence = confidence
+
         return Signal(
             headline=headline,
             entities=entities,
@@ -142,10 +158,25 @@ class SignalProcessor:
             impact_score=round(impact_score, 3),
             positive_hits=positive_hits,
             negative_hits=negative_hits,
+
             confidence=round(confidence, 3),
+
+            source_count=source_count,
+            sources=sources,
+            corroboration_confidence=corroboration_confidence,
+
             signal_type=event.event_type or "news",
             evidence=evidence,
         )
+
+        if canonical_event is not None:
+            source_count = len(canonical_event.sources)
+            sources = canonical_event.sources
+            corroboration_confidence = canonical_event.confidence
+        else:
+            source_count = 1
+            sources = [event.source]
+            corroboration_confidence = signal_confidence
 
     @classmethod
     def _find_keyword_hits(
