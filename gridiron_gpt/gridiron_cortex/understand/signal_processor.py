@@ -4,10 +4,14 @@ from gridiron_cortex.understand.football_language import (
     CONCEPTS,
     FootballConcept,
 )
+from gridiron_cortex.understand.event_classifier import EventClassifier
 
 
 class SignalProcessor:
     """Convert a resolved event into a fantasy-relevant signal."""
+
+    def __init__(self):
+        self.classifier = EventClassifier()
 
     POSITIVE_KEYWORDS = [
         "returns",
@@ -37,6 +41,8 @@ class SignalProcessor:
     ]
 
     def process(self, event, entities):
+        classification = self.classifier.classify(event)
+
         headline = event.headline
         headline_lower = headline.casefold()
 
@@ -59,6 +65,22 @@ class SignalProcessor:
             or event.confidence is not None
             or bool(event.evidence)
         )
+
+        if classification.category != "unknown":
+            sentiment = classification.polarity
+            impact_score = classification.impact
+            confidence = classification.confidence
+
+            evidence = {
+                "classification": {
+                    "category": classification.category,
+                    "subtype": classification.subtype,
+                    "polarity": classification.polarity,
+                    "confidence": classification.confidence,
+                    "impact": classification.impact,
+                    "matched_rules": classification.matched_rules,
+                }
+            }
 
         if has_structured_intelligence:
             sentiment = event.sentiment or "neutral"
@@ -101,6 +123,17 @@ class SignalProcessor:
             impact_score = self._keyword_impact(sentiment)
             confidence = 1.0
             evidence = {}
+
+# Enrich the evidence with deterministic event classification.
+        if classification.category != "unknown":
+            evidence["event_classification"] = {
+                "category": classification.category,
+                "subtype": classification.subtype,
+                "polarity": classification.polarity,
+                "confidence": classification.confidence,
+                "impact": classification.impact,
+                "matched_rules": classification.matched_rules,
+            }
 
         return Signal(
             headline=headline,
