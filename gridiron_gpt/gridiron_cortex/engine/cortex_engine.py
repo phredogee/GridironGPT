@@ -13,7 +13,9 @@ class CortexEngine:
         recommendation_engine,
         player_snapshot_factory,
         explanation_engine,
+        canonical_event = None,
         event_repository=None,
+        evidence_aggregator=None, 
         prediction_engine=None,
     ):
         self.entity_resolver = entity_resolver
@@ -23,11 +25,13 @@ class CortexEngine:
         self.recommendation_engine = recommendation_engine
         self.explanation_engine = explanation_engine
         self.event_repository = event_repository
+        self.evidence_aggregator = evidence_aggregator
         self.prediction_engine = prediction_engine
         self.player_intelligence_builder = PlayerIntelligenceBuilder() 
         self.player_snapshot_factory = player_snapshot_factory
 
     def process_event(self, event):
+        canonical_event = None
         if self.event_repository is not None:
             fingerprint = event.fingerprint()
 
@@ -107,6 +111,9 @@ class CortexEngine:
             predictions=predictions,
         )
 
+        if self.evidence_aggregator is not None:
+            canonical_event = self.evidence_aggregator.add(event)
+
         evidence_chains = (
             self.explanation_engine.build_evidence_chains(
                 signal=signal,
@@ -142,5 +149,6 @@ class CortexEngine:
             evidence_chains=evidence_chains,
             evidence_graphs=evidence_graphs,
 
+            canonical_event=canonical_event,
             explanation=explanation,
         )

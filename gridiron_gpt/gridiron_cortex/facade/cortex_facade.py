@@ -26,6 +26,9 @@ from gridiron_cortex.knowledge.knowledge_graph_manager import (
 from gridiron_cortex.propagation.propagation_planner import (
     PropagationPlanner,
 )
+from gridiron_cortex.understand.evidence_aggregator import (
+    EvidenceAggregator,
+)
 
 
 class CortexFacade:
@@ -51,6 +54,8 @@ class CortexFacade:
                 data_path / "player_scorecards.jsonl"
             )
         )
+
+        evidence_aggregator = EvidenceAggregator()
 
         relationship_repository = JsonRelationshipRepository(
             data_path / "relationships.jsonl"
@@ -83,6 +88,7 @@ class CortexFacade:
             recommendation_engine=RecommendationEngine(),
             explanation_engine=ExplanationEngine(),
             player_snapshot_factory=PlayerSnapshotFactory(),
+            evidence_aggregator=evidence_aggregator,
             event_repository=event_repository,
             prediction_engine=PredictionEngine(),
         )

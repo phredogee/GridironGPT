@@ -9,6 +9,7 @@ from gridiron_cortex.models.player_scorecard import PlayerScorecard
 from gridiron_cortex.models.player_snapshot import PlayerSnapshot
 from gridiron_cortex.models.prediction import Prediction
 from gridiron_cortex.models.raw_event import RawEvent
+from gridiron_cortex.models.canonical_event import CanonicalEvent
 from gridiron_cortex.models.recommendation import Recommendation
 from gridiron_cortex.models.score_update import ScoreUpdate
 from gridiron_cortex.models.signal import Signal
@@ -24,12 +25,14 @@ class EngineResult:
 
     signal: Signal | None = None
 
+    canonical_event: CanonicalEvent | None = None
+
     impacts: List[Impact] = field(default_factory=list)
 
     score_updates: List[ScoreUpdate] = field(default_factory=list)
 
     player_scorecards: List[PlayerScorecard] = field(default_factory=list)
-    
+
     player_snapshots: List[PlayerSnapshot] = field(default_factory=list)
 
     scorecard_history: Dict[str, List[PlayerScorecard]] = field(
