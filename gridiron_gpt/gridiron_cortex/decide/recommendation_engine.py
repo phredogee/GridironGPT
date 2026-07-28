@@ -1,3 +1,6 @@
+from gridiron_cortex.models.intelligence_context import (
+    IntelligenceContext,
+)
 from gridiron_cortex.models.prediction import Prediction
 from gridiron_cortex.models.recommendation import Recommendation
 
@@ -8,7 +11,8 @@ class RecommendationEngine:
     def generate(
         self,
         score_updates,
-        predictions: list[Prediction] | None =None,
+        predictions: list[Prediction] | None = None,
+        intelligence: IntelligenceContext | None = None,
     ):
         predictions_by_name = {
             prediction.entity_name.strip().casefold(): prediction
@@ -21,6 +25,13 @@ class RecommendationEngine:
             action, confidence = self._base_recommendation(
                 update.score_delta
             )
+
+            if intelligence is not None:
+                action, confidence = self._apply_intelligence(
+                    action=action,
+                    confidence=confidence,
+                    intelligence=intelligence,
+                )
 
             reasons = [update.reason] if update.reason else []
 
@@ -114,6 +125,33 @@ class RecommendationEngine:
 
         return action, confidence
 
+    def _apply_intelligence(
+        self,
+        *,
+        action: str,
+        confidence: float,
+        intelligence: IntelligenceContext,
+    ) -> tuple[str, float]:
+        contradiction = intelligence.contradiction
+
+        if (
+            contradiction is not None
+            and contradiction.has_conflict
+        ):
+            confidence -= (
+                contradiction.confidence_penalty * 100.0
+            )
+
+            if action == "BUY":
+                action = "WATCH"
+
+            elif action == "SELL":
+                action = "MONITOR"
+
+        confidence = max(40.0, min(confidence, 95.0))
+
+        return action, confidence
+
     @staticmethod
     def _prediction_weight(
         prediction_confidence: float,
@@ -146,4 +184,8 @@ class RecommendationEngine:
 
     @staticmethod
     def _deduplicate(reasons: list[str]) -> list[str]:
-        return list(dict.fromkeys(reason for reason in reasons if reason))
+        return list(
+            dict.fromkeys(
+                reason for reason in reasons if reason
+            )
+        )

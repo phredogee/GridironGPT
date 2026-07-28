@@ -5,6 +5,9 @@ from gridiron_cortex.models.entity import Entity
 from gridiron_cortex.models.evidence_chain import EvidenceChain
 from gridiron_cortex.models.evidence_graph import EvidenceGraph
 from gridiron_cortex.models.impact import Impact
+from gridiron_cortex.models.intelligence_context import (
+    IntelligenceContext,
+)
 from gridiron_cortex.models.player_scorecard import PlayerScorecard
 from gridiron_cortex.models.player_snapshot import PlayerSnapshot
 from gridiron_cortex.models.prediction import Prediction
@@ -40,6 +43,8 @@ class EngineResult:
     )
 
     predictions: List[Prediction] = field(default_factory=list)
+
+    intelligence: IntelligenceContext | None = None
 
     recommendations: List[Recommendation] = field(default_factory=list)
 

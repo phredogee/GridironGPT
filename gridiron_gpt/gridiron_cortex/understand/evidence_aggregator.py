@@ -5,7 +5,9 @@ from gridiron_cortex.models.canonical_event import CanonicalEvent
 from gridiron_cortex.models.raw_event import RawEvent
 from gridiron_cortex.models.source_evidence import SourceEvidence
 from gridiron_cortex.understand.event_classifier import EventClassifier
-
+from gridiron_cortex.understand.source_reliability import (
+    SourceReliability,
+)
 
 class EvidenceAggregator:
     """
@@ -14,6 +16,7 @@ class EvidenceAggregator:
 
     def __init__(self):
         self.classifier = EventClassifier()
+        self.reliability = SourceReliability()
         self._events: dict[str, CanonicalEvent] = {}
 
     def add(self, event: RawEvent) -> CanonicalEvent:
@@ -105,24 +108,15 @@ class EvidenceAggregator:
             for evidence in canonical_event.evidence
         )
 
-    @staticmethod
     def _aggregate_confidence(
+        self,
         canonical_event: CanonicalEvent,
     ) -> float:
         """
         Increase confidence as independent sources corroborate an event.
         """
-
-        source_count = len(canonical_event.sources)
-
-        boosts = {
-            1: 0.00,
-            2: 0.03,
-            3: 0.05,
-            4: 0.06,
-            5: 0.07,
-        }
-        confidence_boost = boosts.get(source_count, 0.08)
+        confidence_boost = self.reliability.confidence_boost(
+            canonical_event.sources)
 
         return min(
             canonical_event.confidence + confidence_boost,

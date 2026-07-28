@@ -1,7 +1,13 @@
+from gridiron_cortex.intelligence.intelligence_engine import (
+    IntelligenceEngine,
+)
+from gridiron_cortex.models.engine_context import EngineContext
 from gridiron_cortex.models.engine_result import EngineResult
+from gridiron_cortex.reasoning.trend_analyzer import TrendAnalyzer
 from gridiron_cortex.transforms.player_intelligence_builder import (
     PlayerIntelligenceBuilder,
 )
+
 
 class CortexEngine:
     def __init__(
@@ -13,9 +19,10 @@ class CortexEngine:
         recommendation_engine,
         player_snapshot_factory,
         explanation_engine,
-        canonical_event = None,
+        canonical_event=None,
         event_repository=None,
-        evidence_aggregator=None, 
+        evidence_aggregator=None,
+        intelligence_engine=None,
         prediction_engine=None,
     ):
         self.entity_resolver = entity_resolver
@@ -26,9 +33,11 @@ class CortexEngine:
         self.explanation_engine = explanation_engine
         self.event_repository = event_repository
         self.evidence_aggregator = evidence_aggregator
+        self.intelligence_engine = intelligence_engine
         self.prediction_engine = prediction_engine
-        self.player_intelligence_builder = PlayerIntelligenceBuilder() 
+        self.player_intelligence_builder = PlayerIntelligenceBuilder()
         self.player_snapshot_factory = player_snapshot_factory
+        self.trend_analyzer = TrendAnalyzer()
 
     def process_event(self, event):
         if self.event_repository is not None:
@@ -47,28 +56,38 @@ class CortexEngine:
 
             self.event_repository.save(event)
 
-
-        canonical_event = None
-
-        if self.evidence_aggregator is not None:
-            canonical_event = self.evidence_aggregator.add(event)
-
-        entities = self.entity_resolver.resolve(event)
-        signal = self.signal_processor.process(
-            event,
-            entities,
-            canonical_event=canonical_event,
+        context = EngineContext(
+            raw_event=event,
         )
 
-        impacts = self.relationship_engine.propagate(signal)
+        if self.evidence_aggregator is not None:
+            context.canonical_event = self.evidence_aggregator.add(
+                context.raw_event
+            )
+
+        context.entities = self.entity_resolver.resolve(
+            context.raw_event
+        )
+
+        signal = self.signal_processor.process(
+            context.raw_event,
+            context.entities,
+            canonical_event=context.canonical_event,
+        )
+
+        context.signals.append(signal)
+
+        context.impacts = self.relationship_engine.propagate(
+            signal
+        )
 
         (
-            score_updates,
+            context.score_updates,
             player_scorecards,
             scorecard_history,
         ) = self.score_engine.apply(
             signal,
-            impacts,
+            context.impacts,
         )
 
         predictions = []
@@ -79,9 +98,15 @@ class CortexEngine:
                 for scorecard in player_scorecards
             ]
 
+        intelligence = None
+
+        if self.intelligence_engine is not None:
+            intelligence = self.intelligence_engine.evaluate(contect)
+
         recommendations = self.recommendation_engine.generate(
-            score_updates,
+            context.score_updates,
             predictions=predictions,
+            intelligence=intelligence,
         )
 
         predictions_by_name = {
@@ -116,7 +141,7 @@ class CortexEngine:
 
         explanation = self.explanation_engine.explain(
             signal,
-            impacts,
+            context.impacts,
             recommendations,
             predictions=predictions,
         )
@@ -124,7 +149,7 @@ class CortexEngine:
         evidence_chains = (
             self.explanation_engine.build_evidence_chains(
                 signal=signal,
-                impacts=impacts,
+                impacts=context.impacts,
                 predictions=predictions,
                 recommendations=recommendations,
             )
@@ -133,29 +158,26 @@ class CortexEngine:
         evidence_graphs = (
             self.explanation_engine.build_evidence_graphs(
                 signal=signal,
-                impacts=impacts,
+                impacts=context.impacts,
                 predictions=predictions,
                 recommendations=recommendations,
             )
         )
 
         return EngineResult(
-            event=event,
-            entities=entities,
+            event=context.raw_event,
+            entities=context.entities,
             signal=signal,
-            impacts=impacts,
-            score_updates=score_updates,
-
+            impacts=context.impacts,
+            score_updates=context.score_updates,
             player_scorecards=player_scorecards,
             player_snapshots=player_snapshots,
             scorecard_history=scorecard_history,
-
             predictions=predictions,
+            intelligence=intelligence,
             recommendations=recommendations,
-
             evidence_chains=evidence_chains,
             evidence_graphs=evidence_graphs,
-
-            canonical_event=canonical_event,
+            canonical_event=context.canonical_event,
             explanation=explanation,
         )
