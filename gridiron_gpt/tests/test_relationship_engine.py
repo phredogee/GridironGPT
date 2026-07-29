@@ -9,10 +9,6 @@ from gridiron_cortex.reason.relationship_engine import RelationshipEngine
 from gridiron_cortex.remember.json_relationship_repository import (
     JsonRelationshipRepository,
 )
-from gridiron_cortex.storage.json_relationship_repository import (
-    JsonRelationshipRepository,
-)
-
 
 def test_relationship_engine_creates_direct_and_propagated_impacts(
     tmp_path: Path,

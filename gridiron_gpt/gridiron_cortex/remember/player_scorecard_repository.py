@@ -25,3 +25,10 @@ class PlayerScorecardRepository(ABC):
     def save(self, scorecard: PlayerScorecard) -> None:
         """Persist a new scorecard snapshot."""
         raise NotImplementedError
+
+    @abstractmethod
+    def get_all_latest(self) -> list[PlayerScorecard]:
+        """
+        Return the latest scorecard for every player.
+        """
+

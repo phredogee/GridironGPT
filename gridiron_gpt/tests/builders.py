@@ -27,27 +27,6 @@ def build_source_evidence(**kwargs) -> SourceEvidence:
     return SourceEvidence(**defaults)
 
 
-def build_canonical_event(
-    evidence=None,
-    **kwargs,
-) -> CanonicalEvent:
-
-    defaults = {
-        "event_key": "tank_dell",
-        "player": "Tank Dell",
-        "team": "HOU",
-        "category": "injury",
-        "subtype": "returned_to_practice",
-        "polarity": "positive",
-        "impact": 1.0,
-        "confidence": 0.95,
-        "evidence": evidence or [],
-    }
-
-    defaults.update(kwargs)
-    return CanonicalEvent(**defaults)
-
-
 def build_context(**kwargs) -> EngineContext:
     defaults = {
         "raw_event": build_raw_event(),

@@ -20,6 +20,8 @@ class RawEvent:
     impact_score: Optional[float] = None
     confidence: Optional[float] = None
     evidence: dict[str, Any] = field(default_factory=dict)
+    player_id: Optional[str] = None
+    position: Optional[str] = None
 
     def fingerprint(self) -> str:
         """

@@ -13,6 +13,7 @@ class PlayerScorecard:
     player_id: str
     player_name: str
     team: Optional[str] = None
+    position: Optional[str] = None
 
     overall_score: float = 50.0
     opportunity_score: float = 50.0

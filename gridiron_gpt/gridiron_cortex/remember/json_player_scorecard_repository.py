@@ -72,3 +72,32 @@ class JsonPlayerScorecardRepository(PlayerScorecardRepository):
             raise RuntimeError(
                 f"Unable to save scorecard to: {self.file_path}"
             ) from exc
+
+    def get_all_latest(self) -> list[PlayerScorecard]:
+        latest_by_player: dict[str, PlayerScorecard] = {}
+
+        if not self.path.exists():
+            return []
+
+        with open(self.path, encoding="utf-8") as file:
+            for line in file:
+                line = line.strip()
+
+                if not line:
+                    continue
+
+                record = json.loads(line)
+                scorecard = PlayerScorecard(**record)
+
+                current = latest_by_player.get(scorecard.player_id)
+
+                if current is None:
+                    latest_by_player[scorecard.player_id] = scorecard
+                    continue
+
+                if (scorecard.last_updated or "") > (
+                    current.last_updated or ""
+                ):
+                    latest_by_player[scorecard.player_id] = scorecard
+
+        return list(latest_by_player.values())

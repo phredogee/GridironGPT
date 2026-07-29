@@ -1,31 +1,27 @@
-from gridiron_cortex.intelligence.intelligence_engine import (
-    IntelligenceEngine,
-)
 from gridiron_cortex.models.engine_context import EngineContext
 from gridiron_cortex.models.engine_result import EngineResult
-from gridiron_cortex.reasoning.trend_analyzer import TrendAnalyzer
-from gridiron_cortex.transforms.player_intelligence_builder import (
-    PlayerIntelligenceBuilder,
-)
-
 
 class CortexEngine:
     def __init__(
         self,
         entity_resolver,
+        player_enrichment,
         signal_processor,
         relationship_engine,
         score_engine,
         recommendation_engine,
         player_snapshot_factory,
+        player_intelligence_builder,
         explanation_engine,
         canonical_event=None,
         event_repository=None,
         evidence_aggregator=None,
         intelligence_engine=None,
         prediction_engine=None,
+        trend_analyzer=None,
     ):
         self.entity_resolver = entity_resolver
+        self.player_enrichment = player_enrichment
         self.signal_processor = signal_processor
         self.relationship_engine = relationship_engine
         self.score_engine = score_engine
@@ -35,9 +31,9 @@ class CortexEngine:
         self.evidence_aggregator = evidence_aggregator
         self.intelligence_engine = intelligence_engine
         self.prediction_engine = prediction_engine
-        self.player_intelligence_builder = PlayerIntelligenceBuilder()
+        self.player_intelligence_builder = player_intelligence_builder
         self.player_snapshot_factory = player_snapshot_factory
-        self.trend_analyzer = TrendAnalyzer()
+        self.trend_analyzer = trend_analyzer
 
     def process_event(self, event):
         if self.event_repository is not None:
@@ -59,6 +55,8 @@ class CortexEngine:
         context = EngineContext(
             raw_event=event,
         )
+
+        event = self.player_enrichment.enrich(event)
 
         if self.evidence_aggregator is not None:
             context.canonical_event = self.evidence_aggregator.add(
@@ -101,7 +99,7 @@ class CortexEngine:
         intelligence = None
 
         if self.intelligence_engine is not None:
-            intelligence = self.intelligence_engine.evaluate(contect)
+            intelligence = self.intelligence_engine.evaluate(context)
 
         recommendations = self.recommendation_engine.generate(
             context.score_updates,

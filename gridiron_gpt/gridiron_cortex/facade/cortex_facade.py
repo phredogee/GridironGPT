@@ -29,7 +29,13 @@ from gridiron_cortex.propagation.propagation_planner import (
 from gridiron_cortex.understand.evidence_aggregator import (
     EvidenceAggregator,
 )
-
+from gridiron_cortex.enrich.player_enrichment_service import (
+    PlayerEnrichmentService,
+)
+from gridiron_cortex.reasoning.trend_analyzer import TrendAnalyzer
+from gridiron_cortex.transforms.player_intelligence_builder import (
+    PlayerIntelligenceBuilder,
+)
 
 class CortexFacade:
     """
@@ -77,6 +83,7 @@ class CortexFacade:
 
         self.engine = CortexEngine(
             entity_resolver=EntityResolver(),
+            player_enrichment=PlayerEnrichmentService(),
             signal_processor=SignalProcessor(),
             relationship_engine=RelationshipEngine(
                 repository=relationship_repository,
@@ -88,10 +95,13 @@ class CortexFacade:
             recommendation_engine=RecommendationEngine(),
             explanation_engine=ExplanationEngine(),
             player_snapshot_factory=PlayerSnapshotFactory(),
+            player_intelligence_builder=PlayerIntelligenceBuilder(),
+            trend_analyzer=TrendAnalyzer(),
             evidence_aggregator=evidence_aggregator,
             event_repository=event_repository,
             prediction_engine=PredictionEngine(),
         )
+
 
     def process_event(self, event: RawEvent):
         return self.engine.process_event(event)

@@ -5,19 +5,21 @@ from typing import Optional
 @dataclass
 class Entity:
     """
-    A resolved fantasy football entity.
+    A resolved canonical football entity.
 
-    Examples:
-        Player
-        Team
-        Coach
-        Draft Pick (future)
+    This is the authoritative metadata produced by the
+    Entity Resolver and passed through Cortex.
     """
 
     entity_type: str
+
     name: str
 
+    player_id: Optional[str] = None
+
     team: Optional[str] = None
+
+    position: Optional[str] = None
 
     confidence: float = 1.0
 

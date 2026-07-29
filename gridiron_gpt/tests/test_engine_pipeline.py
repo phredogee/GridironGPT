@@ -1,61 +1,19 @@
 from uuid import uuid4
 
-from gridiron_cortex.engine.cortex_engine import CortexEngine
-from gridiron_cortex.engine.entity_resolver import EntityResolver
-from gridiron_cortex.engine.signal_processor import SignalProcessor
-from gridiron_cortex.engine.relationship_engine import RelationshipEngine
-from gridiron_cortex.engine.score_engine import ScoreEngine
-from gridiron_cortex.engine.recommendation_engine import RecommendationEngine
-from gridiron_cortex.engine.explanation_engine import ExplanationEngine
 from gridiron_cortex.models.raw_event import RawEvent
-from gridiron_cortex.predict.prediction_engine import PredictionEngine
-from gridiron_cortex.storage.json_event_repository import JsonEventRepository
-from gridiron_cortex.storage.json_player_scorecard_repository import (
-    JsonPlayerScorecardRepository,
-)
-from gridiron_cortex.storage.json_relationship_repository import (
-    JsonRelationshipRepository,
-)
-from gridiron_cortex.transforms.player_snapshot_factory import (
-    PlayerSnapshotFactory,
-)
 
 
 def test_engine_pipeline_produces_prediction(tmp_path):
-    event_repository = JsonEventRepository(
-        tmp_path / "events.jsonl"
-    )
-    scorecard_repository = JsonPlayerScorecardRepository(
-        tmp_path / "scorecards.jsonl"
-    )
-    relationship_repository = JsonRelationshipRepository(
-        tmp_path / "relationships.json"
-    )
+    engine = build_cortex_engine(tmp_path)
 
-    engine = CortexEngine(
-        entity_resolver=EntityResolver(),
-        signal_processor=SignalProcessor(),
-        relationship_engine=RelationshipEngine(
-            repository=relationship_repository,
-        ),
-        score_engine=ScoreEngine(
-            repository=scorecard_repository,
-        ),
-        recommendation_engine=RecommendationEngine(),
-        explanation_engine=ExplanationEngine(),
-        player_snapshot_factory=PlayerSnapshotFactory(), 
-        event_repository=event_repository,
-        prediction_engine=PredictionEngine(),
-    )
-
-    sample_event = RawEvent(
+    sample_event = build_event(
+        player="CJ Stroud",
+        team="HOU",
+        source="relationship_test",
         headline=(
             "CJ Stroud returns to practice and looks sharp with the "
             f"first-team offense. Test event {uuid4()}"
         ),
-        source="relationship_test",
-        player="CJ Stroud",
-        team="HOU",
     )
 
     result = engine.process_event(sample_event)
@@ -95,3 +53,10 @@ def test_engine_pipeline_produces_prediction(tmp_path):
     assert graph.get_terminals()
     assert graph.get_roots()[0].faculty == "Observe"
     assert graph.get_terminals()[0].faculty == "Decide"
+
+from tests.builders.cortex_engine_builder import (
+    build_cortex_engine,
+)
+from tests.builders.event_builder import (
+    build_event,
+)
