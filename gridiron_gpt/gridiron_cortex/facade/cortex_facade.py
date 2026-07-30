@@ -36,7 +36,9 @@ from gridiron_cortex.reasoning.trend_analyzer import TrendAnalyzer
 from gridiron_cortex.transforms.player_intelligence_builder import (
     PlayerIntelligenceBuilder,
 )
-
+from gridiron_cortex.evidence.evidence_analyzer import (
+    EvidenceAnalyzer,
+)
 class CortexFacade:
     """
     Public entry point for Gridiron Cortex.
@@ -62,6 +64,7 @@ class CortexFacade:
         )
 
         evidence_aggregator = EvidenceAggregator()
+        evidence_analyzer = EvidenceAnalyzer()
 
         relationship_repository = JsonRelationshipRepository(
             data_path / "relationships.jsonl"
@@ -98,6 +101,7 @@ class CortexFacade:
             player_intelligence_builder=PlayerIntelligenceBuilder(),
             trend_analyzer=TrendAnalyzer(),
             evidence_aggregator=evidence_aggregator,
+            evidence_analyzer=evidence_analyzer,
             event_repository=event_repository,
             prediction_engine=PredictionEngine(),
         )

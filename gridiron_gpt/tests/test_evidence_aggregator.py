@@ -242,3 +242,28 @@ def test_unknown_events_for_different_players_do_not_merge(
     assert first_canonical.category == "unknown"
     assert second_canonical.category == "unknown"
     assert first_canonical.event_key != second_canonical.event_key
+
+def test_conflicting_reports_do_not_merge(
+    aggregator: EvidenceAggregator,
+):
+    practice_event = make_event(
+        headline="Tank Dell practiced in full.",
+        source="ESPN",
+        url="https://example.com/full-practice",
+    )
+
+    limited_event = make_event(
+        headline="Tank Dell was a limited participant in practice.",
+        source="NBC Sports",
+        url="https://example.com/limited-practice",
+    )
+
+    practice_canonical = aggregator.add(practice_event)
+    limited_canonical = aggregator.add(limited_event)
+
+    assert practice_canonical is not limited_canonical
+
+    assert practice_canonical.subtype == "full_practice"
+    assert limited_canonical.subtype == "limited_practice"
+
+    assert practice_canonical.event_key != limited_canonical.event_key

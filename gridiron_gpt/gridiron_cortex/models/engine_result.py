@@ -1,6 +1,10 @@
 from dataclasses import dataclass, field
 from typing import Dict, List
 
+from gridiron_cortex.evidence.evidence_analyzer import (
+    EvidenceAssessment,
+)
+from gridiron_cortex.models.confidence_result import ConfidenceResult
 from gridiron_cortex.models.entity import Entity
 from gridiron_cortex.models.evidence_chain import EvidenceChain
 from gridiron_cortex.models.evidence_graph import EvidenceGraph
@@ -29,6 +33,10 @@ class EngineResult:
     signal: Signal | None = None
 
     canonical_event: CanonicalEvent | None = None
+
+    evidence_assessment: EvidenceAssessment | None = None
+
+    confidence_result: ConfidenceResult | None = None
 
     impacts: List[Impact] = field(default_factory=list)
 

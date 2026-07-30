@@ -32,6 +32,8 @@ def build_source_evidence(
         source=source,
         url=url,
         headline="Tank Dell returns to practice.",
+        category="injury",
+        subtype="returned_to_practice",
         confidence=0.95,
         metadata={},
     )

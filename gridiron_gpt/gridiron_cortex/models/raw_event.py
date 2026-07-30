@@ -13,6 +13,7 @@ class RawEvent:
     source: str
     player: Optional[str] = None
     team: Optional[str] = None
+    summary: str | None = None
     event_type: Optional[str] = None
     published_at: Optional[str] = None
     url: Optional[str] = None

@@ -99,3 +99,78 @@ def test_more_specific_rule_wins() -> None:
     assert result.category == "injury"
     assert result.subtype == "activated"
     assert result.confidence == 0.97
+
+def test_classifies_full_practice() -> None:
+    classifier = EventClassifier()
+
+    event = RawEvent(
+        headline="Tank Dell cleared for full practice participation",
+        source="NBC Sports",
+        player="Tank Dell",
+    )
+
+    result = classifier.classify(event)
+
+    assert result.category == "injury"
+    assert result.subtype == "full_practice"
+    assert result.polarity == "positive"
+
+def test_classifies_limited_practice() -> None:
+    classifier = EventClassifier()
+
+    event = RawEvent(
+        headline="Tank Dell was a limited participant in practice",
+        source="ESPN",
+        player="Tank Dell",
+    )
+
+    result = classifier.classify(event)
+
+    assert result.category == "injury"
+    assert result.subtype == "limited_practice"
+    assert result.polarity == "monitor"
+
+def test_classifies_pup() -> None:
+    classifier = EventClassifier()
+
+    event = RawEvent(
+        headline="Christian McCaffrey placed on the PUP list",
+        source="NFL",
+        player="Christian McCaffrey",
+    )
+
+    result = classifier.classify(event)
+
+    assert result.category == "injury"
+    assert result.subtype == "placed_on_pup"
+    assert result.polarity == "negative"
+
+def test_classifies_game_time_decision() -> None:
+    classifier = EventClassifier()
+
+    event = RawEvent(
+        headline="Coach says player will be a game-time decision",
+        source="ESPN",
+        player="Example Player",
+    )
+
+    result = classifier.classify(event)
+
+    assert result.category == "injury"
+    assert result.subtype == "game_time_decision"
+
+def test_classifies_from_summary() -> None:
+    classifier = EventClassifier()
+
+    event = RawEvent(
+        headline="Coach provides injury update",
+        summary="Tank Dell was cleared for full practice participation Tuesday.",
+        source="NBC Sports",
+        player="Tank Dell",
+    )
+
+    result = classifier.classify(event)
+
+    assert result.category == "injury"
+    assert result.subtype == "full_practice"
+    assert result.polarity == "positive"

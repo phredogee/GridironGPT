@@ -33,7 +33,9 @@ from gridiron_cortex.transforms.player_snapshot_factory import (
 )
 from gridiron_cortex.understand.entity_resolver import EntityResolver
 from gridiron_cortex.understand.signal_processor import SignalProcessor
-
+from gridiron_cortex.evidence.evidence_analyzer import (
+    EvidenceAnalyzer,
+)
 
 def build_cortex_engine(
     tmp_path: Path,
@@ -55,6 +57,8 @@ def build_cortex_engine(
         )
     )
 
+    evidence_analyzer = EvidenceAnalyzer()
+
     return CortexEngine(
         entity_resolver=EntityResolver(),
         player_enrichment=PlayerEnrichmentService(),
@@ -71,5 +75,6 @@ def build_cortex_engine(
         player_intelligence_builder=PlayerIntelligenceBuilder(),
         trend_analyzer=TrendAnalyzer(),
         event_repository=event_repository,
+        evidence_analyzer=evidence_analyzer,
         prediction_engine=PredictionEngine(),
     )

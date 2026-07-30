@@ -1,6 +1,10 @@
 from dataclasses import dataclass, field
 
+from gridiron_cortex.evidence.evidence_analyzer import (
+    EvidenceAssessment,
+)
 from gridiron_cortex.models.canonical_event import CanonicalEvent
+from gridiron_cortex.models.confidence_result import ConfidenceResult
 from gridiron_cortex.models.contradiction_result import (
     ContradictionResult,
 )
@@ -25,6 +29,9 @@ class EngineContext:
     raw_event: RawEvent
 
     canonical_event: CanonicalEvent | None = None
+    confidence_result: ConfidenceResult | None = None
+    evidence_assessment: EvidenceAssessment | None = None
+
     contradiction: ContradictionResult | None = None
     trend: TrendResult | None = None
 

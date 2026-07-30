@@ -56,7 +56,10 @@ def build_source_evidence(**kwargs) -> SourceEvidence:
     defaults = {
         "headline": "Tank Dell returns to practice.",
         "source": "ESPN",
+        "category": "injury",
+        "subtype": "returned_to_practice",
         "confidence": 0.95,
+
     }
     defaults.update(kwargs)
     return SourceEvidence(**defaults)

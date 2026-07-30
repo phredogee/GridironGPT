@@ -90,6 +90,7 @@ class EventClassifier:
         combined = " ".join(
             [
                 event.headline or "",
+                event.summary or "",
                 event.event_type or "",
                 event.sentiment or "",
                 evidence_text,

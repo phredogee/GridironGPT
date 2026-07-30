@@ -1,5 +1,11 @@
 from gridiron_cortex.models.engine_context import EngineContext
 from gridiron_cortex.models.engine_result import EngineResult
+from gridiron_cortex.evidence.evidence_analyzer import (
+    EvidenceAnalyzer,
+)
+from gridiron_cortex.confidence.confidence_calibrator import (
+    ConfidenceCalibrator,
+)
 
 class CortexEngine:
     def __init__(
@@ -13,9 +19,10 @@ class CortexEngine:
         player_snapshot_factory,
         player_intelligence_builder,
         explanation_engine,
-        canonical_event=None,
         event_repository=None,
         evidence_aggregator=None,
+        evidence_analyzer: EvidenceAnalyzer | None = None,
+        confidence_calibrator: ConfidenceCalibrator | None = None,
         intelligence_engine=None,
         prediction_engine=None,
         trend_analyzer=None,
@@ -29,6 +36,8 @@ class CortexEngine:
         self.explanation_engine = explanation_engine
         self.event_repository = event_repository
         self.evidence_aggregator = evidence_aggregator
+        self.evidence_analyzer = evidence_analyzer
+        self.confidence_calibrator = confidence_calibrator
         self.intelligence_engine = intelligence_engine
         self.prediction_engine = prediction_engine
         self.player_intelligence_builder = player_intelligence_builder
@@ -52,11 +61,11 @@ class CortexEngine:
 
             self.event_repository.save(event)
 
-        context = EngineContext(
-            raw_event=event,
-        )
+        enriched_event = self.player_enrichment.enrich(event)
 
-        event = self.player_enrichment.enrich(event)
+        context = EngineContext(
+            raw_event=enriched_event,
+        )
 
         if self.evidence_aggregator is not None:
             context.canonical_event = self.evidence_aggregator.add(
@@ -74,6 +83,23 @@ class CortexEngine:
         )
 
         context.signals.append(signal)
+
+        if (
+            self.confidence_calibrator is not None
+            and context.evidence_assessment is not None
+        ):
+            context.confidence_result = (
+                self.confidence_calibrator.calibrate(
+                    classifier_confidence=signal.confidence,
+                    evidence_confidence=(
+                        context.evidence_assessment.trust_score
+                    ),
+                )
+            )
+
+            signal.confidence = (
+                context.confidence_result.final_confidence
+            )
 
         context.impacts = self.relationship_engine.propagate(
             signal

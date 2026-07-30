@@ -1,7 +1,9 @@
 from uuid import uuid4
 
 from gridiron_cortex.models.raw_event import RawEvent
-
+from gridiron_cortex.evidence.evidence_analyzer import (
+    EvidenceAnalyzer,
+)
 
 def test_engine_pipeline_produces_prediction(tmp_path):
     engine = build_cortex_engine(tmp_path)

@@ -1,7 +1,5 @@
 from dataclasses import dataclass, field
-
 from gridiron_cortex.models.source_evidence import SourceEvidence
-
 
 @dataclass
 class CanonicalEvent:
@@ -20,6 +18,7 @@ class CanonicalEvent:
 
     impact: float
     confidence: float
+    consensus: float = 0.0
 
     evidence: list[SourceEvidence] = field(default_factory=list)
 

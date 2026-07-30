@@ -31,6 +31,8 @@ class EvidenceAggregator:
         source_evidence = SourceEvidence(
             headline=event.headline,
             source=event.source,
+            category=classification.category,
+            subtype=classification.subtype,
             published_at=event.published_at,
             url=event.url,
             confidence=classification.confidence,

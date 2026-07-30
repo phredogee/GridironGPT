@@ -2,7 +2,9 @@ from gridiron_cortex.facade import CortexFacade
 from gridiron_cortex.intake.event_pipeline import (
     process_rss_items,
 )
-
+from gridiron_cortex.evidence.evidence_analyzer import (
+    EvidenceAnalyzer,
+)
 
 def test_event_pipeline(tmp_path):
 

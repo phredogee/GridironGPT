@@ -2,7 +2,9 @@ from pathlib import Path
 
 from gridiron_cortex.facade import CortexFacade
 from gridiron_cortex.models.raw_event import RawEvent
-
+from gridiron_cortex.evidence.evidence_analyzer import (
+    EvidenceAnalyzer,
+)
 
 def test_facade_processes_event(tmp_path: Path):
     cortex = CortexFacade(data_directory=tmp_path)

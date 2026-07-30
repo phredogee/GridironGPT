@@ -8,6 +8,9 @@ class SourceEvidence:
     headline: str
     source: str
 
+    category: str
+    subtype: str
+
     published_at: str | None = None
     url: str | None = None
 

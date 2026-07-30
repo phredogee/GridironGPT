@@ -11,8 +11,9 @@ def normalize_rss_item(item: dict) -> RawEvent:
         source=item["source"],
         player=item.get("player"),
         team=item.get("team"),
+        summary=item.get("summary"),
         event_type=item.get("fantasy_impact"),
-        published_at=item.get("date"),
+        published_at=item.get("published_at") or item.get("date"),
         url=item.get("url"),
     )
 

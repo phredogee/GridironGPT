@@ -108,6 +108,12 @@ def fetch_rss_news(feed_url: str, source: str = "RSS Feed") -> list[dict]:
         summary = entry.get("summary", "")
         url = entry.get("link", "")
 
+        published_at = (
+            entry.get("published")
+            or entry.get("updated")
+            or date.today().isoformat()
+        )
+
         url_text = _extract_searchable_url_text(url)
         text = f"{title} {summary} {url_text}"
         matches = extract_players_from_text(text)
@@ -118,6 +124,8 @@ def fetch_rss_news(feed_url: str, source: str = "RSS Feed") -> list[dict]:
                 items.append(
                     {
                         "date": date.today().isoformat(),
+                        "published_at": published_at,              # actual RSS timestamp
+                        "summary": summary,
                         "player": match["player"],
                         "team": match["team"],
                         "position": match.get("position", "Unknown"),
@@ -145,6 +153,8 @@ def fetch_rss_news(feed_url: str, source: str = "RSS Feed") -> list[dict]:
             items.append(
                 {
                     "date": date.today().isoformat(),
+                    "published_at": published_at,              # actual RSS timestamp
+                    "summary": summary,
                     "player": "Unknown",
                     "team": "UNK",
                     "position": "Unknown",
