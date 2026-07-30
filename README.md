@@ -1,826 +1,655 @@
-![Python](https://img.shields.io/badge/Python-3.13-blue)
-![Status](https://img.shields.io/badge/Status-Active-brightgreen)
-![License](https://img.shields.io/badge/License-MIT-yellow)
-![Interface](https://img.shields.io/badge/Interface-Streamlit-red)
-![Engine](https://img.shields.io/badge/Powered%20By-Gridiron%20Cortex-purple)
-
 # 🏈 GridironGPT
 
-### AI-Powered Fantasy Football Intelligence Platform
+![Python](https://img.shields.io/badge/Python-3.11%2B-blue)
+![Status](https://img.shields.io/badge/Status-Active_Development-brightgreen)
+![Interface](https://img.shields.io/badge/Interface-CLI_%7C_Streamlit-orange)
+![License](https://img.shields.io/badge/License-MIT-yellow)
 
-GridironGPT is an AI-powered fantasy football intelligence platform built around the **Gridiron Cortex** engine.
+### AI-Powered Fantasy Football Intelligence
 
-The platform transforms NFL news, injury reports, roster movement, practice updates, and player developments into structured fantasy football intelligence. Rather than only collecting headlines, GridironGPT identifies relevant entities, extracts fantasy signals, evaluates their impact, updates player scorecards, and generates explainable recommendations.
+GridironGPT is a fantasy football intelligence platform that transforms NFL news, injuries, roster moves, player usage, and performance data into structured signals, player scorecards, momentum reports, and explainable fantasy recommendations.
 
-GridironGPT is designed to help fantasy managers identify:
-
-* 🔥 Draft risers
-* ⚠️ Injury and availability risks
-* 📈 Positive momentum
-* 📉 Negative trends
-* 🎯 Waiver and roster opportunities
-* 🏆 Draft-day value
-* 🔄 Indirect impact between related players and teams
+The application combines automated data ingestion, entity matching, semantic retrieval, signal processing, historical tracking, and interactive reporting. Its goal is not simply to summarize football news, but to explain how new information may affect the fantasy value of individual players and related teammates.
 
 ---
 
-## ✨ What It Does
+## Overview
+
+Fantasy football managers often have to monitor multiple news feeds, injury reports, depth-chart changes, and training-camp updates before making decisions.
+
+GridironGPT organizes that information into a repeatable intelligence pipeline:
 
 ```text
-NFL News and Football Events
+NFL Data and News Sources
             │
             ▼
-      Event Ingestion
+     Data Ingestion
             │
             ▼
-      Entity Resolution
+   Validation and Cleanup
             │
             ▼
-      Signal Processing
+ Player and Team Matching
             │
             ▼
-       Impact Analysis
+   Story Deduplication
             │
             ▼
- Relationship Propagation
+    Signal Extraction
             │
             ▼
-    Player Scorecards
+ Fantasy Impact Scoring
             │
             ▼
-Recommendation and Explanation
+ Momentum and Scorecards
             │
             ▼
- Streamlit Dashboard and CLI
+ Reports, Rankings, and
+ Explainable Recommendations
 ```
 
-GridironGPT converts unstructured football information into structured, traceable fantasy intelligence.
+GridironGPT can help identify:
 
-Each event can contribute to:
-
-* Player score changes
-* Team-level effects
-* Positional competition
+* Draft risers and fallers
+* Positive and negative momentum
+* Injury-related risk
 * Opportunity changes
-* Health and risk indicators
-* Momentum tracking
-* Fantasy recommendations
-* Related-player impact
+* Roster movement
+* Training-camp trends
+* Players requiring closer monitoring
+* Potential BUY, HOLD, WATCH, or SELL decisions
 
 ---
 
-## 🚀 Key Features
+## Key Features
 
-| Feature                     | Description                                                           |
-| --------------------------- | --------------------------------------------------------------------- |
-| 🧠 Gridiron Cortex          | Modular intelligence engine that processes football events            |
-| 📰 News Ingestion           | Collects NFL news, injury reports, and roster updates                 |
-| 🧩 Entity Resolution        | Identifies players, teams, and related football entities              |
-| 📡 Signal Processing        | Converts text into positive, negative, neutral, or monitoring signals |
-| 🔄 Impact Propagation       | Distributes indirect impact across related players and teams          |
-| 🎯 Recommendation Engine    | Produces BUY, HOLD, WATCH, MONITOR, and SELL recommendations          |
-| 📊 Player Scorecards        | Tracks opportunity, health, hype, risk, momentum, and overall score   |
-| 💡 Explainable Intelligence | Generates readable reasoning for recommendations                      |
-| ♻️ Event Deduplication      | Prevents duplicate events from repeatedly affecting scores            |
-| 📈 Draft Watch              | Tracks fantasy risers and fallers                                     |
-| ⏱️ Player Timelines         | Maintains historical player activity and score changes                |
-| ⚖️ Player Comparisons       | Compares players using current fantasy signals                        |
-| 🏟️ Team Intelligence       | Produces team-level camp and roster summaries                         |
-| 📋 Daily Digest             | Consolidates important football developments                          |
-| 🖥️ Streamlit Dashboard     | Provides an interactive interface for exploring results               |
-| 💻 Command-Line Tools       | Supports reports, updates, comparisons, and scoring workflows         |
+| Feature                     | Description                                                                                 |
+| --------------------------- | ------------------------------------------------------------------------------------------- |
+| Multi-source news ingestion | Collects NFL and fantasy football updates from multiple RSS sources                         |
+| ESPN data pipeline          | Fetches, cleans, validates, and stores player information                                   |
+| Player matching             | Connects articles and events to known NFL players and teams                                 |
+| Story deduplication         | Prevents the same news story from being processed repeatedly                                |
+| Signal deduplication        | Prevents duplicate events from affecting player scores more than once                       |
+| Injury tracking             | Stores injury events and incorporates health-related risk                                   |
+| Roster movement tracking    | Records signings, releases, promotions, and other roster changes                            |
+| Fantasy signal processing   | Converts football events into structured positive, negative, neutral, or monitoring signals |
+| Momentum engine             | Measures recent positive and negative movement over time                                    |
+| Player scorecards           | Presents a structured view of player fantasy outlook                                        |
+| Player intelligence reports | Combines current signals, recent events, and recommendations                                |
+| Training-camp digest        | Produces consolidated reports from current camp activity                                    |
+| Latest signal feed          | Displays recent fantasy-relevant events                                                     |
+| Semantic advisor            | Uses embeddings and FAISS to retrieve relevant player information                           |
+| Player comparisons          | Compares players using current signals and available context                                |
+| Streamlit dashboard         | Provides an interactive visual interface                                                    |
+| Command-line interface      | Supports ingestion, diagnostics, reports, and fantasy queries                               |
 
 ---
 
-# 🧠 Gridiron Cortex
+## Fantasy Intelligence Model
 
-Gridiron Cortex is the intelligence engine that powers GridIronGPT.
+GridironGPT converts football information into normalized fantasy signals.
 
-It processes raw football events through a modular pipeline:
+| Signal             | Base Impact |
+| ------------------ | ----------: |
+| Positive           |      `+1.0` |
+| Monitor            |      `-0.5` |
+| Negative           |      `-1.0` |
+| Neutral or Unknown |       `0.0` |
 
-```text
-Raw Event
-   │
-   ▼
-Entity Resolver
-   │
-   ▼
-Signal Processor
-   │
-   ▼
-Relationship Engine
-   │
-   ▼
-Propagation Planner
-   │
-   ▼
-Score Engine
-   │
-   ▼
-Recommendation Engine
-   │
-   ▼
-Explanation Engine
-   │
-   ▼
-Engine Result
-```
-
-## Core Responsibilities
-
-### Entity Resolution
-
-Identifies the players, teams, and other football entities referenced in an incoming event.
-
-Example:
-
-```text
-"Tank Dell returned to first-team practice for Houston."
-
-Resolved Entities:
-- Tank Dell — Player — HOU
-- Houston Texans — Team — HOU
-```
-
-### Signal Processing
-
-Determines the fantasy meaning of an event.
-
-Signals may include:
-
-* Positive opportunity
-* Negative health news
-* Increased role
-* Reduced workload
-* Roster competition
-* Practice participation
-* Team movement
-* Neutral monitoring information
-
-### Impact Analysis
-
-Calculates how strongly an event should affect each entity.
-
-Example:
-
-```text
-Tank Dell:
-Direct Impact: +1.0
-
-Houston Texans:
-Team Impact: +0.3
-```
-
-### Relationship Propagation
-
-Allows an event involving one entity to affect related entities.
+A signal represents one fantasy-relevant event rather than an entire article.
 
 For example:
 
 ```text
-Quarterback Injury
-        │
-        ├── Negative impact on wide receivers
-        ├── Negative impact on tight ends
-        ├── Possible increase in running-back volume
-        └── Team-level offensive downgrade
-```
+Event:
+Tank Dell works with the first-team offense during practice.
 
-Propagation considers factors such as:
+Entity:
+Tank Dell — WR, Houston Texans
 
-* Relationship type
-* Relationship strength
-* Confidence
-* Hop count
-* Propagation weight
+Signal:
+Positive opportunity signal
 
-### Score Updates
+Impact:
++1.0
 
-Gridiron Cortex updates persistent player scorecards after processing valid events.
-
-### Recommendations
-
-The recommendation engine translates score changes and current conditions into fantasy guidance.
-
-Possible recommendations include:
-
-* BUY
-* HOLD
-* WATCH
-* MONITOR
-* SELL
-
-### Explanations
-
-Each recommendation includes an explanation describing:
-
-* What happened
-* Which signal was identified
-* How the player was affected
-* Why the recommendation changed
-* Whether related entities were affected
-
----
-
-# 📊 Player Scorecards
-
-Player scorecards provide a multi-dimensional view of a player's fantasy outlook.
-
-| Category    | Description                            |
-| ----------- | -------------------------------------- |
-| Overall     | Combined fantasy outlook               |
-| Opportunity | Expected role, workload, and usage     |
-| Health      | Injury status and availability         |
-| Hype        | Positive attention and market interest |
-| Risk        | Uncertainty, competition, and downside |
-| Momentum    | Direction and recent rate of change    |
-
-Example:
-
-```text
-🏈 Tank Dell Player Scorecard
-
-Overall:      52.0
-Opportunity:  52.0
-Health:       50.0
-Hype:         52.0
-Risk:         50.0
-Momentum:     52.0
-
-Recommendation:
-BUY
-
-Confidence:
-70%
-```
-
-Scorecards are stored historically so the application can evaluate player movement over time rather than relying only on a single current score.
-
----
-
-# 📡 Fantasy Signals
-
-Each player update is converted into a structured fantasy signal.
-
-| Signal               | Base Score |
-| -------------------- | ---------: |
-| 🟢 Positive          |       +1.0 |
-| 🟡 Monitor           |       -0.5 |
-| 🔴 Negative          |       -1.0 |
-| ⚪ Neutral or Unknown |        0.0 |
-
-Example:
-
-```text
-Tank Dell
-
-+1.0 Returned to practice
-+1.0 First-team repetitions
-+1.0 Positive camp report
--0.5 Limited participation
-
-Total Signal Score: +2.5
+Reason:
+First-team usage may indicate an increased offensive role.
 
 Recommendation:
 BUY / MOVE UP WATCHLIST
 ```
 
-Signals are also evaluated using factors such as:
-
-* Confidence
-* Recency
-* Relationship strength
-* Direct versus propagated impact
-* Event type
-* Duplicate detection
+The scoring layer can combine multiple signals while retaining the event history needed to explain why a player's outlook changed.
 
 ---
 
-# ♻️ Event Deduplication
+## Player Intelligence
 
-GridironGPT creates a fingerprint for each processed event.
+GridironGPT builds player-level intelligence from several forms of evidence:
 
-Before applying a score change, the event repository checks whether the same event has already been processed.
+* News mentions
+* Practice participation
+* First-team or second-team usage
+* Injury status
+* Transactions and roster movement
+* Positive and negative camp reports
+* Recent momentum
+* Historical signal activity
+* Team and teammate context
+
+A player report can include:
 
 ```text
-Incoming Event
-      │
-      ▼
-Create Fingerprint
-      │
-      ▼
-Check Event Repository
-      │
- ┌────┴────┐
- │         │
-New     Duplicate
- │         │
- ▼         ▼
-Process   Ignore
-```
+Player: Tank Dell
+Team: Houston Texans
+Position: WR
 
-Duplicate events return an engine result indicating:
+Current Outlook: Positive
+Momentum: Rising
+Recommendation: BUY
 
-```text
-Duplicate event ignored.
-```
+Recent Evidence:
++ First-team practice usage
++ Positive training-camp report
++ Increased opportunity
+- Recent limited practice
 
-This prevents repeated headlines or duplicated feeds from artificially inflating or reducing player scores.
-
----
-
-# 🏈 Player Intelligence
-
-## Generate a Player Report
-
-```bash
-gg report --player "Tank Dell"
-```
-
-## View a Player Timeline
-
-```bash
-gg timeline --player "Tank Dell"
-```
-
-## Generate a Fantasy Scorecard
-
-```bash
-gg score --player "Tank Dell"
-```
-
-Example output:
-
-```text
-🏈 Tank Dell Scorecard
-
-Current Score: +2.5
-
-Recommendation:
-BUY / MOVE UP WATCHLIST
+Summary:
+The positive opportunity signals currently outweigh the health concern,
+but continued injury monitoring is recommended.
 ```
 
 ---
 
-# ⚖️ Player Comparisons
+## Momentum Engine
 
-Compare players using current fantasy signals, scorecards, and recent momentum.
+The momentum engine evaluates the direction of a player's recent fantasy signals.
 
-```bash
-gg compare --player1 "Tank Dell" --player2 "Christian Watson"
-```
+Rather than treating every event equally forever, momentum emphasizes current activity and helps distinguish between:
 
-Example:
+* A player receiving several recent positive updates
+* A player whose earlier hype has cooled
+* A player accumulating injury or role-related concerns
+* A player with mixed or uncertain signals
 
-```text
-Tank Dell         +2.5
-Christian Watson  +1.0
+Momentum reports support:
 
-Edge:
-Tank Dell
-
-Recommendation:
-Prefer Tank Dell based on current signals and momentum.
-```
-
----
-
-# 📈 Draft Intelligence
-
-## Draft Watch
-
-```bash
-gg draft-watch
-```
-
-## Camp Risers
-
-```bash
-gg risers
-```
-
-## Camp Fallers
-
-```bash
-gg fallers
-```
-
-## Draft Watch Example
-
-<img width="408" height="235" alt="GridironGPT Draft Watch" src="https://github.com/user-attachments/assets/16908c8c-d20e-4d91-bc1a-ff228e9a5120" />
-
-Draft Watch helps identify:
-
-* Players gaining opportunity
-* Players receiving positive camp reports
-* Players losing depth-chart position
-* Injury-related movement
-* Emerging waiver and draft targets
-
----
-
-# 🏟️ Team Intelligence
-
-Generate team-wide reports:
-
-```bash
-gg report-team --team HOU
-```
-
-Team reports can include:
-
-* Player news
-* Injury updates
-* Roster movement
-* Positional competition
-* Fantasy outlooks
-* Team-level signal changes
-* Related-player impact
-
----
-
-# 📰 Daily Workflow
-
-## Update Available Sources
-
-```bash
-gg update-all
-```
-
-## Generate the Daily Digest
-
-```bash
-gg digest
-```
-
-The daily digest consolidates:
-
-* Training camp reports
-* Injury developments
-* Roster movement
-* Player opportunity changes
-* Fantasy recommendations
+* Hot-player reports
+* Cold-player reports
 * Risers and fallers
-* Players requiring additional monitoring
+* Player timelines
+* Training-camp monitoring
+* Draft watchlists
 
 ---
 
-# 🖥️ Streamlit Dashboard
+## Semantic Advisor
 
-GridironGPT includes a Streamlit interface for viewing fantasy intelligence interactively.
+GridironGPT includes a semantic retrieval layer built with sentence-transformer embeddings and FAISS vector search.
 
-The dashboard provides access to:
+The semantic advisor:
 
-* Player recommendations
-* Player scorecards
-* Score trends
-* Momentum indicators
-* Draft Watch
-* Signal rankings
-* Cortex Inspector
-* Engine explanations
-* Processed events
-* Propagated impacts
+1. Converts player documents and football information into embeddings.
+2. Stores those embeddings in a FAISS index.
+3. Retrieves relevant records for a user question.
+4. Provides the retrieved context to the configured response layer.
+5. Produces a fantasy-focused answer grounded in available project data.
 
-Run the application locally:
+Example question:
 
 ```bash
-streamlit run streamlit_app.py
+python -m gridiron_gpt.cli ask "Why is Tank Dell a BUY?"
 ```
 
----
-
-# 🔍 Cortex Inspector
-
-The Cortex Inspector exposes the internal results of the intelligence pipeline.
-
-It can display:
-
-* Resolved entities
-* Extracted signals
-* Direct impacts
-* Propagated impacts
-* Score updates
-* Recommendation confidence
-* Explanation output
-* Duplicate-event status
-
-This supports transparency, debugging, and explainable AI development.
-
----
-
-# 🏗️ Architecture
+Other example questions:
 
 ```text
-                    ┌─────────────────────┐
-                    │   Football Sources  │
-                    │ RSS, injuries, news │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │   Data Ingestion    │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │  Event Repository   │
-                    │   Deduplication     │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │  Entity Resolution  │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │  Signal Processing  │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │  Relationship and   │
-                    │ Propagation Engine  │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │    Score Engine     │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │ Player Scorecards   │
-                    │ Historical Storage  │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │   Recommendation    │
-                    │ Explanation Engine  │
-                    └──────────┬──────────┘
-                               │
-                 ┌─────────────┴─────────────┐
-                 ▼                           ▼
-       ┌──────────────────┐        ┌──────────────────┐
-       │ Streamlit UI     │        │ CLI and Reports  │
-       └──────────────────┘        └──────────────────┘
+Which Houston wide receiver has the strongest momentum?
+
+What recent news is affecting Christian Watson?
+
+Compare Tank Dell and Christian Watson.
+
+Which players have accumulated negative injury signals?
+
+Why did this player's score change?
 ```
 
 ---
 
-# 📁 Project Structure
+## Data Pipelines
+
+### News Pipeline
 
 ```text
-GridironGPT/
-├── gridiron_gpt/
-│   ├── data_ingest/
-│   ├── reports/
-│   ├── scoring/
-│   ├── retrieval/
-│   └── utilities/
-│
-├── gridiron_cortex/
-│   ├── engine/
-│   ├── knowledge/
-│   ├── models/
-│   ├── persistence/
-│   ├── propagation/
-│   ├── repositories/
-│   └── scoring/
-│
-├── data/
-│   ├── cortex/
-│   ├── news/
-│   └── player data/
-│
-├── docs/
-│   ├── PROJECT_OVERVIEW.md
-│   ├── ARCHITECTURE.md
-│   ├── CHANGELOG.md
-│   ├── ROADMAP.md
-│   ├── COMMANDS.md
-│   └── KNOWN_ISSUES.md
-│
-├── tests/
-├── streamlit_app.py
-├── requirements.txt
-└── README.md
+RSS Sources
+     │
+     ▼
+Article Collection
+     │
+     ▼
+Relevance Filtering
+     │
+     ▼
+Story Hash Generation
+     │
+     ▼
+Duplicate Detection
+     │
+     ▼
+Player Matching
+     │
+     ▼
+Signal Generation
+     │
+     ▼
+Signal Persistence
 ```
 
-The exact project structure may continue evolving as additional providers, persistence layers, and interfaces are added.
+### ESPN Pipeline
+
+```text
+ESPN Data
+    │
+    ▼
+Fetch and Normalize
+    │
+    ▼
+Schema Validation
+    │
+    ▼
+Player Profile Updates
+    │
+    ▼
+Ranking and Retrieval
+```
+
+### Daily Intelligence Pipeline
+
+```text
+Source Updates
+      │
+      ├── News
+      ├── Injuries
+      ├── Roster Moves
+      └── Player Data
+      │
+      ▼
+Signal Processing
+      │
+      ▼
+Persistence
+      │
+      ▼
+Momentum Report
+      │
+      ▼
+Training-Camp Digest
+      │
+      ▼
+Dashboard and CLI
+```
 
 ---
 
-# 🛠️ Technology Stack
+## Architecture
 
-## Core Development
+GridironGPT is organized around several cooperating layers.
 
-* Python 3.13
-* Git
-* GitHub
-* Linux and WSL
-* Visual Studio Code
+```text
+┌─────────────────────────────────────────────┐
+│              User Interfaces                │
+│       Streamlit Dashboard and CLI           │
+└─────────────────────┬───────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────┐
+│          Reports and Intelligence           │
+│ Player Reports, Digests, Rankings, Queries  │
+└─────────────────────┬───────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────┐
+│          Fantasy Intelligence Layer         │
+│ Signals, Momentum, Scores, Recommendations  │
+└─────────────────────┬───────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────┐
+│       Entity and Relationship Context       │
+│ Players, Teams, Aliases, Related Entities   │
+└─────────────────────┬───────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────┐
+│            Persistence Layer                │
+│ Articles, Events, Signals, Scores, Indexes  │
+└─────────────────────┬───────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────┐
+│             Ingestion Layer                 │
+│ RSS, ESPN, Injuries, Rosters, NFL Data      │
+└─────────────────────────────────────────────┘
+```
 
-## Application Interface
+---
 
+## Active Application Areas
+
+The current implementation is primarily organized within the following areas:
+
+```text
+gridiron_gpt/
+├── app/                         # Application services
+├── cli/                         # Command-line commands
+├── config/                      # Configuration
+├── core/                        # Core advisor and application logic
+├── dashboard/                   # Dashboard components
+├── data/                        # Runtime data and persisted outputs
+├── data_ingest/                 # Player and source ingestion
+├── data_sources/                # External data-provider integrations
+├── docs/                        # Project documentation
+├── draft/                       # Draft intelligence functionality
+├── ingestion/                   # Ingestion orchestration
+├── intelligence/                # Fantasy intelligence services
+├── models/                      # Domain and data models
+├── pipelines/                   # Processing pipelines
+├── scripts/                     # Operational and pipeline scripts
+├── semantic/                    # Semantic search and retrieval
+├── store/                       # Persistence utilities
+├── tests/                       # Automated tests
+├── validators/                  # Data and profile validation
+├── __main__.py                  # Python module entry point
+├── streamlit_app.py             # Streamlit application
+├── requirements.txt             # Runtime dependencies
+├── pyproject.toml               # Python project configuration
+├── ARCHITECTURE.md              # Architecture notes
+└── ROADMAP.md                   # Development roadmap
+```
+
+Some older directories remain in the repository while the application continues to be consolidated. See `ARCHITECTURE.md` for the currently recognized runtime path and areas requiring further review.
+
+---
+
+## Technology Stack
+
+### Core
+
+* Python 3.11+
+* Click
 * Streamlit
-* Command-line interface
+* Pandas
+* NumPy
 
-## AI and Retrieval
+### AI and Retrieval
 
-* Local LLM integration with Ollama
-* Retrieval-Augmented Generation
-* FAISS vector search
-* Natural-language query handling
+* Sentence Transformers
+* FAISS
+* Retrieval-Augmented Generation concepts
+* Configurable LLM providers
+* Local and API-backed language models
 
-## Data and Persistence
+### Data
 
+* ESPN data ingestion
+* `nflreadpy`
 * RSS feed processing
-* JSON data pipelines
-* JSONL scorecard persistence
-* Event fingerprinting
-* Historical score tracking
+* JSON and JSONL persistence
+* Player profile validation
+* Event and story hashing
 
-## Intelligence Architecture
+### Development
 
-* Entity resolution
-* Rule-based signal extraction
-* Relationship modeling
-* Signal propagation
-* Confidence scoring
-* Recommendation generation
-* Explanation generation
+* Git and GitHub
+* Pytest
+* Pre-commit
+* Linux and WSL
+* Virtual environments
 
 ---
 
-# ⚙️ Installation
+## Requirements
+
+* Python 3.11 or newer
+* Git
+* A Python virtual environment
+* Dependencies listed in `requirements.txt`
+* Optional provider credentials for API-backed language models
+
+Major dependencies include:
+
+* `faiss-cpu`
+* `sentence-transformers`
+* `torch`
+* `nflreadpy`
+* `streamlit`
+* `click`
+* `pandas`
+
+---
+
+## Installation
 
 Clone the repository:
 
 ```bash
-git clone https://github.com/phredogee/GridironGPT.git
-cd GridironGPT
+git clone git@github.com:phredogee/GridironGPT.git
+cd GridIronGPT
 ```
 
-Create a virtual environment:
+Create and activate a virtual environment:
 
 ```bash
 python -m venv .venv
-```
-
-Activate it on Linux or WSL:
-
-```bash
 source .venv/bin/activate
 ```
 
-Activate it on Windows PowerShell:
-
-```powershell
-.venv\Scripts\Activate.ps1
-```
-
-Install dependencies:
+Install the project dependencies:
 
 ```bash
-pip install -r requirements.txt
+pip install -r gridiron_gpt/requirements.txt
 ```
 
----
-
-# ▶️ Running GridIronGPT
-
-## Start the Streamlit Application
+Set the repository root on `PYTHONPATH` when needed:
 
 ```bash
-streamlit run streamlit_app.py
+export PYTHONPATH="$(pwd)"
 ```
 
-## Run CLI Commands
+> The repository currently contains both root-level and nested project files. Run commands from the repository root unless a command specifically requires the `gridiron_gpt/` application directory.
 
-Examples:
+---
+
+## Running the Application
+
+### Streamlit Dashboard
+
+From the repository root:
 
 ```bash
-gg update-all
-gg digest
-gg report --player "Tank Dell"
-gg score --player "Tank Dell"
-gg timeline --player "Tank Dell"
-gg compare --player1 "Tank Dell" --player2 "Christian Watson"
-gg draft-watch
-gg risers
-gg fallers
+streamlit run gridiron_gpt/streamlit_app.py
 ```
 
-Available commands may vary as the CLI continues to evolve.
+### Command-Line Interface
 
----
+Display the available CLI commands:
 
-# 🧪 Example Cortex Event
-
-Input:
-
-```text
-Tank Dell returned to first-team practice for Houston.
+```bash
+python -m gridiron_gpt --help
 ```
 
-Possible engine result:
+Run the fantasy advisor:
 
-```text
-Resolved Entities:
-- Tank Dell
-- Houston Texans
+```bash
+python -m gridiron_gpt.cli ask "Why is Tank Dell a BUY?"
+```
 
-Signal:
-Positive
+Depending on the local project configuration, a provider can be selected with environment variables:
 
-Direct Player Impact:
-+1.0
-
-Team Impact:
-+0.3
-
-Recommendation:
-BUY
-
-Confidence:
-70%
-
-Explanation:
-Tank Dell received a positive opportunity signal after returning
-to first-team practice. His scorecard increased because the event
-indicates improved availability and offensive involvement.
+```bash
+LLM_PROVIDER=deepseek \
+GRIDIRON_LLM=deepseek \
+python -m gridiron_gpt.cli ask "Compare Tank Dell and Christian Watson."
 ```
 
 ---
 
-# ✅ Current Capabilities
+## ESPN Commands
 
-* [x] RSS news ingestion
-* [x] Player matching
-* [x] Entity resolution
-* [x] Fantasy signal processing
-* [x] Event deduplication
-* [x] Player scorecards
-* [x] Historical scorecard persistence
-* [x] Recommendation generation
-* [x] Explanation generation
-* [x] Relationship modeling
-* [x] Signal propagation
-* [x] Player timelines
-* [x] Player comparisons
-* [x] Draft Watch
-* [x] Daily digest
-* [x] Team reports
-* [x] Streamlit dashboard
-* [x] Cortex Inspector
-* [x] Local LLM support
+Ingest ESPN data for a selected week:
+
+```bash
+python -m gridiron_gpt espn intake --week 5
+```
+
+Preview the ingestion without saving:
+
+```bash
+python -m gridiron_gpt espn intake --week 5 --dry-run
+```
+
+Scan for missing or incomplete player entries:
+
+```bash
+python -m gridiron_gpt espn fix --week 5
+```
+
+Preview and validate the ESPN data structure:
+
+```bash
+python -m gridiron_gpt espn dry-run --week 5
+```
 
 ---
 
-# 🔮 Roadmap
+## Running Tests
 
-## Data Expansion
+From the repository root:
 
-* [ ] Add additional NFL news providers
-* [ ] Expand NBC Sports ingestion
-* [ ] Add structured NFL data integrations
-* [ ] Add draft-class and rookie data
-* [ ] Improve player alias and nickname matching
-* [ ] Improve multi-player headline handling
-* [ ] Add source-health monitoring and fallback behavior
+```bash
+export PYTHONPATH="$(pwd)"
+pytest gridiron_gpt/tests/ -v
+```
 
-## Intelligence Engine
+To stop after the first failure:
 
-* [ ] Expand relationship types
-* [ ] Improve multi-hop propagation
+```bash
+pytest gridiron_gpt/tests/ -x -v
+```
+
+To run a specific test file:
+
+```bash
+pytest gridiron_gpt/tests/test_pipeline.py -v
+```
+
+The exact number of passing tests may change as the project grows, so the README intentionally does not advertise a fixed test count.
+
+---
+
+## Environment Variables
+
+| Variable            | Purpose                                                     |
+| ------------------- | ----------------------------------------------------------- |
+| `PYTHONPATH`        | Ensures the local `gridiron_gpt` package resolves correctly |
+| `GRIDIRON_LLM`      | Selects the configured language-model backend               |
+| `LLM_PROVIDER`      | Selects the provider used by the advisor                    |
+| `HF_TOKEN`          | Optional Hugging Face token                                 |
+| `OPENAI_API_KEY`    | Optional OpenAI provider credential                         |
+| `ANTHROPIC_API_KEY` | Optional Anthropic provider credential                      |
+| `DEEPSEEK_API_KEY`  | Optional DeepSeek provider credential                       |
+
+Only configure credentials for providers you intend to use. Do not commit `.env` files or private API keys.
+
+---
+
+## Data and Repository Safety
+
+The repository should not contain:
+
+* API keys
+* Authentication tokens
+* Private league credentials
+* Large generated model files
+* Private user data
+* Unlicensed proprietary datasets
+
+Use `.env.example` to document expected settings and keep real credentials in a local `.env` file excluded by `.gitignore`.
+
+---
+
+## Current Capabilities
+
+The following capabilities have been implemented or substantially developed:
+
+* [x] ESPN player-data ingestion
+* [x] Player profile validation
+* [x] Semantic player retrieval
+* [x] FAISS indexing
+* [x] Multi-source RSS ingestion
+* [x] Article relevance filtering
+* [x] Story-level deduplication
+* [x] Signal-level deduplication
+* [x] Injury event persistence
+* [x] Roster movement persistence
+* [x] Daily pipeline processing
+* [x] Player momentum engine
+* [x] Hot and cold player reports
+* [x] Player intelligence reports
+* [x] Latest signal feed
+* [x] Training-camp digest
+* [x] Streamlit player intelligence interface
+* [x] CLI-based querying
+* [x] Automated tests for major workflows
+
+---
+
+## Roadmap
+
+### Data Expansion
+
+* [ ] Add additional reliable NFL news providers
+* [ ] Expand structured injury sources
+* [ ] Add depth-chart and transaction providers
+* [ ] Strengthen `nflreadpy` integration
+* [ ] Ingest rookie and future NFL draft classes
+* [ ] Add team-level context and scoring
+
+### Intelligence
+
+* [ ] Improve alias and nickname resolution
+* [ ] Strengthen multi-player headline processing
+* [ ] Expand relationship-based impact propagation
 * [ ] Add configurable signal decay
-* [ ] Add source reliability weighting
-* [ ] Improve confidence calibration
-* [ ] Add team and position-group scorecards
-* [ ] Add deeper audit trails for propagated impacts
-* [ ] Evaluate hybrid rule-based and machine-learning scoring
+* [ ] Improve confidence scoring
+* [ ] Preserve complete recommendation audit trails
+* [ ] Add historical score comparisons
 
-## Platform
+### Platform
 
-* [ ] Migrate persistence to a database backend
-* [ ] Add REST API support
+* [ ] Consolidate duplicate and legacy directories
+* [ ] Move persistent application data to a database
 * [ ] Add scheduled cloud ingestion
-* [ ] Add authentication and user profiles
-* [ ] Add league-specific scoring settings
-* [ ] Add dynasty league support
-* [ ] Add live draft companion features
-* [ ] Add cloud deployment and monitoring
+* [ ] Add retry and backoff handling for unavailable providers
+* [ ] Expose intelligence through an API
+* [ ] Improve deployment and observability
+* [ ] Add league-specific configuration
+
+See `ROADMAP.md` for more detailed planning.
 
 ---
 
-# 📚 Documentation
+## Documentation
 
-Project documentation is maintained in the `docs/` directory.
+Project documentation is maintained in:
 
-Recommended documentation structure:
+* [`ARCHITECTURE.md`](ARCHITECTURE.md)
+* [`ROADMAP.md`](ROADMAP.md)
+* [`docs/`](docs/)
+
+As the project continues to mature, the documentation should be expanded to include:
 
 ```text
 docs/
@@ -832,48 +661,35 @@ docs/
 └── KNOWN_ISSUES.md
 ```
 
-These documents cover:
-
-* Project purpose and scope
-* System architecture
-* Development history
-* Planned features
-* Common commands
-* Known limitations and technical issues
-
 ---
 
-# ⚠️ Project Status
+## Project Status
 
 GridironGPT is under active development.
 
-The application currently serves as both:
+The repository currently contains a mixture of active application code, experimental modules, and legacy paths created during earlier development stages. Current work is focused on:
 
-1. A functional fantasy football intelligence platform
-2. An ongoing AI engineering and software architecture project
-
-Features, commands, data sources, and internal architecture may change as the system evolves.
+* Consolidating the active architecture
+* Improving data-source reliability
+* Expanding fantasy intelligence
+* Strengthening persistence and auditability
+* Separating reusable intelligence components from interface code
+* Preparing the application for broader deployment
 
 ---
 
-# 📄 License
+## License
 
 This project is licensed under the MIT License.
 
-See the `LICENSE` file for additional information.
+See [`LICENSE`](LICENSE) for details.
 
 ---
 
-# 👨‍💻 Author
+## Author
 
-Built by **Alfredo Garza** as part of an ongoing professional portfolio focused on:
+**Alfredo Garza**
 
-* Artificial intelligence
-* Data engineering
-* Intelligent automation
-* Software architecture
-* Natural language processing
-* Explainable AI
-* Sports analytics
+GridironGPT is an independent portfolio project focused on applied artificial intelligence, data engineering, intelligent automation, software architecture, and fantasy football analytics.
 
-GitHub: [phredogee](https://github.com/phredogee)
+* GitHub: [phredogee](https://github.com/phredogee)
