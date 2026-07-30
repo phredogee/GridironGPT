@@ -1,4 +1,6 @@
+from collections.abc import Callable, Iterable
 from pathlib import Path
+from typing import Any
 
 from gridiron_cortex.engine.cortex_engine import CortexEngine
 from gridiron_cortex.understand.entity_resolver import EntityResolver
@@ -50,7 +52,12 @@ class CortexFacade:
     def __init__(
         self,
         data_directory: str | Path = "data/cortex",
-    ):
+        catalog_loader: Callable[
+            [],
+            Iterable[dict[str, Any]],
+        ] | None = None,
+
+    ) -> None:
         data_path = Path(data_directory)
 
         event_repository = JsonEventRepository(
@@ -86,7 +93,9 @@ class CortexFacade:
 
         self.engine = CortexEngine(
             entity_resolver=EntityResolver(),
-            player_enrichment=PlayerEnrichmentService(),
+            player_enrichment=PlayerEnrichmentService(
+                catalog_loader=catalog_loader,
+        ),
             signal_processor=SignalProcessor(),
             relationship_engine=RelationshipEngine(
                 repository=relationship_repository,
