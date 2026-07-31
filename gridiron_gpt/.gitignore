@@ -32,3 +32,5 @@ phredenv/
 data/cortex/*.jsonl
 !data/cortex/.gitkeep
 client-python/
+
+*.Zone.Identifier
