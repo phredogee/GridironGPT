@@ -41,6 +41,10 @@ from gridiron_cortex.transforms.player_intelligence_builder import (
 from gridiron_cortex.evidence.evidence_analyzer import (
     EvidenceAnalyzer,
 )
+from gridiron_cortex.confidence.confidence_calibrator import (
+    ConfidenceCalibrator,
+)
+
 class CortexFacade:
     """
     Public entry point for Gridiron Cortex.
@@ -111,6 +115,7 @@ class CortexFacade:
             trend_analyzer=TrendAnalyzer(),
             evidence_aggregator=evidence_aggregator,
             evidence_analyzer=evidence_analyzer,
+            confidence_calibrator=ConfidenceCalibrator(),
             event_repository=event_repository,
             prediction_engine=PredictionEngine(),
         )

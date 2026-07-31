@@ -36,6 +36,9 @@ from gridiron_cortex.understand.signal_processor import SignalProcessor
 from gridiron_cortex.evidence.evidence_analyzer import (
     EvidenceAnalyzer,
 )
+from gridiron_cortex.confidence.confidence_calibrator import (
+    ConfidenceCalibrator,
+)
 
 def build_cortex_engine(
     tmp_path: Path,
@@ -76,5 +79,6 @@ def build_cortex_engine(
         trend_analyzer=TrendAnalyzer(),
         event_repository=event_repository,
         evidence_analyzer=evidence_analyzer,
+        confidence_calibrator=ConfidenceCalibrator(),
         prediction_engine=PredictionEngine(),
     )
