@@ -1,6 +1,4 @@
-# Known Issues
-
-# Known Issues
+## Known Issues
 
 ## Statistical Signal Generation
 
@@ -159,15 +157,66 @@ Score Adjustment
 
 ### Cortex Inspector
 
-The Cortex Inspector currently does not visualize:
+The Cortex Inspector now visualizes:
 
-* graph traversal
-* propagation candidates
-* hop counts
-* propagation weights
-* reasoning chains
+- pipeline status
+- evidence and confidence
+- cognitive trace
+- evidence graph
+- propagation
+- predictions
+- player scorecards
+- score history
+- explanations
+- diagnostics
 
-A future update should expose the full propagation path for debugging and explainability.
+The Propagation view currently exposes:
+
+- direct impact
+- downstream propagated impacts
+- hop count
+- propagation weight
+- relationship strength
+- relationship confidence
+- propagation path
+
+### Remaining Inspector Limitations
+
+The Inspector does not yet provide:
+
+- interactive node-based graph visualization
+- clickable propagation nodes
+- live animated pipeline execution
+- side-by-side comparison of multiple players
+- event markers over historical score charts
+- filtering by propagation depth
+- filtering by relationship type
+- graph-level search
+- historical propagation replay
+
+These are presentation limitations rather than core engine blockers.
+
+---
+
+## Relationship Graph Refresh
+
+The current NFL relationship graph is generated from:
+
+- nflverse player catalog
+- nflverse depth charts
+- active roster status
+- latest available team depth-chart snapshot
+
+The initial depth-aware graph contains approximately 579 active relationships.
+
+### Current Limitation
+
+Relationship refresh is manual.
+
+Running a full refresh repeatedly appends another set of relationship snapshots to:
+
+```text
+data/cortex/relationships.jsonl
 
 ---
 

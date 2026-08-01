@@ -7,7 +7,9 @@ class Impact:
     """
     A fantasy-relevant impact created from a signal.
 
-    Impacts may be direct or propagated.
+    Impacts may be direct or propagated. Propagated impacts retain
+    relationship metadata so Cortex can explain how an effect traveled
+    through the knowledge graph.
     """
 
     entity_type: str
@@ -20,3 +22,9 @@ class Impact:
     impact_type: str = "direct"
 
     reason: str = ""
+
+    # Propagation metadata
+    hop_count: Optional[int] = None
+    relationship_strength: Optional[float] = None
+    relationship_confidence: Optional[float] = None
+    propagation_weight: Optional[float] = None

@@ -71,6 +71,16 @@ class RelationshipEngine:
                             impact_score=propagated_score,
                             impact_type="propagated",
                             reason=candidate.reason,
+                            hop_count=candidate.hop_count,
+                            relationship_strength=(
+                                candidate.relationship_strength
+                            ),
+                            relationship_confidence=(
+                                candidate.relationship_confidence
+                            ),
+                            propagation_weight=(
+                                candidate.propagation_weight
+                            ),
                         )
                     )
 

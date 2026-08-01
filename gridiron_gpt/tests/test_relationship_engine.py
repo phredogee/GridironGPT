@@ -137,9 +137,25 @@ def test_relationship_engine_uses_propagation_planner(
     )
 
     assert propagated.entity_name == "Planner Receiver"
+
     assert abs(
         propagated.impact_score - 0.686375
     ) < 0.000001
+
+    assert propagated.hop_count == 1
+
+    assert abs(
+        propagated.relationship_strength - 0.85
+    ) < 0.000001
+
+    assert abs(
+        propagated.relationship_confidence - 0.95
+    ) < 0.000001
+
+    assert abs(
+        propagated.propagation_weight - 0.686375
+    ) < 0.000001
+
 
 def make_signal(
     impact_score: float,

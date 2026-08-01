@@ -34,3 +34,4 @@ data/cortex/*.jsonl
 client-python/
 
 *.Zone.Identifier
+data/cache/

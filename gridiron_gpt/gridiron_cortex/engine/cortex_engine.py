@@ -202,6 +202,8 @@ class CortexEngine:
             recommendations=recommendations,
             evidence_chains=evidence_chains,
             evidence_graphs=evidence_graphs,
+            evidence_assessment=context.evidence_assessment,
+            confidence_result=context.confidence_result,
             canonical_event=context.canonical_event,
             explanation=explanation,
         )

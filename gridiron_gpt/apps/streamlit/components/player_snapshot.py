@@ -14,13 +14,15 @@ def render_player_snapshot(result):
 
     for snapshot in result.player_snapshots:
         st.write(
-            f"**{snapshot.player_name}** "
+            f"**{snapshot.name}** "
             f"({snapshot.team or 'UNK'})"
         )
 
-    prediction = snapshot.prediction
+        prediction = snapshot.prediction
 
-    if prediction is not None:
+        if prediction is None:
+            continue
+
         st.markdown("#### Forecast")
 
         col1, col2, col3, col4 = st.columns(4)

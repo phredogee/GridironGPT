@@ -3,18 +3,54 @@ import streamlit as st
 
 def render_pipeline_status(result):
     st.markdown("### Pipeline Status")
-
-    status_cols = st.columns(6)
+    st.caption(
+        "Execution status for the major Gridiron Cortex reasoning stages."
+    )
 
     stages = [
-        ("RawEvent", True),
-        ("Entities", bool(result.entities)),
-        ("Signal", result.signal is not None),
-        ("Impacts", bool(result.impacts)),
-        ("Scores", bool(result.score_updates)),
-        ("Recommendation", bool(result.recommendations)),
+        (
+            "Evidence",
+            result.canonical_event is not None,
+        ),
+        (
+            "Confidence",
+            result.confidence_result is not None,
+        ),
+        (
+            "Entities",
+            bool(result.entities),
+        ),
+        (
+            "Signal",
+            result.signal is not None,
+        ),
+        (
+            "Propagation",
+            bool(result.impacts),
+        ),
+        (
+            "Scores",
+            bool(result.score_updates),
+        ),
+        (
+            "Prediction",
+            bool(result.predictions),
+        ),
+        (
+            "Recommendation",
+            bool(result.recommendations),
+        ),
+        (
+            "Explanation",
+            bool(result.explanation),
+        ),
     ]
 
-    for col, (label, passed) in zip(status_cols, stages):
-        with col:
-            st.metric(label, "✅" if passed else "⚠️")
+    status_cols = st.columns(3)
+
+    for index, (label, passed) in enumerate(stages):
+        with status_cols[index % 3]:
+            if passed:
+                st.success(f"✓ {label}")
+            else:
+                st.warning(f"⚠ {label}")

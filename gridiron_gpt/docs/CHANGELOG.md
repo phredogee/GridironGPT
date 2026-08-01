@@ -1,5 +1,76 @@
 # Changelog
 
+## 2026-08-01
+
+### Added
+
+#### Depth-Aware NFL Relationship Graph
+
+* Integrated `nflreadpy.load_depth_charts()` with the Cortex relationship pipeline.
+* Added latest-snapshot filtering to prevent historical depth-chart records from entering the active graph.
+* Added active-roster filtering using the nflverse player catalog.
+* Added depth-aware offensive relationships for quarterbacks, running backs, wide receivers, and tight ends.
+* Added GSIS ID matching with normalized player-name fallback.
+* Added position and depth-rank limits to reduce low-value graph edges.
+
+#### Relationship Semantics
+
+Implemented semantic propagation behavior for football relationships including:
+
+* `throws_to`
+* `hands_off_to`
+* `backs_up`
+* `target_competitor`
+* `depth_chart_competitor`
+
+Relationship semantics can preserve or reverse signal direction depending on the source impact.
+
+#### Propagation Intelligence
+
+* Added semantic multi-hop propagation.
+* Added hop-based decay.
+* Added strongest-path selection using absolute propagated effect.
+* Added propagation reasoning chains.
+* Propagated impacts now retain relationship-path explanations.
+* Added team metadata to propagation candidates.
+
+#### Persistent NFL Knowledge Graph
+
+* Generated the initial depth-aware NFL relationship graph.
+* Reduced the prototype graph from approximately 2,940 broad roster relationships to 579 depth-aware relationships.
+* Persisted relationships through the Cortex Knowledge Service.
+* Current relationship storage:
+  `data/cortex/relationships.jsonl`
+* Relationship history remains append-only for auditability.
+
+#### Cortex Inspector
+
+* Added Propagation visualization to Cortex Inspector.
+* Inspector now exposes downstream entities affected by a signal.
+* Added propagation weights, hop counts, and relationship reasoning paths.
+* Verified real NFL propagation using persisted depth-aware relationships.
+
+### Validation
+
+* Verified nflverse player catalog contains 3,133 players.
+* Verified depth-chart snapshots provide position rank and slot information.
+* Verified relationship generation across all 32 NFL teams.
+* Verified end-to-end propagation from nflverse data through the Cortex Inspector.
+* Test suite: **254 passing tests**.
+
+### Known Follow-Up Work
+
+* Relationship coverage varies significantly by team because active-roster and depth-chart data do not always intersect uniformly.
+* Relationship refresh is currently manual.
+* `relationships.jsonl` is append-only, so repeated full refreshes create additional relationship snapshots.
+* Historical validation and relationship-weight calibration remain future work.
+
+### Status
+
+Depth-aware relationship propagation operational.
+
+---
+
 ### Added
 
 - Training-camp football concepts.

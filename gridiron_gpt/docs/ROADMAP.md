@@ -28,33 +28,77 @@ COMPLETE
 
 ---
 
-## Phase 2 — Intelligence (Current)
+## Phase 2 — Intelligence & Reasoning (Current)
 
-### In Progress
+Transform Cortex from a scoring pipeline into a domain-aware football reasoning engine.
 
-- Rolling statistical baselines
-- Signal aggregation
-- Multi-source evidence fusion
-- Confidence calibration
-- Structured event generation
+### Completed
+
+#### Knowledge Layer
+
+- Knowledge Service
+- Persistent entity relationships
+- Knowledge Graph Manager
+- Graph traversal
+- Neighbor discovery
+- Relationship path discovery
+- Cycle-safe graph construction
+- Relationship history
+
+#### NFL Relationship Graph
+
+- nflverse player catalog integration
+- nflverse depth-chart integration
+- Latest depth-chart snapshot filtering
+- Active-roster filtering
+- GSIS ID player matching
+- Depth-aware offensive relationships
+- Position and depth-rank filtering
+- Persistent NFL relationship graph
+
+Initial relationship generation was reduced from approximately **2,940 broad roster relationships to 579 depth-aware relationships**.
+
+Current supported relationship semantics include:
+
+- `throws_to`
+- `hands_off_to`
+- `backs_up`
+- `target_competitor`
+- `depth_chart_competitor`
+
+#### Propagation Engine
+
+- `PropagationCandidate` model
+- Graph-based `PropagationPlanner`
+- Multi-hop traversal
+- Hop-decay weighting
+- Relationship-strength weighting
+- Relationship-confidence weighting
+- Semantic propagation multipliers
+- Direction-reversing competitive relationships
+- Strongest-path selection
+- Propagation reasoning chains
+- RelationshipEngine integration
+- Team metadata propagation
+
+Cortex can now reason differently about cooperative and competitive football relationships.
+
+Example:
+
+```text
+QB positive signal
+    ↓ throws_to
+WR positive effect
+
+WR positive signal
+    ↓ target_competitor
+WR competitor negative effect
 
 ---
 
 ## Phase 3
 
 ### Planned
-
-Knowledge Graph Manager
-
-- Dynamic relationships
-- Editable graph
-- Relationship versioning
-
-Propagation Engine v2
-
-- Multi-hop propagation
-- Confidence decay
-- Multiple propagation strategies
 
 Player Intelligence API
 
@@ -96,27 +140,7 @@ Historical Trend Analysis
 
 ✔ Propagation candidates
 
-### Knowledge Graph
-
-* Persistent entity relationship storage
-* Graph traversal
-* Neighbor discovery
-* Relationship path discovery
-* Cycle-safe graph construction
-
-### Propagation Engine
-
-* PropagationCandidate model
-* Graph-based PropagationPlanner
-* Hop-decay weighting
-* Multi-hop traversal
-* Strongest-path selection
-* Relationship reasoning chain generation
-* RelationshipEngine integration
-
 ---
-
-# Next Milestone
 
 ## Relationship-aware scoring
 
@@ -125,87 +149,6 @@ Historical Trend Analysis
 - Coach influence
 - Injury cascades
 - Offensive line effects
-
----
-
-## Planned Relationship Types
-
-* quarterback_receiver
-* quarterback_running_back
-* running_back_offensive_line
-* receiver_offensive_line
-* offensive_line_team
-* defense_secondary
-* defense_pass_rush
-* coach_team
-* coordinator_offense
-* coordinator_defense
-* rookie_team
-* teammate
-* target_competition
-* depth_chart
-* injury_replacement
-
----
-
-## Signal Categories
-
-Signals will propagate differently based on their category.
-
-Examples:
-
-* Injury
-* Recovery
-* Contract
-* Trade
-* Suspension
-* Camp Performance
-* Coaching Change
-* Scheme Change
-* Depth Chart Movement
-* Rookie Development
-* Fantasy Hype
-* Team Performance
-
----
-
-## Future Propagation Rules
-
-Propagation rules will become directional.
-
-Example:
-
-```text
-QB
- ↓
-WR
-
-Positive Signal
-100%
-
-Negative Signal
-85%
-```
-
-while
-
-```text
-WR
- ↓
-QB
-
-Positive Signal
-40%
-
-Negative Signal
-20%
-```
-
-The same relationship may therefore produce different outcomes depending on:
-
-* signal category
-* sentiment
-* propagation direction
 
 ---
 
