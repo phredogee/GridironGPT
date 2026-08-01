@@ -242,3 +242,26 @@ def test_no_recommendation_returns_no_graphs() -> None:
     )
 
     assert graphs == []
+
+def test_propagated_impact_explanation_includes_relationship_context():
+    impact = Impact(
+        entity_type="player",
+        entity_name="A.J. Brown",
+        team="PHI",
+        impact_score=0.767,
+        impact_type="propagated",
+        reason=(
+            "Jalen Hurts --throws_to(+1.00)--> "
+            "A.J. Brown"
+        ),
+        hop_count=1,
+        relationship_strength=0.95,
+        relationship_confidence=0.95,
+        propagation_weight=0.767,
+    )
+
+    summary = ExplanationEngine._impact_summary(impact)
+
+    assert "propagated impact" in summary
+    assert "1-hop propagation" in summary
+    assert "weight +0.767" in summary

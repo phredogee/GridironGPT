@@ -42,6 +42,42 @@ class SignalProcessor:
         "benched",
     ]
 
+    CATEGORY_KEYWORDS = {
+        "injury": [
+        "injured",
+        "injury",
+        "out",
+        "questionable",
+        "doubtful",
+        "setback",
+    ],
+        "recovery": [
+        "returns",
+        "returned",
+        "cleared",
+        "healthy",
+        "full participant",
+    ],
+        "opportunity": [
+        "first-team",
+        "starter",
+        "starting",
+        "increased reps",
+        "more snaps",
+    ],
+        "depth_chart": [
+        "bench",
+        "benched",
+        "promoted",
+        "demoted",
+        "depth chart",
+    ],
+        "suspension": [
+        "suspended",
+        "suspension",
+    ],
+}
+
     def process(
         self,
         event: RawEvent,
@@ -165,6 +201,7 @@ class SignalProcessor:
             sources=sources,
             corroboration_confidence=corroboration_confidence,
 
+            signal_category=self.classify_signal_category(headline),
             signal_type=event.event_type or "news",
             evidence=evidence,
         )
@@ -354,3 +391,13 @@ class SignalProcessor:
             return -1.0
 
         return 0.0
+
+    @classmethod
+    def classify_signal_category(cls, text: str) -> str:
+        normalized = text.casefold()
+
+        for category, keywords in cls.CATEGORY_KEYWORDS.items():
+            if any(keyword in normalized for keyword in keywords):
+                return category
+
+        return "general"

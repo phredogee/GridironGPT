@@ -151,3 +151,31 @@ def test_confidence_penalty_is_capped():
 
     # More than enough conflicting keywords to exceed the cap.
     assert result.confidence_penalty == 0.50
+
+def test_neutral_source_is_not_marked_as_conflicting():
+    detector = ContradictionDetector()
+
+    event = build_canonical_event(
+        evidence=[
+            build_source_evidence(
+                source="ESPN",
+                headline="Tank Dell returns to practice.",
+            ),
+            build_source_evidence(
+                source="NFL.com",
+                headline="Tank Dell ruled out with injury.",
+            ),
+            build_source_evidence(
+                source="NBC Sports",
+                headline="Tank Dell spoke with reporters.",
+            ),
+        ]
+    )
+
+    result = detector.evaluate(event)
+
+    assert result.has_conflict is True
+    assert set(result.conflicting_sources) == {
+        "ESPN",
+        "NFL.com",
+    }

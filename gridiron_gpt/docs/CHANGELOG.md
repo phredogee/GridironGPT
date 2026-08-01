@@ -1,5 +1,228 @@
 # Changelog
 
+## 2026-08-01 — Phase B Intelligence & Reasoning Complete
+
+### Milestone
+
+Phase B of the Gridiron Cortex architecture is complete.
+
+Cortex has progressed from a weighted fantasy scoring pipeline into an evidence-aware, relationship-aware football reasoning engine capable of tracing an event from observation through recommendation and explanation.
+
+### Added
+
+#### Dynamic Relationship Refresh
+
+- Added `RelationshipRefreshService`.
+- Added relationship-state comparison for:
+  - new relationships
+  - changed relationships
+  - unchanged relationships
+  - stale relationships
+- Added stale relationship deactivation while preserving history.
+- Added idempotent refresh behavior.
+- Unchanged relationship snapshots are no longer repeatedly persisted.
+- Verified stable refresh against the depth-aware NFL graph.
+
+Example stable refresh:
+
+```text
+proposed=579
+current=579
+new=0
+changed=0
+unchanged=579
+stale=0
+written=0
+```
+
+#### Multidimensional Scoring
+
+Expanded player intelligence beyond a single overall score.
+
+Current scorecard dimensions:
+
+- Overall
+- Opportunity
+- Health
+- Hype
+- Risk
+- Momentum
+
+Signal categories now determine which score dimensions change.
+
+Examples:
+
+```text
+Recovery
+   ↓
+Health ↑
+Risk ↓
+Momentum ↑
+Overall ↑
+```
+
+```text
+Injury
+   ↓
+Health ↓
+Risk ↑
+Momentum ↓
+Overall ↓
+```
+
+Propagated impacts retain the semantic meaning of the originating signal so downstream players receive category-aware score changes.
+
+#### Intelligence & Reasoning
+
+- Integrated `IntelligenceContext`.
+- Integrated trend analysis.
+- Integrated contradiction analysis.
+- Integrated reasoning results.
+- Added evidence-aware confidence handling.
+- Added contradiction confidence penalties.
+- Recommendation logic now consumes broader Cortex intelligence rather than relying solely on score thresholds.
+
+#### Contradiction Detection
+
+Added structured contradiction reasoning across canonical-event evidence.
+
+Contradiction results now expose:
+
+```text
+has_conflict
+severity
+confidence_penalty
+conflicting_sources
+explanation
+```
+
+Improved source attribution so neutral evidence sources are not incorrectly labeled as conflicting.
+
+#### Relationship-Aware Explainability
+
+- Propagation metadata now survives into structured evidence chains.
+- Propagated Reason steps expose hop information.
+- Added relationship-aware propagation summaries.
+- Preserved propagation reasons through the explanation layer.
+- Evidence chains can now explain how an effect reached a downstream player.
+
+Example:
+
+```text
+Observe
+   ↓
+Understand
+   ↓
+Reason
+   ↓
+1-hop propagation
+   ↓
+Evaluate
+   ↓
+Predict
+   ↓
+Decide
+```
+
+#### End-to-End Phase B Integration Test
+
+Added a dedicated integration test covering the complete Cortex reasoning path:
+
+```text
+RawEvent
+   ↓
+CortexFacade
+   ↓
+Entity Resolution
+   ↓
+Signal Classification
+   ↓
+Knowledge Graph
+   ↓
+Relationship Propagation
+   ↓
+Multidimensional Scoring
+   ↓
+Prediction / Recommendation
+   ↓
+Relationship-Aware Explanation
+```
+
+The integration test verifies that:
+
+- Semantic signal classification survives the full pipeline.
+- Direct impacts are generated.
+- Graph-based propagated impacts are generated.
+- Propagation metadata survives downstream processing.
+- Direct and propagated players receive multidimensional score updates.
+- Recommendations execute successfully.
+- Evidence chains preserve relationship-aware reasoning.
+
+### Fixed
+
+- Corrected contradiction source attribution so neutral sources are excluded from `conflicting_sources`.
+- Corrected evidence-chain propagation summaries so hop metadata is preserved.
+- Corrected `EvidenceStep.reasons` construction to preserve the expected `list[str]` structure.
+- Prevented unchanged relationship refreshes from generating unnecessary persistence records.
+- Improved propagation metadata continuity between Reason and Explain faculties.
+
+### Changed
+
+- Relationship graph maintenance is now state-aware rather than append-on-every-refresh.
+- Score updates are now category-aware rather than applying one generic delta across all dimensions.
+- Recommendation reasoning now incorporates intelligence context.
+- Explanation artifacts now retain propagation context.
+- Phase B architecture documentation now reflects the completed reasoning system.
+
+### Validation
+
+Phase B closed with:
+
+```text
+274 passed
+```
+
+Validated subsystems include:
+
+- Evidence aggregation
+- Evidence analysis
+- Confidence calibration
+- Contradiction detection
+- Entity resolution
+- Signal processing
+- Semantic signal classification
+- Knowledge Service
+- Knowledge Graph Manager
+- Relationship persistence
+- Dynamic relationship refresh
+- Relationship semantics
+- Propagation planning
+- Multi-hop propagation
+- Cycle protection
+- Strongest-path selection
+- Multidimensional scoring
+- Trend analysis
+- Reasoning
+- Prediction
+- Recommendation
+- Evidence chains
+- Evidence graphs
+- Explanation
+- Cortex Facade integration
+
+### Status
+
+**Phase B — Intelligence & Reasoning: COMPLETE**
+
+Next development phase:
+
+**Phase C — Data Ingestion**
+
+Primary Phase C objective:
+
+> Build a reliable, normalized, deduplicated, observable multi-source NFL ingestion layer capable of continuously supplying Gridiron Cortex with high-quality evidence.
+
+---
 ## 2026-08-01
 
 ### Added

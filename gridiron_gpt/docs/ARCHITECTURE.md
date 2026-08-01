@@ -2,32 +2,45 @@
 
 ## Gridiron Cortex Intelligence Architecture
 
-GridironGPT is a fantasy football intelligence platform powered by **Gridiron Cortex**, a modular reasoning engine that transforms raw NFL information into structured, explainable fantasy football intelligence.
+GridironGPT is a fantasy football intelligence platform powered by **Gridiron Cortex**, a modular reasoning engine that transforms raw NFL information into structured, persistent, and explainable fantasy football intelligence.
 
-GridironGPT owns the football-specific application layer:
+The architecture intentionally separates football-domain concerns from reusable intelligence concerns.
+
+### GridironGPT Owns the Football Domain
+
+GridironGPT is responsible for:
 
 - NFL data ingestion
-- nflverse integration
+- nflverse / nflreadpy integration
 - player catalogs
-- roster and depth-chart interpretation
+- roster interpretation
+- depth-chart interpretation
+- player aliases and identity normalization
 - football-specific relationship construction
 - Streamlit presentation
-- fantasy workflows
+- fantasy football workflows
 
-Gridiron Cortex owns the reusable intelligence layer:
+### Gridiron Cortex Owns Intelligence
+
+Gridiron Cortex is responsible for:
 
 - evidence processing
+- canonical event reasoning
 - entity resolution
-- signal processing
-- relationship reasoning
-- propagation
-- scoring
+- signal interpretation
+- confidence calibration
+- contradiction detection
+- knowledge graph traversal
+- relationship semantics
+- impact propagation
+- multidimensional scoring
+- trend analysis
 - prediction
 - recommendation
 - explanation
 - persistent intelligence
 
-The architectural objective is to keep the application thin while allowing Cortex to remain reusable outside of fantasy football.
+The architectural goal is to keep application interfaces thin while preserving Cortex as the project's primary intelligence engine.
 
 ---
 
@@ -36,46 +49,48 @@ The architectural objective is to keep the application thin while allowing Corte
 ```text
 NFL Data Sources
        │
-       ▼
-GridironGPT Ingestion
-       │
        ├── News / RSS
        ├── nflverse
        ├── Rosters
        ├── Depth Charts
-       └── Player Statistics
+       ├── Statistics
+       └── Future Providers
        │
        ▼
-Structured Football Events
+GridironGPT Ingestion Layer
        │
        ▼
-┌──────────────────────────────┐
-│       GRIDIRON CORTEX        │
-│                              │
-│  Observe                     │
-│     ↓                        │
-│  Understand                  │
-│     ↓                        │
-│  Reason                      │
-│     ↓                        │
-│  Evaluate                    │
-│     ↓                        │
-│  Predict                     │
-│     ↓                        │
-│  Decide                      │
-│     ↓                        │
-│  Explain                     │
-│     ↓                        │
-│  Remember                    │
-└──────────────────────────────┘
+Normalized Football Events
        │
        ▼
-Fantasy Intelligence
+┌──────────────────────────────────┐
+│          GRIDIRON CORTEX         │
+│                                  │
+│  Observe                         │
+│     ↓                            │
+│  Understand                      │
+│     ↓                            │
+│  Reason                          │
+│     ↓                            │
+│  Evaluate                        │
+│     ↓                            │
+│  Predict                         │
+│     ↓                            │
+│  Decide                          │
+│     ↓                            │
+│  Explain                         │
+│     ↓                            │
+│  Remember                        │
+└──────────────────────────────────┘
+       │
+       ▼
+Structured Fantasy Intelligence
        │
        ├── Recommendations
        ├── Player Scorecards
        ├── Predictions
        ├── Propagated Impacts
+       ├── Evidence Chains
        ├── Evidence Graphs
        ├── Timelines
        └── Explanations
@@ -90,50 +105,61 @@ GridironGPT Interfaces
 
 ## Cortex Owns Intelligence
 
-The Cortex engine owns reasoning, scoring, prediction, recommendation, explanation, and persistent intelligence.
+Scoring, reasoning, propagation, prediction, confidence, recommendation, and explanation logic belong inside Cortex.
 
-GridironGPT should not duplicate Cortex reasoning in the application layer.
+Application code should consume Cortex results rather than reproduce Cortex decisions.
 
 ---
 
 ## GridironGPT Owns Football Context
 
-Football-specific knowledge belongs in GridironGPT.
+Football-specific data interpretation belongs in GridironGPT.
 
 Examples include:
 
 - NFL roster interpretation
 - depth-chart analysis
-- fantasy position filtering
+- fantasy-position filtering
+- football-specific player matching
 - player aliases
-- football relationship construction
-- league-specific metadata
+- nflverse adapters
+- relationship construction
 
-Cortex receives structured relationships and events without needing to know how NFL datasets are organized.
+Cortex consumes structured entities, events, evidence, and relationships without needing to understand the organization of external NFL datasets.
 
 ---
 
-## Explainability Is a First-Class Requirement
+## Evidence Before Conclusions
 
-Every major intelligence output should be auditable.
+Recommendations should be traceable to observable evidence.
 
 Cortex should be able to answer:
 
 ```text
 What happened?
-Why does Cortex believe it?
-How confident is Cortex?
-Who else is affected?
-How did the score change?
+What evidence supports it?
+Do the sources agree?
+How confident are we?
+Who is affected?
+How did the effect propagate?
+How did player intelligence change?
 What is likely to happen next?
 Why is the recommendation justified?
 ```
 
 ---
 
+## Explainability Is Part of the Engine
+
+Explainability is not presentation-layer decoration.
+
+Cortex produces structured explanation artifacts that applications can render without reconstructing reasoning independently.
+
+---
+
 ## Persistent Intelligence
 
-Cortex maintains historical state rather than treating every event independently.
+Cortex maintains historical state instead of evaluating every event in isolation.
 
 Persistent knowledge currently includes:
 
@@ -143,13 +169,13 @@ Persistent knowledge currently includes:
 - entity relationships
 - relationship history
 
-This allows Cortex to reason about how intelligence changes over time.
+This enables Cortex to reason about changes over time.
 
 ---
 
 # Cognitive Architecture
 
-Gridiron Cortex is organized around cognitive faculties.
+Cortex organizes intelligence processing around a sequence of reasoning faculties:
 
 ```text
 Observe
@@ -169,7 +195,7 @@ Explain
 Remember
 ```
 
-Each faculty answers a different question.
+These faculties correspond to concrete engine components rather than being presentation-only concepts.
 
 ---
 
@@ -181,28 +207,111 @@ Each faculty answers a different question.
 What happened?
 ```
 
-## Responsibilities
+The observation layer begins with a `RawEvent`.
 
-- receive raw events
-- normalize event input
-- aggregate supporting evidence
-- enrich player metadata
-- reject duplicate events
-
-## Primary Models
+Typical event information includes:
 
 ```text
-RawEvent
-CanonicalEvent
+headline
+source
+player
+team
+timestamp
+additional source metadata
 ```
 
-## Relevant Packages
+Raw events are normalized before deeper reasoning occurs.
+
+---
+
+# Evidence Aggregation
+
+Multiple reports may describe the same underlying football development.
+
+Cortex supports aggregation into a `CanonicalEvent`.
+
+Conceptually:
 
 ```text
-observe/
-evidence/
-enrichment/
+ESPN report ───────┐
+NFL report ────────┤
+NBC report ────────┤
+                   ▼
+             CanonicalEvent
+                   │
+                   ▼
+            Evidence Analysis
 ```
+
+Source evidence retains provenance rather than collapsing reports into untraceable text.
+
+---
+
+# Evidence Analysis
+
+Cortex evaluates the quality and consistency of evidence supporting an event.
+
+Evidence reasoning includes:
+
+- source count
+- corroboration
+- source agreement
+- source conflict
+- evidence confidence
+- supporting evidence
+- contradictory evidence
+
+This allows Cortex to distinguish:
+
+```text
+single report
+```
+
+from:
+
+```text
+multiple independent reports describing the same event
+```
+
+and from:
+
+```text
+multiple reports that disagree about the event
+```
+
+---
+
+# Contradiction Detection
+
+The contradiction subsystem evaluates evidence for incompatible indicators.
+
+Examples:
+
+```text
+Player returns to full practice.
+```
+
+versus:
+
+```text
+Player ruled out with injury.
+```
+
+Contradiction results contain:
+
+```text
+has_conflict
+severity
+confidence_penalty
+conflicting_sources
+explanation
+```
+
+Only sources contributing contradictory positive or negative evidence are attributed as conflicting.
+
+Neutral sources are not automatically labeled contradictory simply because they belong to the same canonical event.
+
+Contradiction penalties feed downstream reasoning and recommendation confidence.
 
 ---
 
@@ -214,67 +323,114 @@ enrichment/
 What does the event mean?
 ```
 
-## Responsibilities
+The understanding layer converts observations into football-relevant signals.
 
-- analyze evidence
-- evaluate evidence quality
-- resolve entities
-- classify signals
-- determine event sentiment
-- calculate direct signal impact
-- calibrate confidence
+Primary responsibilities include:
 
-## Processing Flow
+- entity resolution
+- player enrichment
+- signal classification
+- sentiment interpretation
+- semantic signal categorization
+- evidence-aware confidence
 
-```text
-RawEvent
-    ↓
-Player Enrichment
-    ↓
-Evidence Aggregation
-    ↓
-CanonicalEvent
-    ↓
-Evidence Analysis
-    ↓
-EvidenceAssessment
-    ↓
-Entity Resolution
-    ↓
-Signal Processing
-    ↓
-Confidence Calibration
-```
+---
 
-## Confidence Calibration
+# Entity Resolution
 
-Cortex combines:
+`EntityResolver` identifies entities referenced by an event.
+
+Current primary entity type:
 
 ```text
-Classifier Confidence
-        +
-Evidence Confidence
-        ↓
-Calibrated Confidence
+player
 ```
 
-The current confidence calibrator weights:
+Entities may contain:
 
 ```text
-Classifier confidence: 60%
-Evidence confidence:   40%
+name
+team
+entity type
+confidence
+source
 ```
 
-The calibrated value becomes the confidence used by downstream reasoning.
+Player enrichment can supplement resolved entities using the GridironGPT player catalog.
 
-## Relevant Models
+---
+
+# Signal Processing
+
+`SignalProcessor` converts an event into a structured `Signal`.
+
+Signals contain information such as:
 
 ```text
-EvidenceAssessment
-ConfidenceResult
-Entity
-Signal
+headline
+entities
+sentiment
+impact_score
+positive_hits
+negative_hits
+confidence
+signal_type
+signal_category
+source_count
+sources
+corroboration_confidence
+evidence
 ```
+
+Signals therefore represent more than generic positive or negative sentiment.
+
+They carry semantic meaning used by downstream scoring and reasoning.
+
+---
+
+# Signal Categories
+
+Current Cortex reasoning supports semantic categories such as:
+
+```text
+recovery
+injury
+opportunity
+performance
+availability
+general news
+```
+
+Signal category matters because different football developments should affect different dimensions of player intelligence.
+
+Example:
+
+```text
+Recovery
+   ↓
+Health ↑
+Risk ↓
+Momentum ↑
+```
+
+rather than blindly changing every score dimension equally.
+
+---
+
+# Confidence Calibration
+
+Cortex distinguishes raw classifier confidence from evidence-supported confidence.
+
+Confidence may incorporate:
+
+- signal confidence
+- evidence strength
+- corroboration
+- source count
+- agreement
+- contradiction penalties
+
+This prevents a strong keyword match from automatically becoming a high-confidence football conclusion when supporting evidence is weak or contradictory.
 
 ---
 
@@ -283,277 +439,85 @@ Signal
 ## Question
 
 ```text
-What else is affected?
+Who else is affected, and why?
 ```
 
-## Responsibilities
+The Reason faculty contains the relationship and propagation architecture.
 
-- relationship lookup
-- knowledge-graph traversal
-- relationship semantics
-- direct impact generation
-- semantic multi-hop propagation
-- path selection
-- competitive relationship reasoning
-
-## Relevant Packages
-
-```text
-reason/
-propagation/
-knowledge/
-remember/
-```
-
----
-
-# Knowledge Layer
-
-Persistent Cortex knowledge is accessed through:
+Major components:
 
 ```text
 KnowledgeService
-```
-
-The service hides concrete repository implementations from the engine and application.
-
-```text
-CortexEngine / CortexFacade
-          │
-          ▼
-    KnowledgeService
-       /     |      \
-      /      |       \
- Events   Scorecards  Relationships
-```
-
-This separation allows repository implementations to change without modifying engine reasoning.
-
----
-
-# Knowledge Graph Manager
-
-`KnowledgeGraphManager` converts persisted relationships into traversable graph structures.
-
-Current capabilities include:
-
-- outgoing relationship lookup
-- incoming relationship lookup
-- neighbor discovery
-- graph construction
-- path discovery
-- cycle-safe traversal
-- bounded graph depth
-
-Example:
-
-```text
-Jalen Hurts
-    │
-    ├── throws_to ──> A.J. Brown
-    │
-    ├── throws_to ──> DeVonta Smith
-    │
-    └── hands_off_to ──> Saquon Barkley
-```
-
----
-
-# NFL Relationship Intelligence
-
-GridironGPT supplies football-specific relationships to Cortex.
-
-Cortex itself does not interpret NFL depth-chart files.
-
-The application layer converts nflverse data into generic Cortex `EntityRelationship` objects.
-
-## Data Flow
-
-```text
-nflverse Player Catalog
-        +
-nflverse Depth Charts
-        ↓
-GridironGPT Relationship Builder
-        ↓
-EntityRelationship
-        ↓
-Knowledge Service
-        ↓
-Relationship Repository
-        ↓
+      ↓
 KnowledgeGraphManager
-        ↓
+      ↓
 PropagationPlanner
-        ↓
-Relationship Semantics
-        ↓
+      ↓
+RelationshipSemantics
+      ↓
+RelationshipEngine
+      ↓
 Impact
 ```
 
 ---
 
-# NFL Player Catalog
+# Knowledge Service
 
-GridironGPT builds its player catalog from `nflreadpy`.
+`KnowledgeService` is the central access layer for persistent Cortex knowledge.
 
-The catalog currently contains more than 3,000 NFL player records.
+It hides repository implementations from the engine and application layers.
 
-Available metadata includes:
+Current responsibilities include:
 
-- full player name
-- football name
-- first and last name
-- team
-- position
-- depth-chart position
-- roster status
-- jersey number
-- experience
-- college
-- rookie year
-- entry year
-- draft club
-- draft number
-- GSIS ID
-- ESPN ID
-- Sleeper ID
-- PFR ID
-- Yahoo ID
-- Rotowire ID
-- headshot URL
-- generated aliases
+### Events
 
-The catalog supports:
+```text
+has_event()
+save_event()
+```
 
-- player matching
-- entity enrichment
-- Cortex Inspector player selection
-- NFL relationship generation
+### Player Scorecards
+
+```text
+get_latest_scorecard()
+get_scorecard_history()
+save_scorecard()
+```
+
+### Relationships
+
+```text
+save_relationship()
+get_outgoing_relationships()
+get_incoming_relationships()
+get_relationship_history()
+```
+
+This abstraction allows storage implementations to evolve without requiring Cortex reasoning components to depend directly on JSONL or future database technology.
 
 ---
 
-# Depth-Chart Intelligence
+# Knowledge Graph
 
-Depth charts are loaded using:
+`KnowledgeGraphManager` provides graph-oriented access to persisted relationships.
 
-```python
-nflreadpy.load_depth_charts()
-```
+Capabilities include:
 
-The nflverse table is historical and contains many snapshots.
+- outgoing relationship lookup
+- incoming relationship lookup
+- neighbor discovery
+- graph traversal
+- relationship path discovery
+- cycle-safe traversal
 
-Relevant fields include:
-
-```text
-dt
-team
-player_name
-gsis_id
-pos_grp
-pos_name
-pos_abb
-pos_slot
-pos_rank
-```
-
-GridironGPT selects only the most recent available snapshot for each team before constructing the active relationship graph.
-
-This prevents stale depth-chart positions from becoming active Cortex relationships.
-
-## Depth Ranking
-
-`pos_rank` supplies current positional ordering.
-
-Example:
-
-```text
-QB
-1  Jalen Hurts
-2  Tanner McKee
-
-RB
-1  Saquon Barkley
-2  Tank Bigsby
-3  Will Shipley
-
-WR
-1  A.J. Brown
-2  DeVonta Smith
-3  Jahan Dotson
-```
+The graph represents football dependencies rather than generic social connections.
 
 ---
 
-# NFL Relationship Builder
+# Entity Relationship Model
 
-Football-specific relationship construction is implemented in:
-
-```text
-gridiron_gpt/intelligence/relationship_builder.py
-```
-
-The builder combines:
-
-- active roster status
-- fantasy-relevant positions
-- latest team depth chart
-- GSIS identity matching
-- normalized-name fallback
-- positional ranking
-- role-specific relationship rules
-
-## Fantasy Positions
-
-The current graph focuses on:
-
-```text
-QB
-RB
-WR
-TE
-```
-
-## Depth Limits
-
-The first production relationship model limits graph construction to primary fantasy-relevant roles.
-
-Conceptually:
-
-```text
-QB → primary depth options
-RB → primary depth options
-WR → primary receiving options
-TE → primary receiving options
-```
-
-This significantly reduces graph noise.
-
-The first broad prototype generated approximately:
-
-```text
-2,940 relationships
-```
-
-Depth-aware filtering reduced the initial persisted graph to approximately:
-
-```text
-579 relationships
-```
-
-distributed across all 32 NFL teams.
-
----
-
-# Relationship Model
-
-Cortex represents graph edges with:
-
-```text
-EntityRelationship
-```
-
-Each relationship stores:
+Relationships contain information including:
 
 ```text
 source_entity_id
@@ -565,10 +529,8 @@ target_entity_name
 target_entity_type
 
 relationship_type
-
 strength
 confidence
-
 reason
 
 source_team
@@ -586,16 +548,129 @@ Strength
     → How strongly should this relationship influence propagation?
 
 Confidence
-    → How certain is Cortex that the relationship is valid?
+    → How certain is Cortex that this relationship is valid?
 ```
+
+---
+
+# NFL Relationship Construction
+
+GridironGPT constructs football-specific relationships using player catalog and nflverse depth-chart information.
+
+The relationship builder:
+
+1. Loads the current NFL season.
+2. Loads nflverse depth-chart history.
+3. Selects each team's latest available snapshot.
+4. Filters to fantasy-relevant positions.
+5. Matches depth-chart players against the active player catalog.
+6. Uses GSIS IDs when available.
+7. Falls back to normalized player names.
+8. Applies depth-rank limits.
+9. Constructs high-value football relationships.
+
+This replaced the earlier broad teammate graph.
+
+Development comparison:
+
+```text
+Broad prototype graph:     ~2,940 relationships
+Depth-aware graph:            579 relationships
+NFL teams represented:         32
+```
+
+The smaller graph is intentional.
+
+Cortex should prefer meaningful football relationships over graph density.
+
+---
+
+# Current NFL Relationship Types
+
+The current depth-aware builder produces:
+
+```text
+throws_to
+hands_off_to
+backs_up
+target_competitor
+depth_chart_competitor
+```
+
+Examples:
+
+```text
+Jalen Hurts
+    ↓ throws_to
+A.J. Brown
+```
+
+```text
+Jalen Hurts
+    ↓ hands_off_to
+Saquon Barkley
+```
+
+```text
+Tank Bigsby
+    ↓ backs_up
+Saquon Barkley
+```
+
+```text
+A.J. Brown
+    ↓ target_competitor
+DeVonta Smith
+```
+
+---
+
+# Dynamic Relationship Refresh
+
+NFL relationships are not treated as permanent.
+
+`RelationshipRefreshService` compares newly proposed graph state with currently active relationships.
+
+A refresh classifies relationships as:
+
+```text
+new
+changed
+unchanged
+stale
+```
+
+Only meaningful changes are persisted.
+
+Unchanged relationships are not repeatedly appended to storage.
+
+Stale relationships can be deactivated while historical state remains available.
+
+This provides idempotent graph refresh behavior.
+
+Example refresh:
+
+```text
+proposed=579
+current=579
+new=0
+changed=0
+unchanged=579
+stale=0
+written=0
+```
+
+This allows roster and depth-chart changes to update the active graph without destroying historical relationship information.
 
 ---
 
 # Relationship Semantics
 
-Relationship types determine how signal direction changes during propagation.
+Relationship type determines how a source signal affects its target.
 
-Current semantic relationships include:
+Cortex does not assume every edge moves in the same direction.
+
+---
 
 ## `throws_to`
 
@@ -603,9 +678,7 @@ Current semantic relationships include:
 QB → WR / TE
 ```
 
-Positive quarterback performance generally benefits primary receiving options.
-
-Negative quarterback performance generally reduces receiving outlook.
+Quarterback developments generally affect receiving options in the same direction.
 
 ---
 
@@ -615,19 +688,15 @@ Negative quarterback performance generally reduces receiving outlook.
 QB → RB
 ```
 
-Quarterback/offensive context influences rushing opportunity with moderate strength.
+Quarterback and offensive context influence rushing opportunity with moderate strength.
 
 ---
 
 ## `backs_up`
 
-```text
-Backup → Starter
-```
+Backup relationships use inverse semantics.
 
-This relationship uses inverse semantics.
-
-Example:
+Conceptually:
 
 ```text
 Starter improves
@@ -652,17 +721,7 @@ Receiver ↔ Receiver
 Receiver ↔ Tight End
 ```
 
-Opportunity changes propagate inversely.
-
-Example:
-
-```text
-A.J. Brown positive opportunity signal
-            ↓
-DeVonta Smith competitive impact
-            ↓
-negative opportunity pressure
-```
+Opportunity movement for one receiving option can create inverse opportunity pressure on another.
 
 ---
 
@@ -670,13 +729,13 @@ negative opportunity pressure
 
 Used for players competing for positional workload.
 
-Current usage focuses primarily on running backs.
+Current primary use is running-back competition.
 
 ---
 
-## Other Supported Semantics
+## Additional Semantic Support
 
-Cortex also supports semantic rules including:
+The semantic registry also supports relationship types including:
 
 ```text
 passes_to
@@ -686,15 +745,15 @@ coached_by
 competes_with
 ```
 
-Unknown relationship types fall back to neutral behavior so historical relationship data remains compatible.
+Unknown relationship types fall back to neutral semantic behavior for compatibility with existing relationship data.
 
 ---
 
 # Propagation Planner
 
-The `PropagationPlanner` transforms knowledge-graph paths into propagation candidates.
+`PropagationPlanner` converts graph paths into propagation candidates.
 
-A propagation candidate contains:
+A propagation candidate includes:
 
 ```text
 entity
@@ -706,19 +765,9 @@ propagation weight
 reasoning path
 ```
 
-## Hop Decay
+---
 
-Current hop decay:
-
-```text
-0 hops → 1.00
-1 hop  → 0.85
-2 hops → 0.65
-3 hops → 0.40
-4+     → 0.20
-```
-
-## Propagation Weight
+# Propagation Weight
 
 Conceptually:
 
@@ -734,59 +783,77 @@ semantic multiplier
 hop decay
 ```
 
-The semantic multiplier may be negative.
+Semantic multipliers may be negative.
 
-This allows competitive relationships to reverse signal direction.
+This allows competitive relationships to reverse the direction of a signal.
+
+---
+
+# Hop Decay
+
+Propagation weakens as effects travel farther from the original event.
+
+Current decay behavior:
+
+```text
+0 hops → 1.00
+1 hop  → 0.85
+2 hops → 0.65
+3 hops → 0.40
+4+     → 0.20
+```
+
+This prevents distant graph relationships from receiving the same influence as directly connected players.
 
 ---
 
 # Strongest Path Selection
 
-Multiple graph paths may connect the source entity to the same target.
+Multiple paths may connect a source entity to the same target.
 
-Cortex calculates each path's semantic propagation effect and selects the path with the largest **absolute** weight.
+Cortex evaluates candidate paths and retains the path with the greatest absolute propagation weight.
 
-This is important because:
+Absolute weight is important because:
 
 ```text
-strong negative impact
+strong negative effect
 ```
 
-may be just as meaningful as:
+can be as meaningful as:
 
 ```text
-strong positive impact
+strong positive effect
 ```
 
 ---
 
 # Multi-Hop Semantic Reasoning
 
-Propagation semantics are evaluated edge by edge.
+Semantics are evaluated edge by edge.
 
 Example:
 
 ```text
 Player A
    │
-   │ competitive relationship
+   │ competitive
    ▼
 Player B
    │
-   │ cooperative relationship
+   │ cooperative
    ▼
 Player C
 ```
 
-If the first relationship reverses the signal direction, the second relationship evaluates the newly reversed signal.
+If the first relationship reverses signal direction, the second relationship evaluates that reversed impact.
 
-Cortex therefore reasons over the propagation path rather than simply multiplying static edge values.
+Cortex therefore reasons over the path rather than merely multiplying static graph values.
 
 ---
 
 # Impact Model
 
-The relationship engine converts propagation candidates into `Impact` objects.
+`RelationshipEngine` converts direct and propagated reasoning into `Impact` objects.
 
 Impacts may be:
 
@@ -805,7 +872,7 @@ propagation_weight
 reason
 ```
 
-This allows downstream systems to inspect how Cortex generated an impact rather than receiving only the final score.
+This metadata survives into downstream explanation systems.
 
 ---
 
@@ -814,19 +881,16 @@ This allows downstream systems to inspect how Cortex generated an impact rather 
 ## Question
 
 ```text
-How significant is the event?
+How does this change player intelligence?
 ```
 
-## Responsibilities
+The evaluation faculty applies impacts to persistent player scorecards.
 
-- transform impacts into score changes
-- maintain persistent player scorecards
-- update intelligence dimensions
-- preserve score history
+---
 
-## Player Scorecard
+# Multidimensional Player Scorecard
 
-Current score dimensions:
+Current dimensions:
 
 ```text
 overall_score
@@ -837,25 +901,100 @@ risk_score
 momentum_score
 ```
 
-Player scorecards are persistent.
+Players begin from a neutral baseline and evolve as Cortex processes evidence.
 
-Each event can therefore alter Cortex's ongoing view of a player rather than producing an isolated result.
+Scores remain bounded within the configured Cortex range.
 
 ---
 
-# Player Scorecard History
+# Category-Aware Scoring
 
-Historical scorecard snapshots are stored and returned through `EngineResult`.
+Score updates depend on the semantic meaning of the signal.
 
-This enables:
+Examples:
 
-- score trends
+```text
+Recovery
+   ↓
+overall ↑
+health ↑
+risk ↓
+momentum ↑
+```
+
+```text
+Injury
+   ↓
+overall ↓
+health ↓
+risk ↑
+momentum ↓
+```
+
+Opportunity-oriented events can affect opportunity differently from health-oriented events.
+
+This replaced the earlier behavior in which the same impact delta was applied broadly across multiple score dimensions.
+
+---
+
+# Propagated Semantic Scoring
+
+Semantic scoring applies to downstream players as well as directly mentioned players.
+
+Example:
+
+```text
+QB recovery
+    ↓
+throws_to
+    ↓
+WR propagated recovery impact
+    ↓
+WR health / risk / momentum context updated
+```
+
+The propagated player's scorecard therefore retains the meaning of the original football development rather than receiving only an untyped numeric delta.
+
+---
+
+# Scorecard History
+
+Scorecard snapshots are persisted over time.
+
+History enables:
+
+- trend analysis
 - trajectory analysis
 - historical comparisons
 - score-change explanations
-- Streamlit timeline visualization
+- timeline visualization
+- future learning and calibration
 
-The Cortex Inspector currently displays score evolution over time.
+---
+
+# Intelligence Layer
+
+After scoring, Cortex builds a broader intelligence context.
+
+Current intelligence components include:
+
+```text
+TrendAnalyzer
+ContradictionDetector
+ReasoningEngine
+IntelligenceEngine
+```
+
+`IntelligenceContext` can contain:
+
+```text
+contradiction
+trend
+reasoning
+confidence
+```
+
+This provides downstream recommendation logic with interpreted intelligence rather than only raw scores.
 
 ---
 
@@ -867,17 +1006,9 @@ The Cortex Inspector currently displays score evolution over time.
 What is likely to happen next?
 ```
 
-## Responsibilities
+`PredictionEngine` generates forward-looking player intelligence.
 
-- project player score direction
-- determine trend
-- estimate future score movement
-- attach forecast confidence
-- generate prediction reasons
-
-## Prediction Output
-
-Current prediction data includes:
+Prediction information includes:
 
 ```text
 projected trend
@@ -888,6 +1019,8 @@ horizon
 reasons
 ```
 
+Predictions are advisory intelligence and remain explainable through evidence artifacts.
+
 ---
 
 # Decide
@@ -895,12 +1028,10 @@ reasons
 ## Question
 
 ```text
-What action should be taken?
+What action should a fantasy manager consider?
 ```
 
-## Responsibilities
-
-Generate fantasy recommendations.
+`RecommendationEngine` generates fantasy recommendations.
 
 Current recommendation vocabulary includes:
 
@@ -912,14 +1043,16 @@ HOLD
 MONITOR
 ```
 
-Recommendations contain:
+Recommendations can account for:
 
-- entity
-- team
-- action
+- score movement
+- intelligence context
+- prediction
+- trend
+- contradiction
 - confidence
-- score delta
-- reasons
+
+Contradictory evidence can reduce recommendation confidence or cause aggressive recommendations to become more cautious.
 
 ---
 
@@ -931,29 +1064,59 @@ Recommendations contain:
 Why?
 ```
 
-Cortex generates multiple forms of explanation.
+Explainability is generated in several forms.
+
+---
 
 ## Plain-Language Explanation
 
-Human-readable explanation of the recommendation.
+Provides a human-readable summary of the recommendation and major contributing factors.
+
+---
 
 ## Evidence Chains
 
-Ordered evidence contributing to a decision.
+Evidence chains provide an ordered cognitive trace:
+
+```text
+Observe
+   ↓
+Understand
+   ↓
+Reason
+   ↓
+Evaluate
+   ↓
+Predict
+   ↓
+Decide
+```
+
+Propagated Reason steps preserve information such as:
+
+```text
+1-hop propagation
+propagation weight
+relationship reason
+```
+
+---
 
 ## Evidence Graphs
 
-Causal relationships showing how evidence contributed to an intelligence result.
+Evidence graphs represent causal dependencies between reasoning artifacts.
 
-This is intentionally different from propagation reasoning.
+Evidence graphs and football propagation graphs solve different problems:
 
 ```text
 Evidence Graph
-    → Why does Cortex believe the event?
+    → Why does Cortex believe this conclusion?
 
-Propagation
-    → What else is affected because of the event?
+Relationship Graph
+    → Which football entities are affected?
 ```
+
+Both are retained because explainability and football dependency reasoning are distinct architectural concerns.
 
 ---
 
@@ -965,19 +1128,21 @@ Propagation
 What should Cortex retain?
 ```
 
-Persistent knowledge currently includes:
+Current persistent knowledge includes:
 
-- events
+- processed events
 - player scorecards
 - player scorecard history
-- relationships
+- entity relationships
 - relationship history
+
+Persistence supports both operational state and auditability.
 
 ---
 
 # Persistence Architecture
 
-Current local Cortex storage:
+Current Cortex storage:
 
 ```text
 data/cortex/
@@ -986,13 +1151,18 @@ data/cortex/
 └── relationships.jsonl
 ```
 
+---
+
 ## Events
 
 Used for:
 
 - event history
+- event fingerprinting
 - duplicate detection
 - auditability
+
+---
 
 ## Player Scorecards
 
@@ -1001,34 +1171,61 @@ Used for:
 - current player intelligence
 - historical score trends
 - prediction inputs
+- timeline analysis
+
+---
 
 ## Relationships
 
 Used for:
 
-- graph construction
-- historical relationship state
+- active graph construction
+- graph history
 - multi-hop propagation
+- relationship audits
 
-Relationship persistence is append-only.
+Relationship persistence remains append-only.
 
-This improves auditability but requires a controlled refresh process so unchanged relationships are not written repeatedly.
+Dynamic refresh prevents unchanged graph snapshots from being written repeatedly.
+
+---
+
+# Repository Abstraction
+
+Cortex reasoning depends on repository contracts rather than specific persistence technologies.
+
+This provides a migration path from:
+
+```text
+JSONL
+```
+
+to future infrastructure such as:
+
+```text
+PostgreSQL
+Supabase
+managed cloud databases
+graph storage
+```
+
+without requiring reasoning components to be rewritten.
 
 ---
 
 # Additional Application Persistence
 
-GridironGPT also uses Supabase-backed repositories for selected application intelligence, including historical player score snapshots.
+GridironGPT also uses Supabase-backed persistence for selected application workflows.
 
-These systems are separate from Cortex's local JSONL knowledge repositories and serve application/dashboard workflows.
+Application persistence and Cortex knowledge persistence remain separate architectural concerns.
 
-Network-backed persistence must fail gracefully so temporary database outages do not take down the user interface.
+External persistence should fail gracefully so network outages do not make the entire user interface unavailable.
 
 ---
 
 # Engine Orchestration
 
-The Cortex engine coordinates each faculty.
+`CortexEngine` coordinates the reasoning pipeline.
 
 Conceptually:
 
@@ -1042,8 +1239,6 @@ EvidenceAggregator
 CanonicalEvent
     ↓
 EvidenceAnalyzer
-    ↓
-EvidenceAssessment
     ↓
 EntityResolver
     ↓
@@ -1068,9 +1263,9 @@ ExplanationEngine
 EngineResult
 ```
 
-The engine itself should contain minimal domain business logic.
+The engine's primary responsibility is orchestration.
 
-Its primary responsibility is orchestration.
+Domain-specific behavior should remain in specialized components rather than accumulating inside `CortexEngine`.
 
 ---
 
@@ -1078,7 +1273,7 @@ Its primary responsibility is orchestration.
 
 `EngineResult` is the primary output contract for Cortex processing.
 
-It currently exposes:
+It exposes structured outputs including:
 
 ```text
 event
@@ -1100,19 +1295,19 @@ evidence_graphs
 explanation
 ```
 
-This object allows interfaces such as Streamlit to display Cortex intelligence without independently reproducing engine logic.
+Interfaces can therefore render Cortex intelligence without independently reconstructing reasoning.
 
 ---
 
 # Cortex Facade
 
-Applications interact with Cortex primarily through:
+Applications primarily enter Cortex through:
 
 ```text
 CortexFacade
 ```
 
-The facade constructs and connects:
+The facade constructs and connects infrastructure including:
 
 ```text
 KnowledgeService
@@ -1124,69 +1319,68 @@ reasoning services
 prediction services
 ```
 
-The current default data directory is:
+Default local knowledge directory:
 
 ```text
 data/cortex
 ```
 
+The facade provides the architectural boundary applications should prefer over directly constructing internal Cortex components.
+
 ---
 
 # Standalone Cortex Package
 
-Gridiron Cortex has also been extracted into a standalone repository/library:
+Gridiron Cortex has also been extracted toward a standalone repository/library:
 
 ```text
 gridiron-cortex
 ```
 
-The standalone package provides:
+The standalone direction provides:
 
-- stable public Cortex API
-- independent test suite
-- plugin interface
-- default plugin
-- CI
+- stable Cortex API
+- independent testing
+- extension interfaces
 - package documentation
-- changelog
+- CI
+- reusable intelligence architecture
 
-The standalone project currently represents the reusable Cortex foundation.
+GridironGPT remains the NFL/fantasy application and domain layer.
 
-GridironGPT remains the NFL/fantasy-football application and domain layer.
-
-During the extraction/refactor period, the GridironGPT repository still contains its in-repository Cortex package while integration boundaries continue to stabilize.
+During the extraction/refactor period, the GridironGPT repository continues to contain its in-repository Cortex implementation while boundaries stabilize.
 
 ---
 
-# Plugin Architecture
+# Plugin Direction
 
-The standalone Cortex project introduces:
+The standalone Cortex architecture provides extension points for domain-specific behavior.
 
-```text
-CortexPlugin
-```
-
-with a default implementation:
+The long-term objective is:
 
 ```text
-DefaultPlugin
+Generic Cortex Intelligence
+          +
+Football Domain Plugin
+          =
+Gridiron Cortex for GridironGPT
 ```
 
-The plugin interface provides extension points for domain-specific behaviors such as:
+Potential extension areas include:
 
 - event classification
 - entity resolution
 - signal scoring
-- relationships
-- recommendations
+- relationship behavior
+- recommendation policy
 
-The long-term goal is for GridironGPT's football intelligence to be supplied through domain plugins while the core engine remains generic.
+This boundary remains an architectural direction rather than a requirement for current Phase C ingestion work.
 
 ---
 
 # Cortex Inspector
 
-The Cortex Inspector is the primary engineering interface for observing Cortex reasoning.
+The Cortex Inspector is the primary engineering interface for observing Cortex behavior.
 
 Current views include:
 
@@ -1201,66 +1395,43 @@ Explanation
 Diagnostics
 ```
 
-## Summary
+---
 
-Displays:
+## Propagation View
 
-- signal output
-- recommendation
+Displays information including:
 
-## Evidence & Confidence
-
-Displays:
-
-- classifier confidence
-- evidence trust
-- calibrated confidence
-- consensus
-- agreement
-- conflict
-- source count
-- supporting evidence
-
-## Cognitive Trace
-
-Displays the reasoning path through Cortex faculties.
-
-## Evidence Graph
-
-Displays causal evidence relationships.
-
-## Propagation
-
-Displays:
-
-- direct impact
-- downstream entity impacts
+- direct impacts
+- propagated impacts
+- downstream entities
 - hop count
 - propagation weight
 - relationship strength
 - relationship confidence
-- propagation reasoning path
+- propagation reasoning
 
-## Intelligence
+---
 
-Displays:
+## Intelligence View
+
+Displays information including:
 
 - predictions
-- player snapshot
-- historical player timeline
+- player snapshots
 - score evolution
+- historical timeline
+
+---
 
 ## Diagnostics
 
-Displays internal engine objects for debugging and auditability.
+Provides access to internal engine artifacts for development, debugging, and auditability.
 
 ---
 
 # Pipeline Status
 
-The Cortex Inspector exposes major pipeline-stage status.
-
-Current stages include:
+The Cortex Inspector exposes major pipeline stages:
 
 ```text
 Evidence
@@ -1274,25 +1445,83 @@ Recommendation
 Explanation
 ```
 
-This provides a quick indication of which reasoning faculties produced output for an event.
+This provides immediate visibility into which Cortex faculties produced output for an event.
 
 ---
 
-# Current NFL Knowledge Graph
+# Phase B Integration Gate
 
-The first depth-aware NFL graph has been successfully generated and persisted.
+Phase B introduced a dedicated end-to-end integration test proving that the complete reasoning pipeline works as a system.
 
-Current development snapshot:
+The validated path is:
 
 ```text
-Player catalog:            3,133 players
-Broad prototype graph:     ~2,940 relationships
-Depth-aware graph:         579 relationships
-NFL teams represented:     32
-Automated tests:           254 passing
+RawEvent
+   ↓
+CortexFacade.process_event()
+   ↓
+Entity Resolution
+   ↓
+Signal Classification
+   ↓
+Knowledge Graph
+   ↓
+Relationship Propagation
+   ↓
+Multidimensional Scoring
+   ↓
+Prediction / Recommendation
+   ↓
+Relationship-Aware Explanation
 ```
 
-The graph has been verified end-to-end through the Cortex Inspector using real NFL roster/depth-chart data.
+The Phase B architecture milestone closed with:
+
+```text
+274 automated tests passing
+```
+
+This integration gate is important because isolated subsystem tests cannot prove that reasoning metadata survives the complete pipeline.
+
+---
+
+# Testing Strategy
+
+Automated tests cover areas including:
+
+- Cortex facade
+- engine pipeline
+- structured evidence pipeline
+- evidence analysis
+- confidence calibration
+- contradiction detection
+- entity resolution
+- signal processing
+- semantic signal classification
+- knowledge graph traversal
+- relationship repository behavior
+- relationship refresh
+- relationship semantics
+- propagation planning
+- multi-hop propagation
+- score engine
+- multidimensional scoring
+- prediction
+- reasoning
+- recommendation
+- explanation
+- evidence chains
+- evidence graphs
+- Streamlit component imports
+- ingestion pipelines
+
+Current baseline:
+
+```text
+274 passed
+```
+
+The test suite acts as the primary regression gate during the ongoing Cortex extraction and architectural refactor.
 
 ---
 
@@ -1315,9 +1544,9 @@ qb_to_rb
 
 and direct multiplier-based recursion.
 
-That architecture remains useful as historical context and potential manual override data, but the new Cortex graph is the preferred reasoning architecture.
+The legacy architecture remains useful as historical context and potential manual override material, but the Cortex knowledge graph is the preferred reasoning architecture.
 
-The newer design separates:
+The current design separates:
 
 ```text
 relationship type
@@ -1328,51 +1557,19 @@ hop decay
 graph traversal
 ```
 
-rather than encoding most behavior into a single static multiplier.
+instead of encoding most behavior into a single static multiplier.
 
 ---
 
 # Current Limitations
 
-## Relationship Refresh
+## Relationship Calibration
 
-The NFL relationship graph is currently refreshed manually.
+Current relationship strengths, confidence values, and semantic multipliers are heuristic.
 
-Repeated full refreshes write new records because relationship storage is append-only.
+They have not yet been calibrated against large-scale historical fantasy outcomes.
 
-Future refresh logic should:
-
-- compare current and proposed graph state
-- write only changed relationships
-- deactivate stale relationships
-- preserve history
-- detect roster changes
-- detect depth-chart movement
-
----
-
-## Team Coverage
-
-Relationship counts currently vary significantly by NFL team.
-
-This can occur because:
-
-- active roster and depth-chart datasets do not intersect uniformly
-- some depth-chart snapshots contain fewer fantasy-relevant players
-- roster statuses change rapidly
-- source data freshness varies
-
-Coverage analysis is required before production use.
-
----
-
-## Relationship Weights
-
-Current relationship strengths and confidence values are heuristic.
-
-They have not yet been calibrated against historical fantasy outcomes.
-
-Future calibration inputs may include:
+Future calibration may incorporate:
 
 - snap share
 - route participation
@@ -1387,12 +1584,13 @@ Future calibration inputs may include:
 
 ## Historical Validation
 
-The propagation engine has not yet been fully replayed against historical NFL seasons.
+The reasoning and propagation architecture has not yet been comprehensively replayed against historical NFL seasons.
 
 Future validation should measure:
 
-- propagated score accuracy
+- propagation accuracy
 - recommendation quality
+- prediction quality
 - confidence calibration
 - relationship effectiveness
 - signal-category performance
@@ -1401,167 +1599,215 @@ Future validation should measure:
 
 ## Defensive and Organizational Relationships
 
-The current production graph focuses primarily on offensive fantasy relationships.
+The active graph focuses primarily on offensive fantasy relationships.
 
-Future graph expansion should include:
+Potential future expansion includes:
 
 ```text
 offensive line → quarterback
 offensive line → running back
 coach → player
 coordinator → offense
-rookie → incumbent player
+rookie → incumbent
 injury replacement
 team → player
 defensive secondary → receiver
 pass rush → quarterback
 ```
 
+Graph expansion should remain selective to avoid reintroducing unnecessary relationship noise.
+
 ---
 
-## Evidence Sources
+## Relationship Data Freshness
 
-Evidence aggregation and confidence calibration are operational, but full multi-source corroboration is still being expanded.
+Dynamic refresh is implemented, but refresh scheduling and ingestion orchestration are not yet productionized.
 
-Future sources should allow Cortex to distinguish between:
+Phase C should determine when roster/depth-chart refreshes occur and how source failures are handled.
 
-```text
-single-source report
-multiple-source agreement
-conflicting reports
-developing story
-established consensus
-```
+---
+
+## Source Coverage
+
+Cortex can reason over multi-source evidence, but the ingestion layer does not yet provide the breadth and operational reliability needed to fully exploit that capability.
+
+This is the primary architectural focus of Phase C.
 
 ---
 
 # Reliability Principles
 
-External systems must not make the entire application unavailable.
+External dependencies must not make the entire application unavailable.
 
 Examples include:
 
 - Supabase
 - RSS providers
 - nflverse
-- future APIs
-- LLM providers
+- future NFL APIs
+- future LLM providers
 
-Interfaces should degrade gracefully when external systems are temporarily unavailable.
+External integrations should support:
 
----
+- failure isolation
+- graceful degradation
+- retries where appropriate
+- rate-limit awareness
+- observability
+- caching where useful
 
-# Testing Strategy
-
-The project currently maintains more than 250 automated tests.
-
-Tests cover areas including:
-
-- Cortex pipeline
-- evidence analysis
-- confidence calibration
-- entity resolution
-- relationship semantics
-- propagation planner
-- knowledge graph traversal
-- score engine
-- prediction
-- recommendation
-- explanation
-- player scorecards
-- Streamlit component imports
-- data ingestion
-
-A Streamlit import smoke test ensures syntax/import errors in critical UI components are detected during the test suite.
+These concerns become a primary implementation focus during Phase C.
 
 ---
 
-# Next Architecture Milestone
+# Phase C — Data Ingestion Architecture
 
-## Dynamic Relationship Graph Maintenance
+Phase C moves the architecture upstream.
 
-The next major relationship milestone is to make graph state dynamic.
-
-GridironGPT should periodically compare current nflverse roster/depth-chart information against Cortex's active relationship graph.
-
-The refresh system should identify:
+Phase B established:
 
 ```text
-new relationship
-changed relationship
-unchanged relationship
-stale relationship
+Cortex can reason correctly about an event.
 ```
 
-and only persist meaningful state changes.
-
-Example:
+Phase C must establish:
 
 ```text
-Week 1
-
-RB1: Player A
-RB2: Player B
-
-        ↓ injury / depth-chart change
-
-Week 2
-
-RB1: Player B
-RB2: Player C
-```
-
-Cortex should:
-
-```text
-deactivate stale Player B → Player A backup relationship
-create Player C → Player B backup relationship
-update workload competition relationships
-preserve historical relationship state
+Cortex can reliably receive the events it needs.
 ```
 
 ---
 
-# Future Reasoning Architecture
+# Target Ingestion Boundary
 
-## Signal-Category-Aware Propagation
+External source adapters should not contain Cortex intelligence logic.
 
-Relationship effects should eventually depend on the event category.
-
-Example:
+The desired contract is:
 
 ```text
-QB injury
+External Provider
+      ↓
+Source Adapter
+      ↓
+Normalization
+      ↓
+Identity Resolution
+      ↓
+Deduplication / Corroboration
+      ↓
+RawEvent / Canonical Event Input
+      ↓
+CortexFacade
 ```
 
-should propagate differently from:
+Adapters should answer:
 
 ```text
-QB strong practice report
+What did the provider report?
 ```
 
-even across the same `throws_to` relationship.
+Cortex should answer:
 
-Potential signal categories include:
+```text
+What does it mean?
+```
 
-- injury
-- recovery
-- trade
-- contract
-- suspension
-- camp performance
-- coaching change
-- scheme change
-- depth-chart movement
-- rookie development
-- fantasy hype
-- team performance
+This boundary is critical.
+
+---
+
+# Phase C Source Architecture
+
+Known or existing source categories include:
+
+```text
+ESPN / RSS
+NBC Sports
+nflverse / nflreadpy
+rosters
+depth charts
+statistics
+injuries
+transactions
+practice participation
+usage data
+```
+
+Phase C should consolidate these behind common ingestion interfaces.
+
+---
+
+# Ingestion Reliability
+
+The ingestion architecture should eventually support:
+
+```text
+retry
+backoff
+timeouts
+rate-limit handling
+source health
+cache strategy
+failure isolation
+structured logging
+partial recovery
+```
+
+A provider failure should affect that provider, not the entire Cortex pipeline.
+
+---
+
+# Cross-Source Deduplication
+
+Multiple providers may report the same underlying event.
+
+The ingestion/evidence architecture should converge:
+
+```text
+ESPN ──────┐
+NBC ───────┤
+NFL ───────┤
+           ▼
+      Same Event
+           ↓
+     CanonicalEvent
+```
+
+rather than:
+
+```text
+Same football event
+      ↓
+three independent score changes
+```
+
+Corroboration should increase evidence confidence without multiplying the football effect.
+
+---
+
+# Ingestion Observability
+
+Future operational metrics should include:
+
+```text
+events received
+events accepted
+events rejected
+duplicates
+canonical events
+source failures
+last successful ingestion
+processing latency
+events by provider
+```
+
+These metrics can feed the existing pipeline-status presentation layer and future operational APIs.
 
 ---
 
 # Gridiron Codex
 
-Gridiron Codex is the planned long-term football knowledge repository consumed by Cortex.
+Gridiron Codex remains the planned long-term football knowledge repository consumed by Cortex.
 
 Potential knowledge includes:
 
@@ -1588,18 +1834,24 @@ Potential knowledge includes:
 - player trajectories
 - draft classes
 - rule changes
+- historical relationships
+
+Codex provides durable football knowledge.
+
+Cortex remains responsible for reasoning over that knowledge.
 
 ---
 
 # Long-Term Architecture
 
-The desired architecture is:
-
 ```text
                     Gridiron Codex
                           │
                           ▼
-NFL Data ──────> GridironGPT Domain Layer
+External NFL Data → GridironGPT Domain Layer
+                          │
+                          ▼
+                    Ingestion Layer
                           │
                           ▼
                   Gridiron Cortex
@@ -1610,19 +1862,21 @@ NFL Data ──────> GridironGPT Domain Layer
             Web App      API      Other Apps
 ```
 
-Gridiron Cortex should remain the core intellectual property and reusable reasoning engine.
+Gridiron Cortex remains the primary intelligence engine.
 
-GridironGPT should remain the football intelligence application powered by Cortex.
+GridironGPT remains the football application powered by Cortex.
+
+Gridiron Codex becomes the durable football knowledge repository.
 
 ---
 
 # Architectural Goal
 
-The ultimate goal is not simply to produce numeric fantasy scores.
+The goal is not simply to produce numeric fantasy scores.
 
-Cortex should be able to explain reasoning such as:
+Cortex should be able to reason:
 
-> A positive development for a starting wide receiver increases his direct opportunity score, creates competitive pressure on other receiving options, alters downstream player projections, and changes the confidence of the resulting fantasy recommendation.
+> A positive recovery development improves a player's health outlook, reduces risk, affects connected teammates according to football-specific relationships, changes persistent player intelligence, influences future projections, and produces an explainable fantasy recommendation whose confidence reflects the available evidence.
 
 Instead of merely returning:
 
@@ -1630,16 +1884,21 @@ Instead of merely returning:
 Player +2.3
 ```
 
-the system should be able to answer:
+Cortex should answer:
 
 ```text
 What changed?
 Why did it matter?
+What evidence supports it?
+Do the sources agree?
 Who else was affected?
+How did the effect propagate?
 How strongly?
+How did player intelligence change?
+What happens next?
 How confident are we?
 What should the fantasy manager do?
 Why?
 ```
 
-That transition—from static scoring to persistent, explainable football reasoning—is the central architectural purpose of Gridiron Cortex.
+That transition—from static scoring to persistent, evidence-aware, explainable football reasoning—is the central architectural purpose of Gridiron Cortex.

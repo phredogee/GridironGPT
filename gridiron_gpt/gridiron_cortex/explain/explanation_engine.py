@@ -144,13 +144,14 @@ class ExplanationEngine:
                     EvidenceStep(
                         faculty="Reason",
                         step_type=impact.impact_type,
-                        summary=(
-                            f"{impact.entity_name} received a "
-                            f"{impact.impact_type} impact"
-                        ),
+                        summary=self._impact_summary(impact),
                         entity_name=impact.entity_name,
                         value=impact.impact_score,
-                        reasons=[impact.reason] if impact.reason else [],
+                        reasons=(
+                            [impact.reason]
+                            if impact.reason
+                            else []
+                        ),
                     )
                 )
 
@@ -283,10 +284,7 @@ class ExplanationEngine:
                         node_id=impact_id,
                         faculty="Reason",
                         node_type=impact.impact_type,
-                        summary=(
-                            f"{impact.entity_name} received a "
-                            f"{impact.impact_type} impact"
-                        ),
+                        summary=self._impact_summary(impact),
                         entity_name=impact.entity_name,
                         parents=[understand_id],
                         value=impact.impact_score,
@@ -294,6 +292,16 @@ class ExplanationEngine:
                         metadata={
                             "team": impact.team,
                             "impact_type": impact.impact_type,
+                            "hop_count": impact.hop_count,
+                            "relationship_strength": (
+                                impact.relationship_strength
+                            ),
+                            "relationship_confidence": (
+                                impact.relationship_confidence
+                            ),
+                            "propagation_weight": (
+                                impact.propagation_weight
+                            ),
                         },
                     )
                 )
@@ -405,3 +413,33 @@ class ExplanationEngine:
         )
 
         return list(dict.fromkeys(reasons))
+
+    @staticmethod
+    def _impact_summary(impact) -> str:
+        if impact.impact_type != "propagated":
+            return (
+                f"{impact.entity_name} received a "
+                f"{impact.impact_type} impact"
+            )
+
+        details = []
+
+        if impact.hop_count is not None:
+            details.append(
+                f"{impact.hop_count}-hop propagation"
+            )
+
+        if impact.propagation_weight is not None:
+            details.append(
+                f"weight {impact.propagation_weight:+.3f}"
+            )
+
+        suffix = ""
+
+        if details:
+            suffix = " (" + ", ".join(details) + ")"
+
+        return (
+            f"{impact.entity_name} received a "
+            f"propagated impact{suffix}"
+        )
