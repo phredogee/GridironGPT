@@ -1,4 +1,4 @@
-
+from gridiron_cortex.understand.signal_processor import SignalProcessor
 from gridiron_cortex.engine.signal_processor import SignalProcessor
 from gridiron_cortex.models.entity import Entity
 from gridiron_cortex.models.raw_event import RawEvent
@@ -401,3 +401,56 @@ def test_depth_chart_phrase_is_not_double_counted():
     ]
 
     assert concept_names == ["first_team_role"]
+
+def test_classifies_injury_signal():
+    assert (
+        SignalProcessor.classify_signal_category(
+            "Player ruled out with hamstring injury."
+        )
+        == "injury"
+    )
+
+
+def test_classifies_recovery_signal():
+    assert (
+        SignalProcessor.classify_signal_category(
+            "Player returns as a full participant."
+        )
+        == "recovery"
+    )
+
+
+def test_classifies_opportunity_signal():
+    assert (
+        SignalProcessor.classify_signal_category(
+            "Player taking first-team reps."
+        )
+        == "opportunity"
+    )
+
+
+def test_classifies_depth_chart_signal():
+    assert (
+        SignalProcessor.classify_signal_category(
+            "Player promoted on the depth chart."
+        )
+        == "depth_chart"
+    )
+
+
+def test_classifies_suspension_signal():
+    assert (
+        SignalProcessor.classify_signal_category(
+            "Player suspended by the team."
+        )
+        == "suspension"
+    )
+
+
+def test_unknown_signal_defaults_to_general():
+    assert (
+        SignalProcessor.classify_signal_category(
+            "Player spoke with reporters after practice."
+        )
+        == "general"
+    )

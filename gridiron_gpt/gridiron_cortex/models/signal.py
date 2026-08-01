@@ -26,6 +26,8 @@ class Signal:
 
     signal_type: str = "news"
 
+    signal_category: str = "general"
+
     source_count: int = 1
 
     sources: list[str] | None = None

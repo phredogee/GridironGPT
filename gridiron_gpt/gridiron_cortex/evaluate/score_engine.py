@@ -18,6 +18,64 @@ class ScoreEngine:
     BASELINE_SCORE = 50.0
     MIN_SCORE = 0.0
     MAX_SCORE = 100.0
+    CATEGORY_PROFILES = {
+        "general": {
+            "opportunity": 1.00,
+            "health": 0.00,
+            "hype": 1.00,
+            "risk": 0.00,
+            "momentum": 1.00,
+        },
+        "injury": {
+            "opportunity": 0.60,
+            "health": 1.00,
+            "hype": 0.20,
+            "risk": -1.00,
+            "momentum": 0.50,
+        },
+        "recovery": {
+            "opportunity": 0.25,
+            "health": 1.00,
+            "hype": 0.50,
+            "risk": -0.70,
+            "momentum": 0.50,
+        },
+        "opportunity": {
+            "opportunity": 1.00,
+            "health": 0.00,
+            "hype": 0.30,
+            "risk": 0.00,
+            "momentum": 0.50,
+        },
+        "depth_chart": {
+            "opportunity": 1.00,
+            "health": 0.00,
+            "hype": 0.40,
+            "risk": 0.00,
+            "momentum": 0.60,
+        },
+        "suspension": {
+            "opportunity": 0.80,
+            "health": 0.00,
+            "hype": 0.30,
+            "risk": -0.80,
+            "momentum": 0.70,
+        },
+        "performance": {
+            "opportunity": 0.40,
+            "health": 0.00,
+            "hype": 0.70,
+            "risk": 0.00,
+            "momentum": 1.00,
+        },
+        "roster": {
+            "opportunity": 0.80,
+            "health": 0.00,
+            "hype": 0.40,
+            "risk": 0.20,
+            "momentum": 0.60,
+        },
+    }
 
     def __init__(
         self,
@@ -41,6 +99,17 @@ class ScoreEngine:
                 team=impact.team,
             )
 
+            category = getattr(
+                signal,
+                "signal_category",
+                "general",
+            )
+
+            profile = self.CATEGORY_PROFILES.get(
+                category,
+                self.CATEGORY_PROFILES["general"],
+            )
+
             score_delta = impact.impact_score
 
             updated = PlayerScorecard(
@@ -51,15 +120,39 @@ class ScoreEngine:
                     previous.overall_score + score_delta
                 ),
                 opportunity_score=self._clamp(
-                    previous.opportunity_score + score_delta
+                    previous.opportunity_score
+                    + (
+                        score_delta
+                        * profile["opportunity"]
+                    )
                 ),
-                health_score=previous.health_score,
+                health_score=self._clamp(
+                    previous.health_score
+                    + (
+                        score_delta
+                        * profile["health"]
+                    )
+                ),
                 hype_score=self._clamp(
-                    previous.hype_score + score_delta
+                    previous.hype_score
+                    + (
+                        score_delta
+                        * profile["hype"]
+                    )
                 ),
-                risk_score=previous.risk_score,
+                risk_score=self._clamp(
+                    previous.risk_score
+                    + (
+                        score_delta
+                        * profile["risk"]
+                    )
+                ),
                 momentum_score=self._clamp(
-                    previous.momentum_score + score_delta
+                    previous.momentum_score
+                    + (
+                        score_delta
+                        * profile["momentum"]
+                    )
                 ),
                 last_updated=datetime.now(timezone.utc).isoformat(),
             )
