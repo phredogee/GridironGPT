@@ -87,3 +87,11 @@ class KnowledgeService:
             target_entity_id,
             relationship_type,
         )
+
+    def get_current_relationships(
+        self,
+        active_only: bool = True,
+    ) -> list[EntityRelationship]:
+        return self.relationship_repository.get_current(
+            active_only=active_only
+        )

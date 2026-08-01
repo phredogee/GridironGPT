@@ -32,6 +32,14 @@ class RelationshipRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def get_current(
+        self,
+        active_only: bool = True,
+    ) -> list[EntityRelationship]:
+        """Return the latest snapshot of every relationship."""
+        raise NotImplementedError
+
+    @abstractmethod
     def get_between(
         self,
         source_entity_id: str,

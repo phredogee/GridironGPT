@@ -29,6 +29,23 @@ class JsonRelationshipRepository(RelationshipRepository):
                 f"Unable to save relationship to: {self.file_path}"
             ) from exc
 
+    def get_current(
+        self,
+        active_only: bool = True,
+    ) -> list[EntityRelationship]:
+        current = self._get_latest_relationships()
+
+        relationships = list(current.values())
+
+        if active_only:
+            relationships = [
+                relationship
+                for relationship in relationships
+                if relationship.active
+            ]
+
+        return relationships
+
     def get_outgoing(
         self,
         source_entity_id: str,
