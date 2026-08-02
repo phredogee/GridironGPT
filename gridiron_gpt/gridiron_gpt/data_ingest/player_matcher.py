@@ -59,9 +59,15 @@ def normalize_text(value: str) -> str:
     Examples:
         "D.K. Metcalf" -> "dk metcalf"
         "Ja'Marr Chase" -> "jamarr chase"
+        "Deebo Samuel's" -> "deebo samuel"
         "  Tank   Dell " -> "tank dell"
     """
     normalized = value.casefold()
+
+    # Remove English possessive endings before stripping punctuation so
+    # "Samuel's" becomes "samuel" rather than "samuels".
+    normalized = re.sub(r"(?<=[a-z0-9])['’]s\b", "", normalized)
+
     normalized = re.sub(r"[.'’`-]", "", normalized)
     normalized = re.sub(r"[^a-z0-9\s]", " ", normalized)
     normalized = re.sub(r"\s+", " ", normalized)
