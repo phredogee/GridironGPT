@@ -33,6 +33,20 @@ class JsonEventRepository(EventRepository):
                     if record.get("fingerprint") == fingerprint:
                         return True
 
+                    try:
+                        stored_event = RawEvent(
+                            **{
+                                key: value
+                                for key, value in record.items()
+                                if key != "fingerprint"
+                            }
+                        )
+                    except TypeError:
+                        continue
+
+                    if stored_event.fingerprint() == fingerprint:
+                        return True
+
         except OSError as exc:
             raise RuntimeError(
                 f"Unable to read event repository: {self.file_path}"
