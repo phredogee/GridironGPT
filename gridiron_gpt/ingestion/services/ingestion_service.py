@@ -8,6 +8,7 @@ from gridiron_cortex.models.raw_event import RawEvent
 from gridiron_gpt.ingestion.models.provider_errors import ProviderRateLimitError
 from gridiron_gpt.ingestion.models.provider_ingestion_result import ProviderIngestionResult
 from gridiron_gpt.ingestion.normalize.event_normalizer import EventNormalizer
+from gridiron_gpt.ingestion.services.provider_health_tracker import ProviderHealthTracker
 from gridiron_gpt.ingestion.sources.base import SourceAdapter
 
 
@@ -16,7 +17,7 @@ class ProviderTimeoutError(TimeoutError):
 
 
 class IngestionService:
-    """Coordinate resilient source retrieval and event normalization."""
+    """Coordinate resilient source retrieval, normalization, and provider health."""
 
     def __init__(
         self,
@@ -26,6 +27,7 @@ class IngestionService:
         backoff_seconds: float = 0.5,
         attempt_timeout_seconds: float | None = 15.0,
         sleep: Callable[[float], None] = time.sleep,
+        health_tracker: ProviderHealthTracker | None = None,
     ):
         if max_attempts < 1:
             raise ValueError("max_attempts must be at least 1")
@@ -39,6 +41,7 @@ class IngestionService:
         self.backoff_seconds = backoff_seconds
         self.attempt_timeout_seconds = attempt_timeout_seconds
         self.sleep = sleep
+        self.health_tracker = health_tracker or ProviderHealthTracker()
 
     def _fetch_with_timeout(self, adapter: SourceAdapter):
         if self.attempt_timeout_seconds is None:
@@ -64,6 +67,10 @@ class IngestionService:
                 return retry_after
         return self.backoff_seconds * (2 ** (attempt - 1))
 
+    def _record_result(self, result: ProviderIngestionResult) -> ProviderIngestionResult:
+        self.health_tracker.record(result)
+        return result
+
     def ingest_result(self, adapter: SourceAdapter) -> ProviderIngestionResult:
         source_name = adapter.source_name
         last_error: Exception | None = None
@@ -72,26 +79,26 @@ class IngestionService:
             try:
                 records = self._fetch_with_timeout(adapter)
                 events = self.normalizer.normalize_many(records)
-                return ProviderIngestionResult(
+                return self._record_result(ProviderIngestionResult(
                     source_name=source_name,
                     success=True,
                     events=events,
                     records_received=len(records),
                     attempts=attempt,
-                )
+                ))
             except Exception as exc:
                 last_error = exc
                 if attempt < self.max_attempts:
                     self.sleep(self._retry_delay(exc, attempt))
 
         assert last_error is not None
-        return ProviderIngestionResult(
+        return self._record_result(ProviderIngestionResult(
             source_name=source_name,
             success=False,
             attempts=self.max_attempts,
             error_type=type(last_error).__name__,
             error_message=str(last_error),
-        )
+        ))
 
     def ingest(self, adapter: SourceAdapter) -> list[RawEvent]:
         """Compatibility API returning only normalized events."""
