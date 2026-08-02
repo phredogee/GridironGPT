@@ -69,7 +69,7 @@ Established evidence-aware reasoning, NFL relationship graphs, semantic propagat
 
 ### Phase C — Data Ingestion
 
-**In progress**
+**In progress — core ingestion and source-expansion milestones complete**
 
 #### C1 — Ingestion Architecture
 
@@ -86,38 +86,81 @@ Implemented:
 
 #### C2 — Deduplication & Evidence Identity
 
-**In progress**
+**Complete**
 
-Completed milestones:
+Implemented:
 
-- **C2.1 Canonical persistence** — repository abstraction and append-only JSONL canonical-event persistence.
-- **C2.2 Repository-backed EvidenceAggregator** — canonical state now survives process restarts, corroborating evidence creates updated snapshots, and duplicate evidence does not create redundant snapshots.
+- Canonical-event repository abstraction
+- Append-only JSON canonical-event persistence
+- Repository-backed `EvidenceAggregator`
+- Restart-safe canonical identity
+- Cross-source corroboration
+- Duplicate-evidence suppression
+- Player-aware event fingerprints for multi-player articles
+- Shared article provenance with distinct player event identity
 
-C2.2 validation passed with **18 focused tests** covering evidence aggregation, canonical persistence, restart recovery, corroboration, and duplicate-snapshot prevention.
+The repository is the authoritative source for canonical evidence identity rather than process-local aggregator memory.
 
-Current evidence path:
+#### C3 — Source Expansion & Statistical Context
+
+**Complete**
+
+Implemented:
+
+- Named ESPN NFL RSS adapter
+- Named RotoWire NFL RSS adapter
+- Live multi-source ingestion smoke test
+- Player suffix and possessive alias hardening
+- Multi-player article extraction
+- nflverse / nflreadpy weekly player-stat adapter
+- Dedicated structured-stat interpretation path
+- Historical rolling player baselines
+- Workload and production deltas
+- Team carry share
+- Team target share
+- QB pass-attempt share
+- Opportunity-share trend adjustments
+- Explainable statistical context preserved in signal evidence
+
+Live RSS resolution improved during C3 from approximately **64% to 76%** after alias hardening while retaining non-fantasy NFL entities for future relationship reasoning.
+
+Structured statistical events bypass news-keyword sentiment so factual box-score evidence is interpreted quantitatively rather than as headline sentiment.
+
+Current structured evidence path:
 
 ```text
+nflverse weekly player data
+        ↓
+NFLVersePlayerStatsAdapter
+        ↓
+SourceRecord
+        ↓
+EventNormalizer
+        ↓
 RawEvent
-   ↓
-EvidenceAggregator
-   ↓
-Canonical event key
-   ↓
-CanonicalEventRepository.get()
-   ↓
-Existing event?
-   ├── No  → create canonical event
-   └── Yes → merge new evidence
-   ↓
-Aggregate confidence
-   ↓
-CanonicalEventRepository.save()
-   ↓
-CanonicalEvent
+        ↓
+StatisticalEventInterpreter
+        ↓
+Current performance
++ prior-week baseline
++ workload deltas
++ team opportunity share
+        ↓
+Cortex Signal
 ```
 
-The repository is now the authoritative source for canonical evidence identity rather than process-local aggregator memory.
+Focused C3.7 regression gate: **43 passing tests** across team-share context, contextual statistical reasoning, structured-stat interpretation, nflverse adaptation, and signal processing.
+
+### Next Phase C Focus
+
+The remaining Phase C work is operational rather than another statistical heuristic layer:
+
+- Ingestion reliability
+- Retry/backoff and timeout handling
+- Provider failure isolation
+- Source health reporting
+- Ingestion observability
+- Additional source categories where they materially improve evidence coverage
 
 ---
 
