@@ -1,4 +1,14 @@
 from collections import Counter
+from pathlib import Path
+import sys
+
+# Allow this file to be executed directly from the repository root with:
+#   python scripts/smoke_nfl_news_ingestion.py
+# Python otherwise places scripts/ (rather than the project root) first on
+# sys.path, which prevents the gridiron_gpt package from being resolved.
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from gridiron_gpt.ingestion.services.ingestion_service import (
     IngestionService,
