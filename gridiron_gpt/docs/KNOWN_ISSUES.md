@@ -1,14 +1,6 @@
 # GridironGPT Known Issues
 
-This document tracks known technical limitations, unresolved architectural concerns, and areas requiring future validation.
-
-Items that have been completed should be moved to `CHANGELOG.md` rather than retained here.
-
-Current automated test baseline:
-
-```text
-274 passed
-```
+This document tracks active technical limitations, unresolved architectural concerns, and areas requiring future validation. Completed work belongs in `CHANGELOG.md`.
 
 ---
 
@@ -16,35 +8,27 @@ Current automated test baseline:
 
 ## Source Coverage
 
-Current ingestion does not yet provide the breadth of NFL information required for the long-term Cortex vision.
-
-Existing or partially implemented sources include:
-
-- ESPN / RSS
-- NBC Sports
-- RotoWire
-- nflverse / nflreadpy
-- statistical pipelines
+The unified ingestion architecture is operational for ESPN NFL RSS, RotoWire NFL RSS, and nflverse weekly player statistics. Player matching, multi-player extraction, canonical evidence identity, structured-stat interpretation, historical context, and team opportunity share are implemented.
 
 ### Remaining Work
 
-- Standardize source adapters
-- Add additional reliable NFL sources
-- Normalize provider metadata
-- Normalize timestamps
-- Improve injury-report ingestion
-- Improve transaction ingestion
-- Add practice-participation data
-- Expand usage and statistical data
-- Evaluate team and beat-reporter sources
+- Injury-report-specific structured ingestion
+- Transactions
+- Practice participation
+- Snap counts / route participation where reliable data is available
+- Red-zone usage
+- Team statistics where they materially improve player context
+- Evaluate additional providers for reliability, licensing, and fantasy relevance
 
-This is a primary focus of Phase C.
+Additional sources should be added for evidence value, not simply source count.
 
 ---
 
 ## Ingestion Reliability
 
-External providers do not yet share a unified reliability architecture.
+This is the primary active Phase C risk.
+
+External providers do not yet share a complete production-oriented reliability layer.
 
 ### Needed
 
@@ -62,39 +46,11 @@ A failed external provider should not prevent unrelated providers from supplying
 
 ---
 
-## Cross-Source Deduplication
-
-Cortex supports event fingerprinting and canonical evidence aggregation, but cross-provider event identity still requires improvement.
-
-Multiple sources reporting the same football development should become:
-
-```text
-ESPN ───────┐
-NBC ────────┤
-NFL ────────┤
-            ▼
-       Canonical Event
-```
-
-rather than producing multiple independent score changes.
-
-### Remaining Work
-
-- Cross-source event fingerprints
-- Headline similarity
-- Time-window matching
-- Player/entity-aware clustering
-- Canonical event identity
-- Duplicate headline clustering
-- Provenance preservation
-
----
-
 ## Ingestion Observability
 
 The system does not yet provide complete operational metrics for ingestion.
 
-Future metrics should include:
+Needed metrics include:
 
 - Events received
 - Events accepted
@@ -110,71 +66,65 @@ Future metrics should include:
 
 # Player Matching
 
-The current matcher prioritizes precision over recall.
+The matcher prioritizes precision while supporting suffixless aliases, football names, possessive normalization, and multi-player extraction.
 
 ## Known Limitations
 
 - Ambiguous surnames may intentionally be ignored.
 - Headlines without identifiable player names may be skipped.
-- Nickname and alias coverage is incomplete.
-- Provider naming differences can still cause failed matches.
+- Rare nickname/provider aliases may still be absent.
+- Some current/deep-roster players may lag nflverse catalog coverage.
 - Some nflverse depth-chart entries do not contain GSIS IDs.
 
-The relationship builder currently mitigates missing GSIS IDs by falling back to normalized player-name matching.
-
-### Future Improvements
-
-- Expanded alias catalog
-- Historical aliases
-- Provider-specific aliases
-- Improved suffix handling
-- More robust normalized identity model
-- Persistent canonical player IDs
+The relationship builder mitigates missing GSIS IDs with normalized player-name fallback matching.
 
 ---
 
-# Statistical Signal Generation
+# Statistical Reasoning
 
-Current statistical signal generation remains relatively simple.
+Structured weekly player statistics now have a dedicated quantitative interpretation path.
 
-Existing logic primarily compares recent statistical appearances.
+Implemented context includes:
 
-### Future Improvements
+- Rolling prior-game baselines
+- Workload deltas
+- Production deltas
+- Carry share
+- Target share
+- Pass-attempt share
+- Opportunity-share trend adjustment
+- Explainable statistical evidence
 
-- Rolling 3-game baselines
-- Rolling seasonal averages
+## Remaining Limitations
+
+The current weights remain deterministic heuristics rather than historically calibrated fantasy models.
+
+Future improvements may include:
+
+- Rolling-window configuration
 - Position-specific thresholds
 - Strength-of-schedule adjustments
 - Opponent normalization
-- Snap-share trends
+- Snap share
 - Route participation
-- Target share
-- Carry share
 - Red-zone usage
 - Efficiency metrics
-
-These inputs should eventually strengthen Cortex signal classification and opportunity reasoning.
+- Historical outcome calibration
 
 ---
 
 # Signal Confidence Calibration
 
-Cortex now supports evidence-aware confidence, corroboration, and contradiction penalties, but the underlying values remain heuristic.
-
-### Current Limitation
-
-Confidence has not been calibrated against a large historical outcome dataset.
+Cortex supports evidence-aware confidence, corroboration, contradiction penalties, and additional confidence from statistical history, but values remain heuristic.
 
 ### Future Work
 
 - Historical accuracy tracking
 - Source reliability weighting
-- Bayesian or probabilistic calibration
+- Probabilistic calibration
 - Provider-specific reliability
 - Signal-category calibration
 - Confidence-vs-outcome analysis
-
-The objective is for a Cortex confidence value to eventually have measurable historical meaning.
 
 ---
 
@@ -182,481 +132,114 @@ The objective is for a Cortex confidence value to eventually have measurable his
 
 Contradiction detection is implemented and integrated into Cortex reasoning.
 
-Current behavior supports:
+Current behavior supports positive/negative evidence conflict, conflict severity, confidence penalties, source attribution, and neutral-source exclusion.
 
-- Positive/negative evidence conflict
-- Conflict severity
-- Confidence penalties
-- Conflicting-source attribution
-- Neutral-source exclusion
+## Remaining Limitation
 
-## Remaining Limitations
+Detection remains primarily rule/keyword driven and may miss semantically incompatible reports expressed with different wording.
 
-Detection is currently keyword-driven.
-
-This can miss semantic contradictions where different wording describes incompatible football states.
-
-Examples:
-
-```text
-Expected to suit up Sunday
-```
-
-versus:
-
-```text
-Not likely to be available this weekend
-```
-
-Neither necessarily requires identical injury keywords.
-
-### Future Improvements
-
-- Semantic contradiction classification
-- Temporal contradiction handling
-- Injury-status state models
-- Source chronology
-- Superseding reports
-- Structured status comparison
+Future work includes semantic contradiction classification, temporal precedence, injury-status state models, source chronology, and superseding reports.
 
 ---
 
 # Relationship Graph
 
-The NFL relationship graph is now depth-aware and dynamically refreshable.
+The NFL relationship graph is depth-aware and dynamically refreshable. Current construction uses nflverse player catalog and depth charts, active-roster status, latest team snapshots, fantasy-position filtering, and depth-rank filtering.
 
-Current graph construction uses:
-
-- nflverse player catalog
-- nflverse depth charts
-- active roster status
-- latest available team depth-chart snapshots
-- fantasy-position filtering
-- depth-rank filtering
-
-Current development graph size is approximately:
-
-```text
-579 active relationships
-```
-
-across all 32 NFL teams.
-
----
+Development graph size is approximately 579 active relationships across all 32 NFL teams.
 
 ## Relationship Refresh Scheduling
 
-Dynamic relationship refresh and diffing are implemented.
+Refresh/diff logic is implemented, but orchestration still requires an external trigger. Scheduling should eventually vary by offseason, training camp, preseason, regular season, trade deadline, and injury-driven depth changes.
 
-The remaining limitation is **orchestration**.
+## Relationship Calibration
 
-Refreshes currently need an external trigger rather than being managed by a production scheduling system.
-
-### Future Work
-
-Determine appropriate refresh schedules for:
-
-- Offseason roster movement
-- Training camp
-- Preseason
-- Regular season
-- Trade deadline
-- Injury-driven depth changes
-
-This should be addressed alongside Phase C ingestion orchestration.
-
----
-
-# Relationship Calibration
-
-Current relationship values are heuristic.
-
-Propagation currently considers:
-
-- Relationship strength
-- Relationship confidence
-- Relationship semantics
-- Hop decay
-
-These values have not yet been calibrated against historical fantasy outcomes.
-
-### Future Inputs
-
-Potential calibration data includes:
-
-- Snap counts
-- Route participation
-- Target share
-- Carry share
-- Red-zone usage
-- Coaching tendencies
-- Historical fantasy production
-- Depth-chart movement
-- Player efficiency
-
----
-
-# Relationship Semantics Coverage
-
-Semantic propagation is implemented for the current primary offensive relationship graph.
-
-Current important semantics include:
-
-```text
-throws_to
-hands_off_to
-backs_up
-target_competitor
-depth_chart_competitor
-```
-
-## Remaining Limitation
-
-The semantic model does not yet cover the full football ecosystem.
-
-Potential future relationships include:
-
-```text
-offensive_line_supports
-coached_by
-coordinator_for
-injury_replacement_for
-rookie_competes_with
-blocks_for
-defends_against
-team_context
-```
-
-New relationship types should only be introduced when they provide meaningful fantasy intelligence.
-
-Graph density should not be increased simply for completeness.
-
----
-
-# Static Hop Decay
-
-Current propagation decay is heuristic:
-
-```text
-Hop 0 = 1.00
-Hop 1 = 0.85
-Hop 2 = 0.65
-Hop 3 = 0.40
-Hop 4+ = 0.20
-```
-
-### Future Work
-
-- Configurable decay profiles
-- Relationship-specific decay
-- Signal-specific decay
-- Historically calibrated decay
-- Learned decay functions
-
-The current values are acceptable for development but should eventually be validated empirically.
-
----
-
-# Multidimensional Scoring Calibration
-
-Cortex now supports category-aware multidimensional scoring.
-
-Current dimensions include:
-
-```text
-overall
-opportunity
-health
-hype
-risk
-momentum
-```
-
-## Remaining Limitation
-
-Dimension weights and category effects remain heuristic.
-
-Future historical validation should determine whether:
-
-- Recovery affects health appropriately
-- Injury affects risk appropriately
-- Opportunity signals affect opportunity appropriately
-- Propagated signals should use different dimensional weights
-- Overall score weighting accurately reflects fantasy value
+Strength, confidence, semantic multipliers, and hop decay remain heuristic. Statistical opportunity-share data can eventually contribute to relationship calibration.
 
 ---
 
 # Multiple Simultaneous Events
 
-The engine is well tested for individual event processing, but complex simultaneous developments require additional validation.
+Individual and multi-player article processing are covered, but several distinct developments occurring in a short window still require broader validation.
 
-Examples:
+Examples include starter injury, backup promotion, veteran signing, and committee announcement.
 
-```text
-Starting RB injured
-Backup promoted
-Team signs veteran RB
-Coach announces committee
-```
-
-All may occur within a short time window.
-
-### Future Work
-
-- Event ordering
-- Event aggregation
-- Competing signal resolution
-- Temporal precedence
-- Score-update consolidation
-- Recommendation stability
+Future work: event ordering, temporal precedence, competing-signal resolution, score-update consolidation, and recommendation stability.
 
 ---
 
 # Historical Validation
 
-The Cortex reasoning system has not yet been comprehensively replayed against historical NFL seasons.
+Cortex has not yet been comprehensively replayed against historical NFL seasons.
 
-This is one of the largest remaining validation requirements.
+Future replay should measure signal accuracy, propagation accuracy, recommendation accuracy, prediction accuracy, confidence calibration, relationship effectiveness, scoring performance, and false-positive/false-negative rates.
 
-### Future Work
-
-Replay historical data and measure:
-
-- Signal accuracy
-- Propagation accuracy
-- Recommendation accuracy
-- Prediction accuracy
-- Confidence calibration
-- Relationship effectiveness
-- Category-specific scoring performance
-- False-positive rate
-- False-negative rate
-
-Historical validation should eventually drive parameter calibration rather than relying primarily on manually selected values.
-
----
-
-# Relationship Learning
-
-Relationship strengths and semantic multipliers are currently engineered rather than learned.
-
-Future versions may estimate relationship influence using:
-
-- Historical fantasy scoring
-- Snap counts
-- Target share
-- Route participation
-- Carry share
-- Player usage
-- Coaching tendencies
-- Depth-chart history
-- Machine learning
-
-Learned relationships should supplement explainability rather than create opaque graph behavior.
+Historical validation should eventually drive parameter calibration.
 
 ---
 
 # Performance and Scalability
 
-Current graph traversal and JSONL persistence are sufficient for development.
+Current graph traversal and JSONL persistence are sufficient for development but production-scale performance is not benchmarked.
 
-Production-scale performance has not yet been benchmarked.
-
-### Benchmark Areas
-
-- Graph traversal latency
-- Graph size scalability
-- Propagation throughput
-- Repository read latency
-- JSONL growth
-- Memory usage
-- Concurrent event processing
-- Canonical-event clustering
-- Historical scorecard queries
-
-Performance optimization should be driven by measured bottlenecks rather than premature infrastructure changes.
+Benchmark areas include graph traversal latency, ingestion throughput, repository read latency, JSONL growth, memory use, concurrent processing, canonical-event clustering, and historical scorecard queries.
 
 ---
 
 # JSONL Persistence
 
-Cortex currently stores local knowledge in:
+Current local knowledge includes JSON/JSONL repositories for events, canonical events, player scorecards, and relationships.
 
-```text
-data/cortex/
-├── events.jsonl
-├── player_scorecards.jsonl
-└── relationships.jsonl
-```
-
-This is appropriate for the current development stage but is not intended to be the final production persistence architecture.
-
-## Known Limitations
-
-- Linear file scans
-- Increasing read cost as history grows
-- Limited concurrent-write support
-- No transactional guarantees
-- Limited query capabilities
-- Manual archival requirements
-
-Repository abstractions are intentionally designed to permit future migration to database-backed storage.
+Known limitations include linear scans, increasing read cost, limited concurrent writes, no transactions, limited queries, and manual archival. Repository abstractions intentionally permit later database/cloud migration.
 
 ---
 
 # Cortex Inspector
 
-The Cortex Inspector currently visualizes:
+The Inspector exposes pipeline status, evidence/confidence, cognitive trace, evidence graph, propagation, predictions, scorecards, history, explanations, and diagnostics.
 
-- Pipeline status
-- Evidence and confidence
-- Cognitive trace
-- Evidence graph
-- Propagation
-- Predictions
-- Player scorecards
-- Score history
-- Explanations
-- Diagnostics
-
-The Propagation view exposes:
-
-- Direct impacts
-- Downstream propagated impacts
-- Hop count
-- Propagation weight
-- Relationship strength
-- Relationship confidence
-- Propagation reasoning
-
-## Remaining Inspector Limitations
-
-The Inspector does not yet provide:
-
-- Interactive node-based graph visualization
-- Clickable propagation nodes
-- Live animated pipeline execution
-- Side-by-side player comparison
-- Event markers over historical score charts
-- Filtering by propagation depth
-- Filtering by relationship type
-- Graph-level search
-- Historical propagation replay
-
-These are presentation limitations rather than core Cortex blockers.
+Presentation improvements remain non-blocking: interactive graph nodes, event markers, side-by-side comparison, propagation filtering, graph search, and historical replay.
 
 ---
 
-# External Dependency Reliability
+# Legacy Architecture / Standalone Cortex Extraction
 
-GridironGPT depends on external systems including:
+Legacy GridironGPT components remain while Cortex extraction continues.
 
-- RSS providers
-- nflverse / nflreadpy
-- Supabase
-- Future NFL data providers
+Remaining concerns:
 
-Network or provider failures remain an operational concern.
-
-### Desired Behavior
-
-External failures should result in:
-
-```text
-degraded functionality
-```
-
-rather than:
-
-```text
-application failure
-```
-
-Phase C should establish consistent failure-isolation patterns across ingestion providers.
-
----
-
-# Legacy Architecture
-
-Some legacy GridironGPT components remain while Cortex extraction and migration continue.
-
-Examples may include:
-
-- Legacy relationship definitions
-- Older semantic pipelines
-- Duplicate CLI functionality
-- Transitional application imports
-
-### Remaining Migration Work
-
-- Retire obsolete semantic pipeline components
-- Remove duplicate CLI modules where appropriate
-- Complete remaining PHRED migration work
-- Continue standalone Cortex repository separation
-- Eliminate application dependencies on Cortex internals where facade access is sufficient
-
-Legacy components should only be removed after replacement paths are covered by tests.
-
----
-
-# Standalone Cortex Extraction
-
-Gridiron Cortex is moving toward an independently reusable engine/library.
-
-## Remaining Concerns
-
+- Retire obsolete semantic/CLI paths after replacement coverage exists
+- Complete standalone Cortex repository separation
 - Finalize stable public API
-- Reduce GridIronGPT-specific assumptions inside Cortex
-- Formalize extension/plugin interfaces
-- Establish package versioning
-- Determine long-term repository ownership of shared models
-- Prevent duplicated implementations between repositories
-
-The extraction should not interrupt active GridironGPT development.
+- Reduce GridironGPT-specific assumptions inside Cortex
+- Formalize extension interfaces and package versioning
+- Prevent duplicate implementations between repositories
 
 ---
 
-# Not Currently Considered Blockers
+# Resolved During Phase C So Far
 
-The following capabilities are desirable but are **not required for Phase C**:
+The following are no longer active known issues:
 
-- Interactive knowledge-graph visualization
-- Machine-learned relationships
-- Historical replay UI
-- Mobile application
-- Public Cortex API
-- Dynasty-specific intelligence
-- Full Gridiron Codex
-- Automated parameter learning
-
-These should not distract from establishing a reliable ingestion architecture.
-
----
-
-# Resolved During Phase B
-
-The following previous limitations are now resolved and should not be treated as active known issues:
-
-- Persistent relationship graph
-- Graph traversal
-- Multi-hop propagation
-- Cycle protection
-- Strongest-path selection
-- Semantic relationship propagation
-- Direction-reversing competitive propagation
-- Relationship-aware propagation weights
-- Dynamic relationship diffing
-- Stale relationship detection
-- Idempotent relationship refresh
-- Category-aware scoring
-- Multidimensional player scorecards
-- Propagated semantic scoring
-- Contradiction detection
-- Contradiction confidence penalties
-- Conflicting-source attribution
-- Relationship-aware explanation chains
-- Propagation metadata in explanations
-- End-to-end Phase B integration validation
+- Common `SourceAdapter` / `SourceRecord` ingestion contract
+- Common event normalization
+- Named ESPN and RotoWire RSS adapters
+- nflverse weekly player-stat adapter
+- Canonical-event persistence
+- Restart-safe evidence aggregation
+- Duplicate evidence snapshot prevention
+- Cross-source corroboration persistence
+- Player-aware identity for multi-player articles
+- Multi-player article extraction
+- Jr./Sr. suffix matching
+- Football-name aliases
+- Possessive-name normalization
+- Dedicated structured-stat interpretation
+- Rolling player statistical baselines
+- Workload and production trend context
+- Carry-share context
+- Target-share context
+- Pass-attempt-share context
 
 ---
 
@@ -665,58 +248,33 @@ The following previous limitations are now resolved and should not be treated as
 | Component | Status |
 |---|---|
 | Cortex Facade | ✅ Complete |
-| Knowledge Service | ✅ Complete |
-| Knowledge Graph | ✅ Complete |
-| Graph Traversal | ✅ Complete |
-| Relationship Persistence | ✅ Complete |
-| Relationship Refresh | ✅ Complete |
-| Propagation Planner | ✅ Complete |
-| Multi-Hop Propagation | ✅ Complete |
-| Cycle Protection | ✅ Complete |
-| Strongest Path Selection | ✅ Complete |
-| Semantic Propagation | ✅ Complete |
+| Knowledge Graph / Propagation | ✅ Complete |
 | Multidimensional Scoring | ✅ Complete |
-| Contradiction Detection | ✅ Complete |
-| Prediction Integration | ✅ Complete |
-| Recommendation Intelligence | ✅ Complete |
-| Explanation Integration | ✅ Complete |
-| Phase B Integration Gate | ✅ Complete |
-| Unified Ingestion Architecture | ▶ Phase C |
-| Source Reliability Layer | ▶ Phase C |
-| Cross-Source Deduplication | ▶ Phase C |
+| Prediction / Recommendation / Explanation | ✅ Complete |
+| Unified Ingestion Architecture | ✅ Complete |
+| Canonical Evidence Persistence | ✅ Complete |
+| Cross-Source Corroboration | ✅ Complete |
+| Multi-Player Extraction | ✅ Complete |
+| NFL News Adapters | ✅ Complete |
+| nflverse Player Stats | ✅ Complete |
+| Contextual Statistical Reasoning | ✅ Complete |
+| Team Opportunity Share | ✅ Complete |
+| Source Reliability Layer | ▶ Next |
+| Ingestion Observability | Planned |
 | Historical Validation | 🔮 Future |
 | Learned Relationships | 🔮 Future |
 
 ---
 
-# Current Test Baseline
-
-Phase B closed with:
-
-```text
-274 passed
-```
-
-Any Phase C architectural work should preserve this baseline while adding ingestion-specific tests.
-
----
-
 # Primary Next Risk
 
-The primary engineering risk has shifted.
-
-During Phase B, the major risk was:
-
-```text
-Can Cortex reason correctly?
-```
+The main question is no longer whether Cortex can normalize and interpret multiple evidence types.
 
 The next risk is:
 
 ```text
-Can Cortex reliably receive clean, timely,
-non-duplicated information from multiple
-external NFL sources?
+Can ingestion remain healthy when a provider is slow,
+unavailable, rate-limited, or returns malformed data?
 ```
 
-That is the primary problem Phase C is intended to solve.
+That is the next Phase C engineering target.
