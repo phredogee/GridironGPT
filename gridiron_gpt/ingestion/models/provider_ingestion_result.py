@@ -13,6 +13,7 @@ class ProviderIngestionResult:
     success: bool
     events: list[RawEvent] = field(default_factory=list)
     records_received: int = 0
+    attempts: int = 1
     error_type: str | None = None
     error_message: str | None = None
 
