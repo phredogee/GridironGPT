@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from gridiron_cortex.models.raw_event import RawEvent
+from gridiron_gpt.ingestion.models.provider_ingestion_result import (
+    ProviderIngestionResult,
+)
 from gridiron_gpt.ingestion.normalize.event_normalizer import (
     EventNormalizer,
 )
@@ -13,8 +16,8 @@ class IngestionService:
     """
     Coordinate source retrieval and event normalization.
 
-    The service converts external source evidence into normalized
-    RawEvents without performing Cortex interpretation.
+    Provider execution is isolated so one failing source does not prevent
+    healthy providers from producing normalized RawEvents.
     """
 
     def __init__(
@@ -23,23 +26,54 @@ class IngestionService:
     ):
         self.normalizer = normalizer or EventNormalizer()
 
+    def ingest_result(
+        self,
+        adapter: SourceAdapter,
+    ) -> ProviderIngestionResult:
+        source_name = adapter.source_name
+
+        try:
+            records = adapter.fetch()
+            events = self.normalizer.normalize_many(records)
+        except Exception as exc:
+            return ProviderIngestionResult(
+                source_name=source_name,
+                success=False,
+                error_type=type(exc).__name__,
+                error_message=str(exc),
+            )
+
+        return ProviderIngestionResult(
+            source_name=source_name,
+            success=True,
+            events=events,
+            records_received=len(records),
+        )
+
     def ingest(
         self,
         adapter: SourceAdapter,
     ) -> list[RawEvent]:
-        records = adapter.fetch()
+        """Compatibility API returning only normalized events."""
+        return self.ingest_result(adapter).events
 
-        return self.normalizer.normalize_many(records)
+    def ingest_many_results(
+        self,
+        adapters: list[SourceAdapter],
+    ) -> list[ProviderIngestionResult]:
+        return [
+            self.ingest_result(adapter)
+            for adapter in adapters
+        ]
 
     def ingest_many(
         self,
         adapters: list[SourceAdapter],
     ) -> list[RawEvent]:
+        """Compatibility API that returns events from successful providers."""
         events: list[RawEvent] = []
 
-        for adapter in adapters:
-            events.extend(
-                self.ingest(adapter)
-            )
+        for result in self.ingest_many_results(adapters):
+            events.extend(result.events)
 
         return events
