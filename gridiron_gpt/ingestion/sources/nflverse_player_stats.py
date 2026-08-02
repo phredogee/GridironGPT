@@ -10,13 +10,33 @@ from gridiron_gpt.ingestion.sources.base import SourceAdapter
 
 
 StatsLoader = Callable[[int | list[int], str], pd.DataFrame]
+CONTEXT_METRICS = (
+    "carries",
+    "rushing_attempts",
+    "targets",
+    "receptions",
+    "rushing_yards",
+    "receiving_yards",
+    "passing_yards",
+    "passing_tds",
+    "passing_touchdowns",
+    "rushing_tds",
+    "rushing_touchdowns",
+    "receiving_tds",
+    "receiving_touchdowns",
+    "interceptions",
+    "passing_interceptions",
+    "sacks",
+    "sacks_suffered",
+)
 
 
 class NFLVersePlayerStatsAdapter(SourceAdapter):
     """Expose nflverse weekly player statistics as source-neutral records.
 
-    The adapter emits factual statistical evidence only. It does not assign
-    sentiment, fantasy impact, recommendations, or Cortex confidence.
+    The adapter emits factual statistical evidence only. For weekly data it
+    also attaches rolling prior-week baselines so Cortex can evaluate change
+    in usage and performance without relying on headline wording.
     """
 
     def __init__(
@@ -42,9 +62,11 @@ class NFLVersePlayerStatsAdapter(SourceAdapter):
         if frame.empty:
             return []
 
+        rows = frame.to_dict(orient="records")
+        context_by_index = self._build_context(rows)
         records: list[SourceRecord] = []
 
-        for row in frame.to_dict(orient="records"):
+        for index, row in enumerate(rows):
             position = self._text(row.get("position")).upper()
 
             if self.positions and position not in self.positions:
@@ -101,11 +123,84 @@ class NFLVersePlayerStatsAdapter(SourceAdapter):
                         "game_id": game_id or None,
                         "opponent_team": opponent or None,
                         "stats": stats,
+                        "stat_context": context_by_index.get(index),
                     },
                 )
             )
 
         return records
+
+    @classmethod
+    def _build_context(cls, rows: list[dict[str, Any]]) -> dict[int, dict]:
+        grouped: dict[str, list[tuple[int, dict[str, Any]]]] = {}
+
+        for index, row in enumerate(rows):
+            player_id = cls._text(row.get("player_id"))
+            if not player_id:
+                continue
+            grouped.setdefault(player_id, []).append((index, row))
+
+        result: dict[int, dict] = {}
+
+        for player_rows in grouped.values():
+            ordered = sorted(
+                player_rows,
+                key=lambda item: (
+                    cls._sortable_number(item[1].get("season")),
+                    cls._sortable_number(item[1].get("week")),
+                ),
+            )
+
+            history: list[dict[str, Any]] = []
+
+            for index, row in ordered:
+                current = cls._context_values(row)
+                baseline = cls._average_metrics(history)
+                deltas = {
+                    key: round(current.get(key, 0.0) - baseline.get(key, 0.0), 3)
+                    for key in current
+                    if key in baseline
+                }
+
+                result[index] = {
+                    "prior_games": len(history),
+                    "baseline": baseline,
+                    "current": current,
+                    "deltas": deltas,
+                }
+                history.append(current)
+
+        return result
+
+    @classmethod
+    def _context_values(cls, row: dict[str, Any]) -> dict[str, float]:
+        values: dict[str, float] = {}
+        for key in CONTEXT_METRICS:
+            value = cls._numeric(row.get(key))
+            if value is not None:
+                values[key] = value
+
+        carries = values.get("carries", values.get("rushing_attempts", 0.0))
+        receptions = values.get("receptions", 0.0)
+        values["touches"] = carries + receptions
+        values["scrimmage_yards"] = (
+            values.get("rushing_yards", 0.0)
+            + values.get("receiving_yards", 0.0)
+        )
+        return values
+
+    @staticmethod
+    def _average_metrics(history: list[dict[str, float]]) -> dict[str, float]:
+        if not history:
+            return {}
+
+        keys = set().union(*(entry.keys() for entry in history))
+        averages: dict[str, float] = {}
+        for key in keys:
+            values = [entry[key] for entry in history if key in entry]
+            if values:
+                averages[key] = round(sum(values) / len(values), 3)
+        return averages
 
     @staticmethod
     def _default_loader(
@@ -195,6 +290,22 @@ class NFLVersePlayerStatsAdapter(SourceAdapter):
             stats[key] = value
 
         return stats
+
+    @staticmethod
+    def _numeric(value: Any) -> float | None:
+        if value is None or pd.isna(value):
+            return None
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
+
+    @staticmethod
+    def _sortable_number(value: Any) -> float:
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return -1.0
 
     @staticmethod
     def _text(value: Any) -> str:
