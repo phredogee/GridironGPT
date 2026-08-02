@@ -12,6 +12,8 @@ MANUAL_ALIASES: dict[str, list[str]] = {
     "Jonathon Cooper": ["LB Cooper", "J. Cooper"],
 }
 
+NAME_SUFFIXES = {"jr", "sr", "ii", "iii", "iv", "v"}
+
 
 class PlayerMatch(TypedDict):
     player: str
@@ -25,9 +27,9 @@ class PlayerMatch(TypedDict):
 def get_cached_catalog() -> list[dict]:
     return load_player_catalog()
 
+
 @lru_cache(maxsize=1)
 def get_alias_index() -> dict[str, list[dict]]:
-
     alias_index: dict[str, list[dict]] = {}
 
     for player in get_cached_catalog():
@@ -42,6 +44,7 @@ def get_alias_index() -> dict[str, list[dict]]:
             )
 
     return alias_index
+
 
 def clear_catalog_cache() -> None:
     """Clear cached catalog and alias index."""
@@ -76,11 +79,9 @@ def calculate_confidence(alias: str) -> float:
     if len(parts) >= 2:
         first_part = parts[0]
 
-        # Initial plus last name, such as "C Watson".
         if len(first_part) == 1:
             return 0.90
 
-        # Position plus last name, such as "WR Watson".
         if first_part.upper() in {
             "QB",
             "RB",
@@ -97,18 +98,33 @@ def calculate_confidence(alias: str) -> float:
         }:
             return 0.88
 
-        # Full player name.
         return 1.0
 
-    # Last-name-only aliases are inherently more ambiguous.
     return 0.72
+
+
+def strip_name_suffix(player_name: str) -> str:
+    """Return a display name without a trailing generational suffix."""
+    parts = player_name.strip().split()
+
+    if not parts:
+        return ""
+
+    normalized_suffix = normalize_text(parts[-1])
+    if normalized_suffix in NAME_SUFFIXES:
+        parts = parts[:-1]
+
+    return " ".join(parts)
+
 
 def build_default_aliases(player: dict) -> set[str]:
     """
     Return stored catalog aliases plus safe generated fallbacks.
 
-    Catalog aliases are preferred so alias construction happens during
-    preprocessing rather than repeatedly during matching.
+    In addition to the official full name, include football-name and
+    suffixless variants. News providers commonly omit Jr./Sr./roman-numeral
+    suffixes, so "Chris Rodriguez" must still resolve to
+    "Chris Rodriguez Jr." without requiring a manual alias.
     """
     player_name = get_player_name(player)
 
@@ -123,27 +139,39 @@ def build_default_aliases(player: dict) -> set[str]:
 
     aliases.add(player_name)
 
-    name_parts = player_name.split()
+    football_name = str(player.get("football_name") or "").strip()
+    first_name = str(player.get("first_name") or "").strip()
+    last_name = str(player.get("last_name") or "").strip()
+
+    suffixless_name = strip_name_suffix(player_name)
+    if suffixless_name and suffixless_name != player_name:
+        aliases.add(suffixless_name)
+
+    if football_name and last_name:
+        aliases.add(f"{football_name} {last_name}")
+
+    base_name = suffixless_name or player_name
+    name_parts = base_name.split()
 
     if len(name_parts) >= 2:
-        first_name = name_parts[0]
-        last_name = name_parts[-1]
+        generated_first = first_name or name_parts[0]
+        generated_last = last_name or name_parts[-1]
         position = get_player_position(player)
         team = get_player_team(player)
 
-        aliases.add(f"{first_name[0]}. {last_name}")
-        aliases.add(f"{first_name[0]} {last_name}")
+        aliases.add(f"{generated_first[0]}. {generated_last}")
+        aliases.add(f"{generated_first[0]} {generated_last}")
 
         if position:
-            aliases.add(f"{position} {last_name}")
-            aliases.add(f"{position} {player_name}")
+            aliases.add(f"{position} {generated_last}")
+            aliases.add(f"{position} {base_name}")
 
         if team:
-            aliases.add(f"{team} {player_name}")
+            aliases.add(f"{team} {base_name}")
 
             if position:
-                aliases.add(f"{team} {position} {last_name}")
-                aliases.add(f"{team} {position} {player_name}")
+                aliases.add(f"{team} {position} {generated_last}")
+                aliases.add(f"{team} {position} {base_name}")
 
     aliases.update(MANUAL_ALIASES.get(player_name, []))
 
@@ -229,6 +257,7 @@ def score_match(
 
     return round(max(0.0, min(confidence, 1.0)), 3)
 
+
 def find_alias_span(
     normalized_text: str,
     normalized_alias: str,
@@ -245,6 +274,7 @@ def find_alias_span(
 
     return match.span()
 
+
 def find_player_matches(
     text: str,
     *,
@@ -252,22 +282,7 @@ def find_player_matches(
     position_hint: Optional[str] = None,
     minimum_confidence: float = 0.85,
 ) -> list[PlayerMatch]:
-    """
-    Find all player references contained in a piece of text.
-
-    Args:
-        text:
-            Headline, article text, injury report, or other source text.
-        team_hint:
-            Optional team abbreviation used to improve disambiguation.
-        position_hint:
-            Optional position abbreviation used to improve disambiguation.
-        minimum_confidence:
-            Lowest confidence score included in the result.
-
-    Returns:
-        Matches ordered from highest to lowest confidence.
-    """
+    """Find all high-confidence player references contained in text."""
     if not text or not text.strip():
         return []
 
@@ -301,6 +316,7 @@ def find_player_matches(
 
         if is_contained_by_stronger_match:
             continue
+
         alias_accepted = False
 
         for entry in alias_entries:
@@ -355,6 +371,7 @@ def find_player_matches(
 
     return matches
 
+
 def resolve_player(
     text: str,
     *,
@@ -363,13 +380,7 @@ def resolve_player(
     minimum_confidence: float = 0.85,
     ambiguity_threshold: float = 0.03,
 ) -> Optional[PlayerMatch]:
-    """
-    Resolve the strongest player match from text.
-
-    Returns None when:
-        - no candidate exceeds the minimum confidence;
-        - the top candidates are too close and cannot be disambiguated.
-    """
+    """Resolve the strongest player match from text."""
     matches = find_player_matches(
         text,
         team_hint=team_hint,
@@ -405,16 +416,13 @@ def match_player(
     team_hint: Optional[str] = None,
     position_hint: Optional[str] = None,
 ) -> Optional[PlayerMatch]:
-    """
-    Backward-compatible entry point for resolving one player.
-
-    New code may call resolve_player() directly.
-    """
+    """Backward-compatible entry point for resolving one player."""
     return resolve_player(
         text,
         team_hint=team_hint,
         position_hint=position_hint,
     )
+
 
 def extract_players_from_text(
     text: str,
