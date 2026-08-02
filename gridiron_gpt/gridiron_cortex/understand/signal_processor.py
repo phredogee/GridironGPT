@@ -106,30 +106,14 @@ class SignalProcessor:
             event.sentiment is not None
             or event.impact_score is not None
             or event.confidence is not None
-            or bool(event.evidence)
         )
 
-        if classification.category != "unknown":
-            sentiment = classification.polarity
-            impact_score = classification.impact
-            confidence = classification.confidence
-
-            evidence = {
-                "classification": {
-                    "category": classification.category,
-                    "subtype": classification.subtype,
-                    "polarity": classification.polarity,
-                    "confidence": classification.confidence,
-                    "impact": classification.impact,
-                    "matched_rules": classification.matched_rules,
-                }
-            }
+        evidence = dict(event.evidence)
 
         if has_structured_intelligence:
             sentiment = event.sentiment or "neutral"
             impact_score = float(event.impact_score or 0.0)
             confidence = float(event.confidence or 0.0)
-            evidence = dict(event.evidence)
 
         elif matched_concepts:
             (
@@ -138,8 +122,10 @@ class SignalProcessor:
                 confidence,
             ) = self._interpret_concepts(matched_concepts)
 
-            evidence = self._build_concept_evidence(
-                matched_concepts
+            evidence.update(
+                self._build_concept_evidence(
+                    matched_concepts
+                )
             )
 
             positive_hits = self._merge_hits(
@@ -157,6 +143,11 @@ class SignalProcessor:
                 ),
             )
 
+        elif classification.category != "unknown":
+            sentiment = classification.polarity
+            impact_score = classification.impact
+            confidence = classification.confidence
+
         else:
             sentiment = self._keyword_sentiment(
                 positive_hits=positive_hits,
@@ -165,7 +156,6 @@ class SignalProcessor:
 
             impact_score = self._keyword_impact(sentiment)
             confidence = 1.0
-            evidence = {}
 
 # Enrich the evidence with deterministic event classification.
         if classification.category != "unknown":
