@@ -13,6 +13,9 @@ from gridiron_cortex.knowledge.knowledge_service import KnowledgeService
 from gridiron_cortex.models.raw_event import RawEvent
 from gridiron_cortex.predict.prediction_engine import PredictionEngine
 from gridiron_cortex.remember.json_event_repository import JsonEventRepository
+from gridiron_cortex.remember.json_canonical_event_repository import (
+    JsonCanonicalEventRepository,
+)
 from gridiron_cortex.remember.json_player_scorecard_repository import (
     JsonPlayerScorecardRepository,
 )
@@ -45,6 +48,7 @@ from gridiron_cortex.confidence.confidence_calibrator import (
     ConfidenceCalibrator,
 )
 
+
 class CortexFacade:
     """
     Public entry point for Gridiron Cortex.
@@ -68,13 +72,19 @@ class CortexFacade:
             data_path / "events.jsonl"
         )
 
+        canonical_event_repository = JsonCanonicalEventRepository(
+            data_path / "canonical_events.jsonl"
+        )
+
         player_scorecard_repository = (
             JsonPlayerScorecardRepository(
                 data_path / "player_scorecards.jsonl"
             )
         )
 
-        evidence_aggregator = EvidenceAggregator()
+        evidence_aggregator = EvidenceAggregator(
+            repository=canonical_event_repository,
+        )
         evidence_analyzer = EvidenceAnalyzer()
 
         relationship_repository = JsonRelationshipRepository(
@@ -99,7 +109,7 @@ class CortexFacade:
             entity_resolver=EntityResolver(),
             player_enrichment=PlayerEnrichmentService(
                 catalog_loader=catalog_loader,
-        ),
+            ),
             signal_processor=SignalProcessor(),
             relationship_engine=RelationshipEngine(
                 repository=relationship_repository,
@@ -119,7 +129,6 @@ class CortexFacade:
             event_repository=event_repository,
             prediction_engine=PredictionEngine(),
         )
-
 
     def process_event(self, event: RawEvent):
         return self.engine.process_event(event)
