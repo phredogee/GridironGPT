@@ -1,13 +1,18 @@
 from __future__ import annotations
 
 import time
+import uuid
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
+from datetime import datetime, timezone
 
 from gridiron_cortex.models.raw_event import RawEvent
+from gridiron_gpt.ingestion.models.ingestion_run import IngestionRunSummary, ProviderDiagnostic
 from gridiron_gpt.ingestion.models.provider_errors import ProviderRateLimitError
+from gridiron_gpt.ingestion.models.provider_health import ProviderHealthStatus
 from gridiron_gpt.ingestion.models.provider_ingestion_result import ProviderIngestionResult
 from gridiron_gpt.ingestion.normalize.event_normalizer import EventNormalizer
+from gridiron_gpt.ingestion.services.ingestion_run_repository import JsonlIngestionRunRepository
 from gridiron_gpt.ingestion.services.provider_health_tracker import ProviderHealthTracker
 from gridiron_gpt.ingestion.sources.base import SourceAdapter
 
@@ -17,7 +22,7 @@ class ProviderTimeoutError(TimeoutError):
 
 
 class IngestionService:
-    """Coordinate resilient source retrieval, normalization, and provider health."""
+    """Coordinate resilient source retrieval, normalization, health, and observability."""
 
     def __init__(
         self,
@@ -28,6 +33,9 @@ class IngestionService:
         attempt_timeout_seconds: float | None = 15.0,
         sleep: Callable[[float], None] = time.sleep,
         health_tracker: ProviderHealthTracker | None = None,
+        run_repository: JsonlIngestionRunRepository | None = None,
+        clock: Callable[[], datetime] | None = None,
+        monotonic: Callable[[], float] = time.monotonic,
     ):
         if max_attempts < 1:
             raise ValueError("max_attempts must be at least 1")
@@ -42,11 +50,13 @@ class IngestionService:
         self.attempt_timeout_seconds = attempt_timeout_seconds
         self.sleep = sleep
         self.health_tracker = health_tracker or ProviderHealthTracker()
+        self.run_repository = run_repository
+        self.clock = clock or (lambda: datetime.now(timezone.utc))
+        self.monotonic = monotonic
 
     def _fetch_with_timeout(self, adapter: SourceAdapter):
         if self.attempt_timeout_seconds is None:
             return adapter.fetch()
-
         executor = ThreadPoolExecutor(max_workers=1)
         future = executor.submit(adapter.fetch)
         try:
@@ -54,17 +64,14 @@ class IngestionService:
         except FutureTimeoutError as exc:
             future.cancel()
             raise ProviderTimeoutError(
-                f"{adapter.source_name} exceeded "
-                f"{self.attempt_timeout_seconds}s attempt timeout"
+                f"{adapter.source_name} exceeded {self.attempt_timeout_seconds}s attempt timeout"
             ) from exc
         finally:
             executor.shutdown(wait=False, cancel_futures=True)
 
     def _retry_delay(self, error: Exception, attempt: int) -> float:
-        if isinstance(error, ProviderRateLimitError):
-            retry_after = error.retry_after_seconds
-            if retry_after is not None:
-                return retry_after
+        if isinstance(error, ProviderRateLimitError) and error.retry_after_seconds is not None:
+            return error.retry_after_seconds
         return self.backoff_seconds * (2 ** (attempt - 1))
 
     def _record_result(self, result: ProviderIngestionResult) -> ProviderIngestionResult:
@@ -74,44 +81,70 @@ class IngestionService:
     def ingest_result(self, adapter: SourceAdapter) -> ProviderIngestionResult:
         source_name = adapter.source_name
         last_error: Exception | None = None
-
         for attempt in range(1, self.max_attempts + 1):
             try:
                 records = self._fetch_with_timeout(adapter)
                 events = self.normalizer.normalize_many(records)
                 return self._record_result(ProviderIngestionResult(
-                    source_name=source_name,
-                    success=True,
-                    events=events,
-                    records_received=len(records),
-                    attempts=attempt,
+                    source_name=source_name, success=True, events=events,
+                    records_received=len(records), attempts=attempt,
                 ))
             except Exception as exc:
                 last_error = exc
                 if attempt < self.max_attempts:
                     self.sleep(self._retry_delay(exc, attempt))
-
         assert last_error is not None
         return self._record_result(ProviderIngestionResult(
-            source_name=source_name,
-            success=False,
-            attempts=self.max_attempts,
-            error_type=type(last_error).__name__,
-            error_message=str(last_error),
+            source_name=source_name, success=False, attempts=self.max_attempts,
+            error_type=type(last_error).__name__, error_message=str(last_error),
         ))
 
+    def _diagnostic(self, result: ProviderIngestionResult) -> ProviderDiagnostic:
+        health = self.health_tracker.get(result.source_name)
+        status = health.status if health else (
+            ProviderHealthStatus.HEALTHY if result.success else ProviderHealthStatus.DEGRADED
+        )
+        return ProviderDiagnostic(
+            source_name=result.source_name,
+            success=result.success,
+            status=status,
+            attempts=result.attempts,
+            records_received=result.records_received,
+            events_created=result.event_count,
+            error_type=result.error_type,
+            error_message=result.error_message,
+        )
+
+    def ingest_run(self, adapters: list[SourceAdapter]) -> IngestionRunSummary:
+        """Execute a complete observable ingestion run and optionally persist it."""
+        started_at = self.clock()
+        started_tick = self.monotonic()
+        results = self.ingest_many_results(adapters)
+        completed_at = self.clock()
+        duration = max(0.0, self.monotonic() - started_tick)
+        summary = IngestionRunSummary(
+            run_id=str(uuid.uuid4()),
+            started_at=started_at,
+            completed_at=completed_at,
+            duration_seconds=round(duration, 6),
+            providers_attempted=len(results),
+            providers_successful=sum(1 for result in results if result.success),
+            providers_failed=sum(1 for result in results if not result.success),
+            records_received=sum(result.records_received for result in results),
+            events_created=sum(result.event_count for result in results),
+            diagnostics=[self._diagnostic(result) for result in results],
+        )
+        if self.run_repository is not None:
+            self.run_repository.save(summary)
+        return summary
+
     def ingest(self, adapter: SourceAdapter) -> list[RawEvent]:
-        """Compatibility API returning only normalized events."""
         return self.ingest_result(adapter).events
 
-    def ingest_many_results(
-        self,
-        adapters: list[SourceAdapter],
-    ) -> list[ProviderIngestionResult]:
+    def ingest_many_results(self, adapters: list[SourceAdapter]) -> list[ProviderIngestionResult]:
         return [self.ingest_result(adapter) for adapter in adapters]
 
     def ingest_many(self, adapters: list[SourceAdapter]) -> list[RawEvent]:
-        """Compatibility API returning events from successful providers."""
         events: list[RawEvent] = []
         for result in self.ingest_many_results(adapters):
             events.extend(result.events)
