@@ -67,6 +67,12 @@ class RSSSourceAdapter(SourceAdapter):
             entry.get("published")
             or entry.get("updated")
         )
+        source_id = (
+            entry.get("id")
+            or entry.get("guid")
+            or url
+            or None
+        )
 
         searchable_text = " ".join(
             part
@@ -82,6 +88,12 @@ class RSSSourceAdapter(SourceAdapter):
             searchable_text
         )
 
+        shared_metadata = {
+            "feed_url": self.feed_url,
+            "article_source_id": source_id,
+            "matched_player_count": len(matches),
+        }
+
         if not matches:
             return [
                 SourceRecord(
@@ -90,9 +102,8 @@ class RSSSourceAdapter(SourceAdapter):
                     summary=summary or None,
                     published_at=published_at,
                     url=url or None,
-                    metadata={
-                        "feed_url": self.feed_url,
-                    },
+                    source_id=source_id,
+                    metadata=shared_metadata,
                 )
             ]
 
@@ -103,11 +114,12 @@ class RSSSourceAdapter(SourceAdapter):
                 summary=summary or None,
                 published_at=published_at,
                 url=url or None,
+                source_id=source_id,
                 player=match["player"],
                 team=match.get("team"),
                 position=match.get("position"),
                 metadata={
-                    "feed_url": self.feed_url,
+                    **shared_metadata,
                     "match_confidence": match.get(
                         "confidence",
                     ),
