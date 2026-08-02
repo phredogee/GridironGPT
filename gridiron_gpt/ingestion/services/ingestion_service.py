@@ -5,9 +5,8 @@ from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 
 from gridiron_cortex.models.raw_event import RawEvent
-from gridiron_gpt.ingestion.models.provider_ingestion_result import (
-    ProviderIngestionResult,
-)
+from gridiron_gpt.ingestion.models.provider_errors import ProviderRateLimitError
+from gridiron_gpt.ingestion.models.provider_ingestion_result import ProviderIngestionResult
 from gridiron_gpt.ingestion.normalize.event_normalizer import EventNormalizer
 from gridiron_gpt.ingestion.sources.base import SourceAdapter
 
@@ -56,14 +55,16 @@ class IngestionService:
                 f"{self.attempt_timeout_seconds}s attempt timeout"
             ) from exc
         finally:
-            # Do not wait for a blocked provider thread. Provider/network clients
-            # should still configure their own request-level timeouts where possible.
             executor.shutdown(wait=False, cancel_futures=True)
 
-    def ingest_result(
-        self,
-        adapter: SourceAdapter,
-    ) -> ProviderIngestionResult:
+    def _retry_delay(self, error: Exception, attempt: int) -> float:
+        if isinstance(error, ProviderRateLimitError):
+            retry_after = error.retry_after_seconds
+            if retry_after is not None:
+                return retry_after
+        return self.backoff_seconds * (2 ** (attempt - 1))
+
+    def ingest_result(self, adapter: SourceAdapter) -> ProviderIngestionResult:
         source_name = adapter.source_name
         last_error: Exception | None = None
 
@@ -81,8 +82,7 @@ class IngestionService:
             except Exception as exc:
                 last_error = exc
                 if attempt < self.max_attempts:
-                    delay = self.backoff_seconds * (2 ** (attempt - 1))
-                    self.sleep(delay)
+                    self.sleep(self._retry_delay(exc, attempt))
 
         assert last_error is not None
         return ProviderIngestionResult(
