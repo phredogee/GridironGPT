@@ -1,4 +1,6 @@
 import re
+from datetime import datetime
+from email.utils import parsedate_to_datetime
 from hashlib import sha256
 
 from gridiron_cortex.models.canonical_event import CanonicalEvent
@@ -115,6 +117,7 @@ class EvidenceAggregator:
     ) -> str:
         player = EvidenceAggregator._normalize(event.player)
         team = EvidenceAggregator._normalize(event.team)
+        event_date = EvidenceAggregator._event_date(event.published_at)
 
         payload = "|".join(
             [
@@ -122,10 +125,30 @@ class EvidenceAggregator:
                 team,
                 category,
                 subtype,
+                event_date,
             ]
         )
 
         return sha256(payload.encode("utf-8")).hexdigest()
+
+    @staticmethod
+    def _event_date(published_at: str | None) -> str:
+        """Return a stable calendar-day bucket for canonical identity."""
+        if not published_at:
+            return ""
+
+        value = published_at.strip()
+
+        try:
+            return parsedate_to_datetime(value).date().isoformat()
+        except (TypeError, ValueError, OverflowError):
+            pass
+
+        try:
+            normalized = value.replace("Z", "+00:00")
+            return datetime.fromisoformat(normalized).date().isoformat()
+        except ValueError:
+            return ""
 
     @staticmethod
     def _normalize(value: str | None) -> str:
