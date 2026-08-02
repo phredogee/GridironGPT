@@ -18,6 +18,9 @@ from gridiron_gpt.ingestion.sources.nfl_news import (
 )
 
 
+FANTASY_SKILL_POSITIONS = {"QB", "RB", "WR", "TE"}
+
+
 def main() -> None:
     service = IngestionService()
     adapters = default_nfl_news_adapters()
@@ -27,16 +30,34 @@ def main() -> None:
     by_source = Counter(event.source for event in events)
     resolved = [event for event in events if event.player]
     unresolved = [event for event in events if not event.player]
+
+    fantasy_resolved = [
+        event
+        for event in resolved
+        if (event.position or "").upper() in FANTASY_SKILL_POSITIONS
+    ]
+    other_resolved = [
+        event
+        for event in resolved
+        if (event.position or "").upper() not in FANTASY_SKILL_POSITIONS
+    ]
+
     players = Counter(
         event.player
         for event in resolved
         if event.player
+    )
+    positions = Counter(
+        (event.position or "UNKNOWN").upper()
+        for event in resolved
     )
 
     print("NFL news ingestion smoke test")
     print("=" * 32)
     print(f"total_events={len(events)}")
     print(f"resolved_events={len(resolved)}")
+    print(f"fantasy_skill_resolved={len(fantasy_resolved)}")
+    print(f"other_position_resolved={len(other_resolved)}")
     print(f"unresolved_events={len(unresolved)}")
     print()
 
@@ -45,9 +66,23 @@ def main() -> None:
         print(f"  {source}: {count}")
 
     print()
+    print("resolved_by_position")
+    for position, count in sorted(positions.items()):
+        print(f"  {position}: {count}")
+
+    print()
     print("top_resolved_players")
     for player, count in players.most_common(20):
         print(f"  {player}: {count}")
+
+    if other_resolved:
+        print()
+        print("sample_non_fantasy_resolved")
+        for event in other_resolved[:10]:
+            print(
+                f"  [{event.position or 'UNKNOWN'}] "
+                f"{event.player}: {event.headline}"
+            )
 
     if unresolved:
         print()
