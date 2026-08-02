@@ -4,20 +4,52 @@ from hashlib import sha256
 from gridiron_cortex.models.canonical_event import CanonicalEvent
 from gridiron_cortex.models.raw_event import RawEvent
 from gridiron_cortex.models.source_evidence import SourceEvidence
+from gridiron_cortex.remember.canonical_event_repository import (
+    CanonicalEventRepository,
+)
 from gridiron_cortex.understand.event_classifier import EventClassifier
 from gridiron_cortex.understand.source_reliability import (
     SourceReliability,
 )
 
+
+class _InMemoryCanonicalEventRepository(CanonicalEventRepository):
+    """Default process-local repository used when persistence is not injected."""
+
+    def __init__(self):
+        self._events: dict[str, CanonicalEvent] = {}
+        self._history: dict[str, list[CanonicalEvent]] = {}
+
+    def save(self, canonical_event: CanonicalEvent) -> None:
+        self._events[canonical_event.event_key] = canonical_event
+        self._history.setdefault(canonical_event.event_key, []).append(
+            canonical_event
+        )
+
+    def get(self, event_key: str) -> CanonicalEvent | None:
+        return self._events.get(event_key)
+
+    def get_history(self, event_key: str) -> list[CanonicalEvent]:
+        return list(self._history.get(event_key, []))
+
+
 class EvidenceAggregator:
     """
     Group reports that describe the same football development.
+
+    Canonical state is read from and written through a
+    CanonicalEventRepository. A process-local repository is used by default
+    so existing callers keep their current behavior, while persistent
+    repositories can be injected for state that survives process restarts.
     """
 
-    def __init__(self):
+    def __init__(
+        self,
+        repository: CanonicalEventRepository | None = None,
+    ):
         self.classifier = EventClassifier()
         self.reliability = SourceReliability()
-        self._events: dict[str, CanonicalEvent] = {}
+        self.repository = repository or _InMemoryCanonicalEventRepository()
 
     def add(self, event: RawEvent) -> CanonicalEvent:
         classification = self.classifier.classify(event)
@@ -28,6 +60,8 @@ class EvidenceAggregator:
             subtype=classification.subtype,
         )
 
+        fingerprint = event.fingerprint()
+
         source_evidence = SourceEvidence(
             headline=event.headline,
             source=event.source,
@@ -37,11 +71,11 @@ class EvidenceAggregator:
             url=event.url,
             confidence=classification.confidence,
             metadata={
-                "raw_event_fingerprint": event.fingerprint(),
+                "raw_event_fingerprint": fingerprint,
             },
         )
 
-        canonical_event = self._events.get(event_key)
+        canonical_event = self.repository.get(event_key)
 
         if canonical_event is None:
             canonical_event = CanonicalEvent(
@@ -56,18 +90,20 @@ class EvidenceAggregator:
                 evidence=[source_evidence],
             )
 
-            self._events[event_key] = canonical_event
+            self.repository.save(canonical_event)
             return canonical_event
 
-        if not self._already_contains(
+        if self._already_contains(
             canonical_event,
-            event.fingerprint(),
+            fingerprint,
         ):
-            canonical_event.evidence.append(source_evidence)
+            return canonical_event
 
+        canonical_event.evidence.append(source_evidence)
         canonical_event.confidence = self._aggregate_confidence(
             canonical_event
         )
+        self.repository.save(canonical_event)
 
         return canonical_event
 
@@ -118,7 +154,8 @@ class EvidenceAggregator:
         Increase confidence as independent sources corroborate an event.
         """
         confidence_boost = self.reliability.confidence_boost(
-            canonical_event.sources)
+            canonical_event.sources
+        )
 
         return min(
             canonical_event.confidence + confidence_boost,
