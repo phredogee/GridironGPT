@@ -70,6 +70,7 @@ class SignalProcessor:
             evidence["statistical_interpretation"] = {
                 "indicators": interpretation.indicators,
                 "reasons": interpretation.reasons,
+                "context": interpretation.context,
                 "method": "structured_player_stats",
             }
             signal_category = "performance"
