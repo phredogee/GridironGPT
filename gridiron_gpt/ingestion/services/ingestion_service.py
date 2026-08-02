@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import time
+from collections.abc import Callable
+
 from gridiron_cortex.models.raw_event import RawEvent
 from gridiron_gpt.ingestion.models.provider_ingestion_result import (
     ProviderIngestionResult,
@@ -13,41 +16,57 @@ from gridiron_gpt.ingestion.sources.base import (
 
 
 class IngestionService:
-    """
-    Coordinate source retrieval and event normalization.
-
-    Provider execution is isolated so one failing source does not prevent
-    healthy providers from producing normalized RawEvents.
-    """
+    """Coordinate resilient source retrieval and event normalization."""
 
     def __init__(
         self,
         normalizer: EventNormalizer | None = None,
+        *,
+        max_attempts: int = 3,
+        backoff_seconds: float = 0.5,
+        sleep: Callable[[float], None] = time.sleep,
     ):
+        if max_attempts < 1:
+            raise ValueError("max_attempts must be at least 1")
+        if backoff_seconds < 0:
+            raise ValueError("backoff_seconds cannot be negative")
+
         self.normalizer = normalizer or EventNormalizer()
+        self.max_attempts = max_attempts
+        self.backoff_seconds = backoff_seconds
+        self.sleep = sleep
 
     def ingest_result(
         self,
         adapter: SourceAdapter,
     ) -> ProviderIngestionResult:
         source_name = adapter.source_name
+        last_error: Exception | None = None
 
-        try:
-            records = adapter.fetch()
-            events = self.normalizer.normalize_many(records)
-        except Exception as exc:
-            return ProviderIngestionResult(
-                source_name=source_name,
-                success=False,
-                error_type=type(exc).__name__,
-                error_message=str(exc),
-            )
+        for attempt in range(1, self.max_attempts + 1):
+            try:
+                records = adapter.fetch()
+                events = self.normalizer.normalize_many(records)
+                return ProviderIngestionResult(
+                    source_name=source_name,
+                    success=True,
+                    events=events,
+                    records_received=len(records),
+                    attempts=attempt,
+                )
+            except Exception as exc:
+                last_error = exc
+                if attempt < self.max_attempts:
+                    delay = self.backoff_seconds * (2 ** (attempt - 1))
+                    self.sleep(delay)
 
+        assert last_error is not None
         return ProviderIngestionResult(
             source_name=source_name,
-            success=True,
-            events=events,
-            records_received=len(records),
+            success=False,
+            attempts=self.max_attempts,
+            error_type=type(last_error).__name__,
+            error_message=str(last_error),
         )
 
     def ingest(
@@ -61,19 +80,14 @@ class IngestionService:
         self,
         adapters: list[SourceAdapter],
     ) -> list[ProviderIngestionResult]:
-        return [
-            self.ingest_result(adapter)
-            for adapter in adapters
-        ]
+        return [self.ingest_result(adapter) for adapter in adapters]
 
     def ingest_many(
         self,
         adapters: list[SourceAdapter],
     ) -> list[RawEvent]:
-        """Compatibility API that returns events from successful providers."""
+        """Compatibility API returning events from successful providers."""
         events: list[RawEvent] = []
-
         for result in self.ingest_many_results(adapters):
             events.extend(result.events)
-
         return events
