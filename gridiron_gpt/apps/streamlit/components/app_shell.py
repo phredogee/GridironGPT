@@ -265,6 +265,13 @@ def _inject_shell_styles() -> None:
             color: #101713 !important;
             border-color: #929b95 !important;
         }
+        div[data-testid="stTextArea"] textarea::placeholder {
+            color: #353b37 !important;
+            opacity: 1 !important;
+        }
+        div[data-testid="stTextArea"] textarea {
+            caret-color: #148443 !important;
+        }
         div[data-baseweb="select"] > div:focus-within,
         div[data-testid="stTextInput"] input:focus,
         div[data-testid="stNumberInput"] input:focus,
