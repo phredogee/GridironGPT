@@ -21,52 +21,20 @@ class NavigationSection(TypedDict):
 
 
 NAVIGATION_ITEMS: Final[dict[str, NavigationItem]] = {
-    "Dashboard": {
-        "label": "Dashboard",
-        "description": "Monitor recommendations, signal activity, and the strongest fantasy-football opportunities.",
-    },
-    "Advisor": {
-        "label": "Advisor",
-        "description": "Ask roster, waiver, trade, and lineup questions using Gridiron Cortex intelligence.",
-    },
-    "Players": {
-        "label": "Players",
-        "description": "Review player scorecards, recommendations, confidence, and supporting signals.",
-    },
-    "Trends": {
-        "label": "Trends",
-        "description": "Track emerging player movement and changes in fantasy value.",
-    },
-    "Trajectory": {
-        "label": "Trajectory",
-        "description": "Inspect score history, velocity, and longer-term player direction.",
-    },
-    "Ingestion": {
-        "label": "Ingestion",
-        "description": "Monitor provider health, ingestion reliability, run metrics, and recent operational history.",
-    },
-    "Inspector": {
-        "label": "Inspector",
-        "description": "Inspect Cortex entities, signals, impacts, propagation, recommendations, and explanations.",
-    },
+    "Dashboard": {"label": "Dashboard", "description": "Monitor recommendations, signal activity, and the strongest fantasy-football opportunities."},
+    "Explorer": {"label": "Cortex Explorer", "description": "Open a unified player dossier with score, confidence, evidence, trend, trajectory, and Cortex profile."},
+    "Advisor": {"label": "Advisor", "description": "Ask roster, waiver, trade, and lineup questions using Gridiron Cortex intelligence."},
+    "Players": {"label": "Players", "description": "Review player scorecards, recommendations, confidence, and supporting signals."},
+    "Trends": {"label": "Trends", "description": "Track emerging player movement and changes in fantasy value."},
+    "Trajectory": {"label": "Trajectory", "description": "Inspect score history, velocity, and longer-term player direction."},
+    "Ingestion": {"label": "Ingestion", "description": "Monitor provider health, ingestion reliability, run metrics, and recent operational history."},
+    "Inspector": {"label": "Inspector", "description": "Inspect Cortex entities, signals, impacts, propagation, recommendations, and explanations."},
 }
 
 NAVIGATION_SECTIONS: Final[tuple[NavigationSection, ...]] = (
-    {
-        "label": "Intelligence",
-        "icon": "🧠",
-        "pages": ("Dashboard", "Players", "Trends", "Trajectory", "Inspector"),
-    },
-    {
-        "label": "Fantasy",
-        "icon": "🏈",
-        "pages": ("Advisor",),
-    },
-    {
-        "label": "Operations",
-        "icon": "⚙",
-        "pages": ("Ingestion",),
-    },
+    {"label": "Intelligence", "icon": "🧠", "pages": ("Dashboard", "Explorer", "Players", "Trends", "Trajectory", "Inspector")},
+    {"label": "Fantasy", "icon": "🏈", "pages": ("Advisor",)},
+    {"label": "Operations", "icon": "⚙", "pages": ("Ingestion",)},
 )
 
 APP_NAME: Final[str] = "GRIDIRONGPT"
@@ -81,344 +49,56 @@ _LOGO_PATH = _ASSET_DIR / "cortex_node.png"
 
 
 def _inject_shell_styles() -> None:
-    st.markdown(
-        """
-        <style>
-        section[data-testid="stSidebar"] {
-            background: #050706 !important;
-            border-right: 1px solid rgba(82, 214, 124, 0.22);
-        }
-        section[data-testid="stSidebar"] div[data-testid="stSidebarContent"] {
-            height: 100vh;
-            padding-bottom: 4.4rem;
-            background: #050706 !important;
-        }
-
-        .gridiron-home-link {
-            display: block;
-            max-width: 14rem;
-            margin: 0 auto 0.4rem;
-            padding: 0.3rem;
-            border-radius: 50%;
-            background: #050706;
-            text-decoration: none !important;
-            transition: transform 170ms ease, filter 170ms ease, box-shadow 170ms ease;
-        }
-        .gridiron-home-link:hover {
-            transform: scale(1.025);
-            filter: brightness(1.12);
-            box-shadow: 0 0 22px rgba(86, 239, 132, 0.26);
-        }
-        .gridiron-home-logo {
-            display: block;
-            width: 100%;
-            border-radius: 50%;
-            background: #050706;
-        }
-        .gridiron-shell-brand { text-align: center; margin: 0 auto 0.8rem; }
-        .gridiron-shell-name {
-            color: var(--cortex-text); font-size: 1.55rem; font-weight: 800;
-            letter-spacing: 0.075em; line-height: 1.15; margin-top: 0.3rem;
-        }
-        .gridiron-shell-tagline {
-            color: var(--cortex-muted); font-size: 0.77rem;
-            letter-spacing: 0.035em; line-height: 1.35; margin-top: 0.3rem;
-        }
-        .gridiron-shell-powered {
-            color: var(--cortex-muted); font-size: 0.68rem;
-            letter-spacing: 0.08em; margin-top: 0.55rem; text-transform: uppercase;
-        }
-        .gridiron-shell-engine {
-            color: var(--cortex-cyan); font-size: 0.83rem; font-weight: 650;
-            letter-spacing: 0.025em; margin-top: 0.08rem;
-        }
-        .gridiron-shell-divider {
-            border-top: 1px solid rgba(82, 214, 124, 0.2); margin: 0.8rem 0 0.7rem;
-        }
-
-        .gridiron-nav { display: flex; flex-direction: column; gap: 0.3rem; }
-        .gridiron-nav-section {
-            position: relative;
-            border: 1px solid transparent;
-            border-radius: 9px;
-            overflow: hidden;
-            transition: border-color 170ms ease, box-shadow 170ms ease;
-        }
-        .gridiron-nav-heading {
-            position: relative;
-            display: flex;
-            align-items: center;
-            gap: 0.58rem;
-            min-height: 2.55rem;
-            padding: 0.56rem 0.78rem 0.56rem 0.88rem;
-            color: var(--cortex-text) !important;
-            background: rgba(14, 29, 20, 0.78);
-            font-size: 0.93rem;
-            font-weight: 650;
-            text-decoration: none !important;
-            cursor: pointer;
-            transition: background 170ms ease, color 170ms ease, box-shadow 170ms ease;
-        }
-        .gridiron-nav-heading::before {
-            content: "";
-            position: absolute;
-            left: 0;
-            top: 0.42rem;
-            bottom: 0.42rem;
-            width: 3px;
-            border-radius: 2px;
-            background: transparent;
-            transition: background 170ms ease, box-shadow 170ms ease;
-        }
-        .gridiron-nav-chevron {
-            margin-left: auto;
-            color: var(--cortex-muted);
-            font-size: 0.72rem;
-            transition: transform 170ms ease, color 170ms ease;
-        }
-        .gridiron-nav-section:hover,
-        .gridiron-nav-section:focus-within {
-            border-color: rgba(97, 255, 145, 0.48);
-            box-shadow: 0 0 14px rgba(57, 222, 111, 0.16);
-        }
-        .gridiron-nav-section:hover .gridiron-nav-heading,
-        .gridiron-nav-section:focus-within .gridiron-nav-heading {
-            color: #ffffff !important;
-            background: linear-gradient(90deg, rgba(38, 132, 73, 0.96), rgba(55, 201, 105, 0.72));
-            box-shadow: inset 0 0 18px rgba(113, 255, 157, 0.13);
-        }
-        .gridiron-nav-section:hover .gridiron-nav-heading::before,
-        .gridiron-nav-section:focus-within .gridiron-nav-heading::before {
-            background: #79ff9f;
-            box-shadow: 0 0 10px rgba(121, 255, 159, 0.85);
-        }
-        .gridiron-nav-section:hover .gridiron-nav-chevron,
-        .gridiron-nav-section:focus-within .gridiron-nav-chevron,
-        .gridiron-nav-section.active .gridiron-nav-chevron {
-            color: #ffffff;
-            transform: rotate(90deg);
-        }
-        .gridiron-nav-section.active .gridiron-nav-heading {
-            background: linear-gradient(90deg, rgba(24, 92, 52, 0.98), rgba(39, 132, 73, 0.64));
-            font-weight: 760;
-        }
-        .gridiron-nav-section.active .gridiron-nav-heading::before {
-            background: var(--gridiron-green-light);
-            box-shadow: 0 0 8px rgba(121, 255, 159, 0.55);
-        }
-
-        .gridiron-nav-children {
-            display: none;
-            padding: 0.34rem;
-            background: #070b08;
-        }
-        .gridiron-nav-section:hover > .gridiron-nav-children,
-        .gridiron-nav-section:focus-within > .gridiron-nav-children,
-        .gridiron-nav-section.active > .gridiron-nav-children {
-            display: block;
-        }
-        .gridiron-nav-child {
-            position: relative;
-            display: block;
-            margin: 0.12rem 0;
-            padding: 0.48rem 0.66rem 0.48rem 1.45rem;
-            border-radius: 7px;
-            color: var(--cortex-muted) !important;
-            font-size: 0.84rem;
-            text-decoration: none !important;
-            transition: background 150ms ease, color 150ms ease, transform 150ms ease;
-        }
-        .gridiron-nav-child::before {
-            content: "";
-            position: absolute;
-            left: 0.66rem;
-            top: 50%;
-            width: 5px;
-            height: 5px;
-            border-radius: 50%;
-            background: rgba(112, 188, 133, 0.52);
-            transform: translateY(-50%);
-        }
-        .gridiron-nav-child:hover {
-            color: #ffffff !important;
-            background: rgba(65, 210, 112, 0.19);
-            transform: translateX(2px);
-        }
-        .gridiron-nav-child.active {
-            color: #ffffff !important;
-            background: rgba(47, 158, 87, 0.30);
-            font-weight: 700;
-        }
-        .gridiron-nav-child.active::before {
-            background: #79ff9f;
-            box-shadow: 0 0 8px rgba(121, 255, 159, 0.85);
-        }
-
-        div[data-baseweb="select"],
-        div[data-testid="stTextInput"],
-        div[data-testid="stNumberInput"],
-        div[data-testid="stDateInput"] { max-width: 28rem; }
-        div[data-baseweb="select"] > div,
-        div[data-testid="stTextInput"] input,
-        div[data-testid="stNumberInput"] input,
-        div[data-testid="stDateInput"] input,
-        div[data-testid="stTextArea"] textarea {
-            background: #d7dbd8 !important;
-            color: #101713 !important;
-            border-color: #929b95 !important;
-        }
-        div[data-testid="stTextArea"] textarea::placeholder {
-            color: #353b37 !important;
-            opacity: 1 !important;
-        }
-        div[data-testid="stTextArea"] textarea {
-            caret-color: #148443 !important;
-        }
-        div[data-baseweb="select"] > div:focus-within,
-        div[data-testid="stTextInput"] input:focus,
-        div[data-testid="stNumberInput"] input:focus,
-        div[data-testid="stDateInput"] input:focus,
-        div[data-testid="stTextArea"] textarea:focus {
-            border-color: #55d982 !important;
-            box-shadow: 0 0 0 1px #55d982 !important;
-        }
-
-        .gridiron-status-bar {
-            position: fixed; left: 0; bottom: 0; width: var(--sidebar-width, 21rem);
-            box-sizing: border-box; z-index: 999; padding: 0.78rem 0.6rem 0.85rem;
-            border-top: 1px solid rgba(82, 214, 124, 0.22); background: #050706;
-            color: var(--cortex-muted); text-align: center;
-            font-size: 0.67rem; line-height: 1.35; white-space: nowrap;
-        }
-        .gridiron-status-online { color: var(--gridiron-green-light); font-weight: 700; }
-        .gridiron-status-engine { color: var(--cortex-cyan); font-weight: 650; }
-        .gridiron-page-header { padding: 0.25rem 0 0.35rem; }
-        .gridiron-page-kicker {
-            color: var(--gridiron-green-light); font-size: 0.69rem;
-            font-weight: 750; letter-spacing: 0.13em; text-transform: uppercase;
-        }
-        .gridiron-page-title {
-            color: var(--cortex-text); font-size: 1.72rem; font-weight: 760;
-            letter-spacing: -0.025em; line-height: 1.2; margin-top: 0.2rem;
-        }
-        .gridiron-page-description {
-            color: var(--cortex-muted); font-size: 0.9rem; line-height: 1.5;
-            margin-top: 0.28rem; max-width: 58rem;
-        }
-        @media (max-width: 900px) {
-            .gridiron-status-bar { position: static; width: 100%; margin-top: 1rem; }
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.markdown("""
+<style>
+section[data-testid="stSidebar"] {background:#050706!important;border-right:1px solid rgba(82,214,124,.22)}
+section[data-testid="stSidebar"] div[data-testid="stSidebarContent"] {height:100vh;padding-bottom:4.4rem;background:#050706!important}
+.gridiron-home-link{display:block;max-width:14rem;margin:0 auto .4rem;padding:.3rem;border-radius:50%;background:#050706;text-decoration:none!important;transition:transform 170ms ease,filter 170ms ease,box-shadow 170ms ease}.gridiron-home-link:hover{transform:scale(1.025);filter:brightness(1.12);box-shadow:0 0 22px rgba(86,239,132,.26)}.gridiron-home-logo{display:block;width:100%;border-radius:50%;background:#050706}.gridiron-shell-brand{text-align:center;margin:0 auto .8rem}.gridiron-shell-name{color:var(--cortex-text);font-size:1.55rem;font-weight:800;letter-spacing:.075em;line-height:1.15;margin-top:.3rem}.gridiron-shell-tagline{color:var(--cortex-muted);font-size:.77rem;letter-spacing:.035em;line-height:1.35;margin-top:.3rem}.gridiron-shell-powered{color:var(--cortex-muted);font-size:.68rem;letter-spacing:.08em;margin-top:.55rem;text-transform:uppercase}.gridiron-shell-engine{color:var(--cortex-cyan);font-size:.83rem;font-weight:650;letter-spacing:.025em;margin-top:.08rem}.gridiron-shell-divider{border-top:1px solid rgba(82,214,124,.2);margin:.8rem 0 .7rem}
+.gridiron-nav{display:flex;flex-direction:column;gap:.3rem}.gridiron-nav-section{position:relative;border:1px solid transparent;border-radius:9px;overflow:hidden;transition:border-color 170ms ease,box-shadow 170ms ease}.gridiron-nav-heading{position:relative;display:flex;align-items:center;gap:.58rem;min-height:2.55rem;padding:.56rem .78rem .56rem .88rem;color:var(--cortex-text)!important;background:rgba(14,29,20,.78);font-size:.93rem;font-weight:650;text-decoration:none!important;cursor:pointer;transition:background 170ms ease,color 170ms ease,box-shadow 170ms ease}.gridiron-nav-heading::before{content:"";position:absolute;left:0;top:.42rem;bottom:.42rem;width:3px;border-radius:2px;background:transparent}.gridiron-nav-chevron{margin-left:auto;color:var(--cortex-muted);font-size:.72rem;transition:transform 170ms ease,color 170ms ease}.gridiron-nav-section:hover,.gridiron-nav-section:focus-within{border-color:rgba(97,255,145,.48);box-shadow:0 0 14px rgba(57,222,111,.16)}.gridiron-nav-section:hover .gridiron-nav-heading,.gridiron-nav-section:focus-within .gridiron-nav-heading{color:#fff!important;background:linear-gradient(90deg,rgba(38,132,73,.96),rgba(55,201,105,.72))}.gridiron-nav-section:hover .gridiron-nav-heading::before,.gridiron-nav-section:focus-within .gridiron-nav-heading::before{background:#79ff9f;box-shadow:0 0 10px rgba(121,255,159,.85)}.gridiron-nav-section:hover .gridiron-nav-chevron,.gridiron-nav-section:focus-within .gridiron-nav-chevron,.gridiron-nav-section.active .gridiron-nav-chevron{color:#fff;transform:rotate(90deg)}.gridiron-nav-section.active .gridiron-nav-heading{background:linear-gradient(90deg,rgba(24,92,52,.98),rgba(39,132,73,.64));font-weight:760}.gridiron-nav-section.active .gridiron-nav-heading::before{background:var(--gridiron-green-light);box-shadow:0 0 8px rgba(121,255,159,.55)}
+.gridiron-nav-children{display:none;padding:.34rem;background:#070b08}.gridiron-nav-section:hover>.gridiron-nav-children,.gridiron-nav-section:focus-within>.gridiron-nav-children,.gridiron-nav-section.active>.gridiron-nav-children{display:block}.gridiron-nav-child{position:relative;display:block;margin:.12rem 0;padding:.48rem .66rem .48rem 1.45rem;border-radius:7px;color:var(--cortex-muted)!important;font-size:.84rem;text-decoration:none!important;transition:background 150ms ease,color 150ms ease,transform 150ms ease}.gridiron-nav-child::before{content:"";position:absolute;left:.66rem;top:50%;width:5px;height:5px;border-radius:50%;background:rgba(112,188,133,.52);transform:translateY(-50%)}.gridiron-nav-child:hover{color:#fff!important;background:rgba(65,210,112,.19);transform:translateX(2px)}.gridiron-nav-child.active{color:#fff!important;background:rgba(47,158,87,.30);font-weight:700}.gridiron-nav-child.active::before{background:#79ff9f;box-shadow:0 0 8px rgba(121,255,159,.85)}
+div[data-baseweb="select"],div[data-testid="stTextInput"],div[data-testid="stNumberInput"],div[data-testid="stDateInput"]{max-width:28rem}div[data-baseweb="select"]>div,div[data-testid="stTextInput"] input,div[data-testid="stNumberInput"] input,div[data-testid="stDateInput"] input,div[data-testid="stTextArea"] textarea{background:#d7dbd8!important;color:#101713!important;border-color:#929b95!important}div[data-testid="stTextArea"] textarea::placeholder{color:#353b37!important;opacity:1!important}div[data-testid="stTextArea"] textarea{caret-color:#148443!important}div[data-baseweb="select"]>div:focus-within,div[data-testid="stTextInput"] input:focus,div[data-testid="stNumberInput"] input:focus,div[data-testid="stDateInput"] input:focus,div[data-testid="stTextArea"] textarea:focus{border-color:#55d982!important;box-shadow:0 0 0 1px #55d982!important}
+.gridiron-status-bar{position:fixed;left:0;bottom:0;width:var(--sidebar-width,21rem);box-sizing:border-box;z-index:999;padding:.78rem .6rem .85rem;border-top:1px solid rgba(82,214,124,.22);background:#050706;color:var(--cortex-muted);text-align:center;font-size:.67rem;line-height:1.35;white-space:nowrap}.gridiron-status-online{color:var(--gridiron-green-light);font-weight:700}.gridiron-status-engine{color:var(--cortex-cyan);font-weight:650}.gridiron-page-header{padding:.25rem 0 .35rem}.gridiron-page-kicker{color:var(--gridiron-green-light);font-size:.69rem;font-weight:750;letter-spacing:.13em;text-transform:uppercase}.gridiron-page-title{color:var(--cortex-text);font-size:1.72rem;font-weight:760;letter-spacing:-.025em;line-height:1.2;margin-top:.2rem}.gridiron-page-description{color:var(--cortex-muted);font-size:.9rem;line-height:1.5;margin-top:.28rem;max-width:58rem}@media(max-width:900px){.gridiron-status-bar{position:static;width:100%;margin-top:1rem}}
+</style>""", unsafe_allow_html=True)
 
 
 def _logo_data_uri() -> str | None:
-    if not _LOGO_PATH.exists():
-        return None
+    if not _LOGO_PATH.exists(): return None
     encoded = base64.b64encode(_LOGO_PATH.read_bytes()).decode("ascii")
     return f"data:image/png;base64,{encoded}"
 
 
 def _render_brand() -> None:
-    logo_uri = _logo_data_uri()
-    logo_markup = ""
+    logo_uri = _logo_data_uri(); logo_markup = ""
     if logo_uri:
-        logo_markup = (
-            '<a class="gridiron-home-link" href="?page=Dashboard" target="_top" '
-            'title="Return to Dashboard" aria-label="Return to Dashboard">'
-            f'<img class="gridiron-home-logo" src="{logo_uri}" alt="Gridiron Cortex node">'
-            "</a>"
-        )
-    st.markdown(
-        f"""
-        {logo_markup}
-        <div class="gridiron-shell-brand">
-            <div class="gridiron-shell-name">{APP_NAME}</div>
-            <div class="gridiron-shell-tagline">{APP_TAGLINE}</div>
-            <div class="gridiron-shell-powered">Powered by</div>
-            <div class="gridiron-shell-engine">{ENGINE_NAME}</div>
-        </div>
-        <div class="gridiron-shell-divider"></div>
-        """,
-        unsafe_allow_html=True,
-    )
+        logo_markup = '<a class="gridiron-home-link" href="?page=Dashboard" target="_top" title="Return to Dashboard" aria-label="Return to Dashboard">' + f'<img class="gridiron-home-logo" src="{logo_uri}" alt="Gridiron Cortex node"></a>'
+    st.markdown(f'{logo_markup}<div class="gridiron-shell-brand"><div class="gridiron-shell-name">{APP_NAME}</div><div class="gridiron-shell-tagline">{APP_TAGLINE}</div><div class="gridiron-shell-powered">Powered by</div><div class="gridiron-shell-engine">{ENGINE_NAME}</div></div><div class="gridiron-shell-divider"></div>', unsafe_allow_html=True)
 
 
 def build_navigation_markup(selected_page: str) -> str:
-    sections: list[str] = ['<nav class="gridiron-nav" aria-label="Primary navigation">']
+    sections = ['<nav class="gridiron-nav" aria-label="Primary navigation">']
     for section in NAVIGATION_SECTIONS:
-        active_section = selected_page in section["pages"]
-        children: list[str] = []
+        active_section = selected_page in section["pages"]; children = []
         for page in section["pages"]:
-            item = NAVIGATION_ITEMS[page]
-            active = " active" if page == selected_page else ""
-            current = ' aria-current="page"' if page == selected_page else ""
-            children.append(
-                f'<a class="gridiron-nav-child{active}" href="?page={quote(page)}" '
-                f'target="_top"{current}>{escape(item["label"])}</a>'
-            )
-
+            item = NAVIGATION_ITEMS[page]; active = " active" if page == selected_page else ""; current = ' aria-current="page"' if page == selected_page else ""
+            children.append(f'<a class="gridiron-nav-child{active}" href="?page={quote(page)}" target="_top"{current}>{escape(item["label"])}</a>')
         section_class = "gridiron-nav-section active" if active_section else "gridiron-nav-section"
-        sections.append(
-            f'<div class="{section_class}" tabindex="0">'
-            f'<div class="gridiron-nav-heading">'
-            f'<span>{escape(section["icon"])}</span>'
-            f'<span>{escape(section["label"])}</span>'
-            f'<span class="gridiron-nav-chevron">›</span>'
-            "</div>"
-            f'<div class="gridiron-nav-children">{"".join(children)}</div>'
-            "</div>"
-        )
-    sections.append("</nav>")
-    return "".join(sections)
+        sections.append(f'<div class="{section_class}" tabindex="0"><div class="gridiron-nav-heading"><span>{escape(section["icon"])}</span><span>{escape(section["label"])}</span><span class="gridiron-nav-chevron">›</span></div><div class="gridiron-nav-children">{"".join(children)}</div></div>')
+    sections.append("</nav>"); return "".join(sections)
 
 
-def _render_navigation() -> str:
+def _resolve_selected_page() -> str:
     requested = st.query_params.get("page", "Dashboard")
-    selected_page = requested if requested in NAVIGATION_ITEMS else "Dashboard"
-    st.session_state.selected_page = selected_page
-    st.markdown(build_navigation_markup(selected_page), unsafe_allow_html=True)
-    return selected_page
+    if isinstance(requested, list): requested = requested[0] if requested else "Dashboard"
+    return requested if requested in NAVIGATION_ITEMS else "Dashboard"
 
 
-def _render_status_bar(*, version: str, model_name: str, signal_count: int | str) -> None:
-    display_version = version if str(version).startswith("v") else f"v{version}"
-    st.markdown(
-        f"""
-        <div class="gridiron-status-bar">
-            <span class="gridiron-status-online">Online</span>&nbsp;|&nbsp;
-            <span class="gridiron-status-engine">{ENGINE_NAME}</span>&nbsp;|&nbsp;
-            {model_name}&nbsp;|&nbsp;{signal_count} Signals&nbsp;|&nbsp;{display_version}
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
-def render_sidebar(
-    *,
-    version: str,
-    model_name: str = DEFAULT_MODEL,
-    signal_count: int | str = DEFAULT_SIGNAL_COUNT,
-) -> str:
-    _inject_shell_styles()
+def render_sidebar(*, version: str, model_name: str = DEFAULT_MODEL, signal_count: int = DEFAULT_SIGNAL_COUNT) -> str:
+    _inject_shell_styles(); selected_page = _resolve_selected_page()
     with st.sidebar:
-        _render_brand()
-        selected_page = _render_navigation()
-        _render_status_bar(version=version, model_name=model_name, signal_count=signal_count)
+        _render_brand(); st.markdown(build_navigation_markup(selected_page), unsafe_allow_html=True)
+        st.markdown(f'<div class="gridiron-status-bar"><span class="gridiron-status-online">● System Online</span>&nbsp;&nbsp;|&nbsp;&nbsp;<span class="gridiron-status-engine">{escape(ENGINE_NAME)}</span>&nbsp;&nbsp;|&nbsp;&nbsp;Model: {escape(model_name)}&nbsp;&nbsp;|&nbsp;&nbsp;Signals: {signal_count:,}&nbsp;&nbsp;|&nbsp;&nbsp;v{escape(version)}</div>', unsafe_allow_html=True)
     return selected_page
 
 
 def render_shell_header(*, page_name: str, description: str) -> None:
-    st.markdown(
-        f"""
-        <div class="gridiron-page-header">
-            <div class="gridiron-page-kicker">{APP_NAME}</div>
-            <div class="gridiron-page-title">{page_name}</div>
-            <div class="gridiron-page-description">{description}</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.markdown(f'<div class="gridiron-page-header"><div class="gridiron-page-kicker">GridironGPT / Cortex</div><div class="gridiron-page-title">{escape(page_name)}</div><div class="gridiron-page-description">{escape(description)}</div></div>', unsafe_allow_html=True)
