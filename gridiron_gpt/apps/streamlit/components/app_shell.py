@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 from html import escape
 from pathlib import Path
 from typing import Final, TypedDict
@@ -83,27 +84,37 @@ def _inject_shell_styles() -> None:
     st.markdown(
         """
         <style>
+        section[data-testid="stSidebar"] {
+            background: #050706 !important;
+            border-right: 1px solid rgba(82, 214, 124, 0.22);
+        }
         section[data-testid="stSidebar"] div[data-testid="stSidebarContent"] {
             height: 100vh;
             padding-bottom: 4.4rem;
+            background: #050706 !important;
         }
 
-        section[data-testid="stSidebar"] div[data-testid="stImage"] {
-            max-width: 15rem;
-            margin: 0 auto;
-            padding: 0.35rem;
-            border-radius: 50%;
-            background: #08110d;
-            overflow: hidden;
-        }
-
-        section[data-testid="stSidebar"] div[data-testid="stImage"] img {
+        .gridiron-home-link {
             display: block;
+            max-width: 14rem;
+            margin: 0 auto 0.4rem;
+            padding: 0.3rem;
             border-radius: 50%;
-            clip-path: circle(49% at 50% 50%);
-            background: #08110d;
+            background: #050706;
+            text-decoration: none !important;
+            transition: transform 170ms ease, filter 170ms ease, box-shadow 170ms ease;
         }
-
+        .gridiron-home-link:hover {
+            transform: scale(1.025);
+            filter: brightness(1.12);
+            box-shadow: 0 0 22px rgba(86, 239, 132, 0.26);
+        }
+        .gridiron-home-logo {
+            display: block;
+            width: 100%;
+            border-radius: 50%;
+            background: #050706;
+        }
         .gridiron-shell-brand { text-align: center; margin: 0 auto 0.8rem; }
         .gridiron-shell-name {
             color: var(--cortex-text); font-size: 1.55rem; font-weight: 800;
@@ -122,7 +133,7 @@ def _inject_shell_styles() -> None:
             letter-spacing: 0.025em; margin-top: 0.08rem;
         }
         .gridiron-shell-divider {
-            border-top: 1px solid var(--cortex-border); margin: 0.8rem 0 0.7rem;
+            border-top: 1px solid rgba(82, 214, 124, 0.2); margin: 0.8rem 0 0.7rem;
         }
 
         .gridiron-nav { display: flex; flex-direction: column; gap: 0.3rem; }
@@ -140,7 +151,7 @@ def _inject_shell_styles() -> None:
             min-height: 2.55rem;
             padding: 0.56rem 0.78rem 0.56rem 0.88rem;
             color: var(--cortex-text) !important;
-            background: rgba(19, 43, 30, 0.42);
+            background: rgba(14, 29, 20, 0.78);
             font-size: 0.93rem;
             font-weight: 650;
             text-decoration: none !important;
@@ -161,7 +172,6 @@ def _inject_shell_styles() -> None:
             margin-left: auto;
             color: var(--cortex-muted);
             font-size: 0.72rem;
-            transform: rotate(0deg);
             transition: transform 170ms ease, color 170ms ease;
         }
         .gridiron-nav-section:hover {
@@ -170,23 +180,25 @@ def _inject_shell_styles() -> None:
         }
         .gridiron-nav-section:hover .gridiron-nav-heading {
             color: #ffffff !important;
-            background: linear-gradient(90deg, rgba(38, 132, 73, 0.94), rgba(55, 201, 105, 0.68));
+            background: linear-gradient(90deg, rgba(38, 132, 73, 0.96), rgba(55, 201, 105, 0.72));
             box-shadow: inset 0 0 18px rgba(113, 255, 157, 0.13);
         }
         .gridiron-nav-section:hover .gridiron-nav-heading::before {
             background: #79ff9f;
             box-shadow: 0 0 10px rgba(121, 255, 159, 0.85);
         }
-        .gridiron-nav-section:hover .gridiron-nav-chevron {
+        .gridiron-nav-section:hover .gridiron-nav-chevron,
+        .gridiron-nav-section.active .gridiron-nav-chevron {
             color: #ffffff;
             transform: rotate(90deg);
         }
         .gridiron-nav-section.active .gridiron-nav-heading {
-            background: linear-gradient(90deg, rgba(24, 92, 52, 0.96), rgba(39, 132, 73, 0.60));
+            background: linear-gradient(90deg, rgba(24, 92, 52, 0.98), rgba(39, 132, 73, 0.64));
             font-weight: 760;
         }
         .gridiron-nav-section.active .gridiron-nav-heading::before {
             background: var(--gridiron-green-light);
+            box-shadow: 0 0 8px rgba(121, 255, 159, 0.55);
         }
 
         .gridiron-nav-children {
@@ -194,10 +206,11 @@ def _inject_shell_styles() -> None:
             opacity: 0;
             overflow: hidden;
             padding: 0 0.34rem;
-            background: rgba(7, 18, 12, 0.58);
+            background: #070b08;
             transition: max-height 210ms ease, opacity 150ms ease, padding 210ms ease;
         }
-        .gridiron-nav-section:hover .gridiron-nav-children {
+        .gridiron-nav-section:hover .gridiron-nav-children,
+        .gridiron-nav-section.active .gridiron-nav-children {
             max-height: 22rem;
             opacity: 1;
             padding: 0.34rem;
@@ -242,9 +255,7 @@ def _inject_shell_styles() -> None:
         div[data-baseweb="select"],
         div[data-testid="stTextInput"],
         div[data-testid="stNumberInput"],
-        div[data-testid="stDateInput"] {
-            max-width: 28rem;
-        }
+        div[data-testid="stDateInput"] { max-width: 28rem; }
         div[data-baseweb="select"] > div,
         div[data-testid="stTextInput"] input,
         div[data-testid="stNumberInput"] input,
@@ -266,8 +277,8 @@ def _inject_shell_styles() -> None:
         .gridiron-status-bar {
             position: fixed; left: 0; bottom: 0; width: var(--sidebar-width, 21rem);
             box-sizing: border-box; z-index: 999; padding: 0.78rem 0.6rem 0.85rem;
-            border-top: 1px solid var(--cortex-border); background: rgba(8, 17, 13, 0.97);
-            backdrop-filter: blur(8px); color: var(--cortex-muted); text-align: center;
+            border-top: 1px solid rgba(82, 214, 124, 0.22); background: #050706;
+            color: var(--cortex-muted); text-align: center;
             font-size: 0.67rem; line-height: 1.35; white-space: nowrap;
         }
         .gridiron-status-online { color: var(--gridiron-green-light); font-weight: 700; }
@@ -294,11 +305,26 @@ def _inject_shell_styles() -> None:
     )
 
 
+def _logo_data_uri() -> str | None:
+    if not _LOGO_PATH.exists():
+        return None
+    encoded = base64.b64encode(_LOGO_PATH.read_bytes()).decode("ascii")
+    return f"data:image/png;base64,{encoded}"
+
+
 def _render_brand() -> None:
-    if _LOGO_PATH.exists():
-        st.image(str(_LOGO_PATH), use_container_width=True)
+    logo_uri = _logo_data_uri()
+    logo_markup = ""
+    if logo_uri:
+        logo_markup = (
+            '<a class="gridiron-home-link" href="?page=Dashboard" target="_top" '
+            'title="Return to Dashboard" aria-label="Return to Dashboard">'
+            f'<img class="gridiron-home-logo" src="{logo_uri}" alt="Gridiron Cortex node">'
+            "</a>"
+        )
     st.markdown(
         f"""
+        {logo_markup}
         <div class="gridiron-shell-brand">
             <div class="gridiron-shell-name">{APP_NAME}</div>
             <div class="gridiron-shell-tagline">{APP_TAGLINE}</div>
@@ -321,9 +347,8 @@ def build_navigation_markup(selected_page: str) -> str:
             active = " active" if page == selected_page else ""
             current = ' aria-current="page"' if page == selected_page else ""
             children.append(
-                f'<a class="gridiron-nav-child{active}" '
-                f'href="?page={quote(page)}" target="_self"{current}>'
-                f'{escape(item["label"])}</a>'
+                f'<a class="gridiron-nav-child{active}" href="?page={quote(page)}" '
+                f'target="_top"{current}>{escape(item["label"])}</a>'
             )
 
         section_class = "gridiron-nav-section active" if active_section else "gridiron-nav-section"
@@ -333,9 +358,9 @@ def build_navigation_markup(selected_page: str) -> str:
             f'<span>{escape(section["icon"])}</span>'
             f'<span>{escape(section["label"])}</span>'
             f'<span class="gridiron-nav-chevron">›</span>'
-            f'</div>'
+            "</div>"
             f'<div class="gridiron-nav-children">{"".join(children)}</div>'
-            f'</div>'
+            "</div>"
         )
     sections.append("</nav>")
     return "".join(sections)
