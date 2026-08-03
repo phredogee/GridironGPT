@@ -1,18 +1,22 @@
 # Useful Commands
 
-## Phase C — Focused Regression Gate
+## Phase C — Reliability / Observability Regression Gate
 
 ```bash
 pytest \
-  tests/test_team_share_context.py \
-  tests/test_contextual_statistical_reasoning.py \
-  tests/test_statistical_event_interpreter.py \
-  tests/test_nflverse_player_stats_adapter.py \
-  tests/test_signal_processor.py \
+  tests/test_ingestion_observability.py \
+  tests/test_provider_health_tracker.py \
+  tests/test_ingestion_health_integration.py \
+  tests/test_ingestion_rate_limit.py \
+  tests/test_ingestion_timeout.py \
+  tests/test_ingestion_retry.py \
+  tests/test_ingestion_provider_boundary.py \
+  tests/test_ingestion_service.py \
+  tests/test_nfl_news_adapters.py \
   -v
 ```
 
-Current focused C3.7 result:
+Validated Phase C closeout result:
 
 ```text
 43 passed
@@ -28,8 +32,28 @@ Reports total/resolved/unresolved events, provider counts, position counts, top 
 
 ## Run Full Test Suite
 
+Run this at major phase boundaries and before large merges:
+
 ```bash
 pytest
+```
+
+## Show Current Branch
+
+```bash
+git branch --show-current
+```
+
+## Check Working Tree
+
+```bash
+git status
+```
+
+## Update Current Development Branch
+
+```bash
+git pull origin refactor/extract-cortex
 ```
 
 ## Test Supabase
