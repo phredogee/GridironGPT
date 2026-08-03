@@ -1,7 +1,7 @@
 import streamlit as st
 from apps.streamlit.components.theme import apply_cortex_theme
 from apps.streamlit.pages.dashboard import render_dashboard
-from apps.streamlit.pages.dashboard import render_dashboard
+from apps.streamlit.pages.ingestion_status import render_ingestion_status
 from gridiron_cortex.presentation.builders.dashboard_builder import (
     build_dashboard_view_model,
 )
@@ -13,18 +13,11 @@ from gridiron_gpt.intelligence.momentum_engine import build_momentum_rankings
 from gridiron_gpt.intelligence.player_intelligence import build_player_intelligence
 from gridiron_gpt.data_ingest.player_catalog import load_player_catalog
 from gridiron_gpt.data_ingest.player_scores import (
-    build_player_scorecard,
     calculate_player_scores,
     confidence_from_signals,
     recommendation_from_score,
 )
-from gridiron_gpt.data_ingest.player_trends import (
-    calculate_velocity,
-    get_player_trend_points,
-)
-from apps.streamlit.components.command_center import (
-    render_command_center,
-)
+from gridiron_gpt.data_ingest.player_trends import calculate_velocity
 from apps.streamlit.components.app_shell import (
     NAVIGATION_ITEMS,
     render_shell_header,
@@ -33,23 +26,21 @@ from apps.streamlit.components.app_shell import (
 from apps.streamlit.components.branding import get_project_version
 
 
-
 def apply_adjusted_scores(scores_dict):
     adjusted = {}
 
     for (player, team), data in scores_dict.items():
         score = data["score"]
-
         impact_report = generate_signal_impacts(player, score)
 
         updated_data = dict(data)
         updated_data["base_score"] = score
         updated_data["adjusted_score"] = impact_report["total_system_impact"]
         updated_data["propagated_impacts"] = impact_report["propagated_impacts"]
-
         adjusted[(player, team)] = updated_data
 
     return adjusted
+
 
 st.set_page_config(
     page_title="GridironGPT | Cortex Engine",
@@ -60,23 +51,17 @@ st.set_page_config(
 
 apply_cortex_theme()
 
-
-# -----------------------------
 # Shared data
-# -----------------------------
 catalog = load_player_catalog()
 player_names = sorted({item["player"] for item in catalog})
 
-scores = apply_adjusted_scores(
-    calculate_player_scores()
-)
+scores = apply_adjusted_scores(calculate_player_scores())
 
 ranked_players = sorted(
     scores.items(),
     key=lambda item: item[1].get("adjusted_score", item[1]["score"]),
     reverse=True,
 )
-
 ranked_players = [
     ((player, team), data)
     for (player, team), data in ranked_players
@@ -94,57 +79,38 @@ cortex = CortexFacade()
 buy_players = [
     ((player, team), data)
     for (player, team), data in ranked_players
-    if recommendation_from_score(
-        data.get("adjusted_score", data["score"])
-    ) == "BUY"
+    if recommendation_from_score(data.get("adjusted_score", data["score"])) == "BUY"
 ]
-
 watch_players = [
     ((player, team), data)
     for (player, team), data in ranked_players
-    if recommendation_from_score(
-        data.get("adjusted_score", data["score"])
-    ) == "WATCH"
+    if recommendation_from_score(data.get("adjusted_score", data["score"])) == "WATCH"
 ]
-
 risk_players = [
     ((player, team), data)
     for (player, team), data in ranked_players
-    if recommendation_from_score(
-        data.get("adjusted_score", data["score"])
-    ) in ["MONITOR", "SELL"]
+    if recommendation_from_score(data.get("adjusted_score", data["score"]))
+    in ["MONITOR", "SELL"]
 ]
 
-
-# -----------------------------
 # Navigation
-# -----------------------------
 version = get_project_version()
-
-selected_page = render_sidebar(
-    version=version,
-)
-
+selected_page = render_sidebar(version=version)
 page_metadata = NAVIGATION_ITEMS[selected_page]
 
 render_shell_header(
     page_name=page_metadata["label"],
     description=page_metadata["description"],
 )
-
 st.divider()
 
-# -----------------------------
-# Inspector
-# -----------------------------
 if selected_page == "Inspector":
     render_cortex_inspector(cortex)
 
-# -----------------------------
-# Dashboard
-# -----------------------------
-if selected_page == "Dashboard":
+if selected_page == "Ingestion":
+    render_ingestion_status()
 
+if selected_page == "Dashboard":
     dashboard = build_dashboard_view_model(
         ranked_players=ranked_players,
         buy_players=buy_players,
@@ -153,21 +119,13 @@ if selected_page == "Dashboard":
         player_count=len(player_names),
         recommendation_from_score=recommendation_from_score,
         confidence_from_signals=confidence_from_signals,
-        passing_tests=13,
+        passing_tests=43,
     )
-
     render_dashboard(dashboard)
 
-# -----------------------------
-# Advisor
-# -----------------------------
 if selected_page == "Advisor":
-
     st.markdown("### Ask Cortex")
-
-    st.caption(
-        "Ask football questions in natural language."
-    )
+    st.caption("Ask football questions in natural language.")
 
     question = st.text_area(
         "Ask Gridiron Cortex",
@@ -181,22 +139,12 @@ if selected_page == "Advisor":
         height=140,
     )
 
-    if st.button(
-        "Ask Cortex",
-        use_container_width=True,
-    ):
-
+    if st.button("Ask Cortex", use_container_width=True):
         if question.strip():
-
             response = roster_advisor.answer(question)
-
             st.markdown("### Cortex Response")
             st.write(response["answer"])
-
-            st.metric(
-                "Confidence",
-                f"{response['confidence']}%",
-            )
+            st.metric("Confidence", f"{response['confidence']}%")
 
             if response["details"]:
                 with st.expander("Reasoning", expanded=True):
@@ -204,9 +152,7 @@ if selected_page == "Advisor":
                         st.write(f"• {detail}")
 
             st.markdown("### Your Question")
-
             st.write(question)
-
             st.markdown("### Planned Cortex Workflow")
 
             workflow = [
@@ -218,21 +164,15 @@ if selected_page == "Advisor":
                 "Generate recommendation",
                 "Explain reasoning",
             ]
-
             for step in workflow:
                 st.write(f"• {step}")
-
         else:
             st.warning("Enter a question first.")
 
-# -----------------------------
-# Players
-# -----------------------------
 if selected_page == "Players":
     st.markdown("### Player Intelligence")
 
     default_player = "Tank Dell" if "Tank Dell" in player_names else player_names[0]
-
     selected_player = st.selectbox(
         "Select player",
         player_names,
@@ -245,29 +185,15 @@ if selected_page == "Players":
         st.warning(f"No intelligence found for {selected_player}.")
     else:
         col1, col2, col3 = st.columns(3)
-
         with col1:
-            st.metric(
-                "Recommendation",
-                intel["recommendation"],
-            )
-
+            st.metric("Recommendation", intel["recommendation"])
         with col2:
-            st.metric(
-                "Score",
-                f"{intel['score']:+.2f}",
-            )
-
+            st.metric("Score", f"{intel['score']:+.2f}")
         with col3:
-            st.metric(
-                "Confidence",
-                f"{intel['confidence']}%",
-            )
+            st.metric("Confidence", f"{intel['confidence']}%")
 
         st.divider()
-
         st.markdown("### 🚀 Momentum")
-
         momentum = intel["momentum"]
 
         if momentum.get("status") == "first_snapshot":
@@ -283,9 +209,7 @@ if selected_page == "Players":
             st.info("No momentum history available yet.")
 
         st.divider()
-
         st.markdown("### 📈 Trend")
-
         trend = intel["trend"]
 
         if trend.get("status") == "first_snapshot":
@@ -299,9 +223,7 @@ if selected_page == "Players":
             st.info("No trend history available yet.")
 
         st.divider()
-
         st.markdown("### 📰 Recent Signals")
-
         recent_signals = intel.get("recent_signals", [])
 
         if recent_signals:
@@ -314,9 +236,7 @@ if selected_page == "Players":
                 )
         else:
             st.info("No recent signals found.")
-# -----------------------------
-# Trends
-# -----------------------------
+
 if selected_page == "Trends":
     st.markdown("### Trending Players")
 
@@ -338,7 +258,6 @@ if selected_page == "Trends":
 
         if velocity["velocity"] > 0:
             hot_players.append(item)
-
         if velocity["velocity"] < 0:
             cold_players.append(item)
 
@@ -346,10 +265,8 @@ if selected_page == "Trends":
     cold_players.sort(key=lambda item: item["velocity"])
 
     col1, col2 = st.columns(2)
-
     with col1:
         st.markdown("### 🔥 Hot Players")
-
         if hot_players:
             for item in hot_players[:5]:
                 st.metric(
@@ -362,7 +279,6 @@ if selected_page == "Trends":
 
     with col2:
         st.markdown("### 🧊 Cold Players")
-
         if cold_players:
             for item in cold_players[:5]:
                 st.metric(
@@ -373,19 +289,13 @@ if selected_page == "Trends":
         else:
             st.info("No cooling players found.")
 
-# -----------------------------
-# Trajectory
-# -----------------------------
 if selected_page == "Trajectory":
     st.subheader("🚀 Trajectory")
-
     rankings = build_momentum_rankings(limit=10)
 
     col1, col2 = st.columns(2)
-
     with col1:
         st.markdown("### Top Risers")
-
         if rankings["risers"]:
             for item in rankings["risers"]:
                 st.metric(
@@ -399,7 +309,6 @@ if selected_page == "Trajectory":
 
     with col2:
         st.markdown("### Top Fallers")
-
         if rankings["fallers"]:
             for item in rankings["fallers"]:
                 st.metric(
@@ -412,7 +321,6 @@ if selected_page == "Trajectory":
             st.info("No fallers yet. More score snapshots are needed.")
 
     st.divider()
-
     st.markdown("### 🆕 First Snapshots")
 
     if rankings["first_snapshots"]:
