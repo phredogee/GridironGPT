@@ -45,6 +45,13 @@ NAVIGATION_ITEMS: Final[dict[str, NavigationItem]] = {
             "Inspect score history, velocity, and longer-term player direction."
         ),
     },
+    "Ingestion": {
+        "label": "Ingestion",
+        "description": (
+            "Monitor provider health, ingestion reliability, run metrics, "
+            "and recent operational history."
+        ),
+    },
     "Inspector": {
         "label": "Inspector",
         "description": (
@@ -72,7 +79,6 @@ def _inject_shell_styles() -> None:
     st.markdown(
         """
         <style>
-        /* Sidebar layout */
         section[data-testid="stSidebar"] div[data-testid="stSidebarContent"] {
             height: 100vh;
             padding-bottom: 4.4rem;
@@ -82,7 +88,6 @@ def _inject_shell_styles() -> None:
             gap: 0.35rem;
         }
 
-        /* Branding */
         .gridiron-shell-brand {
             text-align: center;
             margin: 0 auto 0.8rem;
@@ -126,7 +131,6 @@ def _inject_shell_styles() -> None:
             margin: 0.8rem 0 0.7rem;
         }
 
-        /* Navigation */
         section[data-testid="stSidebar"] div[role="radiogroup"] {
             gap: 0.26rem;
         }
@@ -193,7 +197,6 @@ def _inject_shell_styles() -> None:
             margin: 0;
         }
 
-        /* Fixed centered status line */
         .gridiron-status-bar {
             position: fixed;
             left: 0;
@@ -222,7 +225,6 @@ def _inject_shell_styles() -> None:
             font-weight: 650;
         }
 
-        /* Main page header */
         .gridiron-page-header {
             padding: 0.25rem 0 0.35rem;
         }
@@ -266,8 +268,6 @@ def _inject_shell_styles() -> None:
 
 
 def _render_brand() -> None:
-    """Render the GridironGPT product identity."""
-
     if _LOGO_PATH.exists():
         st.image(str(_LOGO_PATH), use_container_width=True)
 
@@ -286,19 +286,13 @@ def _render_brand() -> None:
 
 
 def _render_navigation() -> str:
-    """Render icon-free navigation and return the selected page key."""
-
     page_keys = list(NAVIGATION_ITEMS.keys())
 
     if "selected_page" not in st.session_state:
         st.session_state.selected_page = page_keys[0]
 
     current_page = st.session_state.selected_page
-    default_index = (
-        page_keys.index(current_page)
-        if current_page in page_keys
-        else 0
-    )
+    default_index = page_keys.index(current_page) if current_page in page_keys else 0
 
     selected_page = st.radio(
         "Navigation",
@@ -319,8 +313,6 @@ def _render_status_bar(
     model_name: str,
     signal_count: int | str,
 ) -> None:
-    """Render a compact centered engine status bar."""
-
     display_version = version if str(version).startswith("v") else f"v{version}"
 
     st.markdown(
@@ -347,13 +339,6 @@ def render_sidebar(
     model_name: str = DEFAULT_MODEL,
     signal_count: int | str = DEFAULT_SIGNAL_COUNT,
 ) -> str:
-    """
-    Render the application sidebar and return the selected page.
-
-    Existing callers only need to pass ``version``. Model and signal values
-    remain optional so they can be connected to live application data later.
-    """
-
     _inject_shell_styles()
 
     with st.sidebar:
@@ -373,8 +358,6 @@ def render_shell_header(
     page_name: str,
     description: str,
 ) -> None:
-    """Render a consistent header for the active application page."""
-
     st.markdown(
         f"""
         <div class="gridiron-page-header">
