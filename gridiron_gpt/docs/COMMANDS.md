@@ -1,71 +1,52 @@
-# Useful Commands
+# GridironGPT Useful Commands
 
-## Phase C — Reliability / Observability Regression Gate
-
-```bash
-pytest \
-  tests/test_ingestion_observability.py \
-  tests/test_provider_health_tracker.py \
-  tests/test_ingestion_health_integration.py \
-  tests/test_ingestion_rate_limit.py \
-  tests/test_ingestion_timeout.py \
-  tests/test_ingestion_retry.py \
-  tests/test_ingestion_provider_boundary.py \
-  tests/test_ingestion_service.py \
-  tests/test_nfl_news_adapters.py \
-  -v
-```
-
-Validated Phase C closeout result:
-
-```text
-43 passed
-```
-
-## Live NFL News Ingestion Smoke Test
-
-```bash
-python scripts/smoke_nfl_news_ingestion.py
-```
-
-Reports total/resolved/unresolved events, provider counts, position counts, top resolved players, non-fantasy matches, and unresolved headlines.
-
-## Run Full Test Suite
-
-Run this at major phase boundaries and before large merges:
-
-```bash
-pytest
-```
-
-## Show Current Branch
-
-```bash
-git branch --show-current
-```
-
-## Check Working Tree
-
-```bash
-git status
-```
-
-## Update Current Development Branch
+## Pull Current Development Branch
 
 ```bash
 git pull origin refactor/extract-cortex
 ```
 
-## Test Supabase
+## Full Regression Suite
+
+Run after every major implementation batch:
 
 ```bash
-PYTHONPATH=. python -c "
-from gridiron_gpt.storage.supabase_client import get_supabase_client
-print(get_supabase_client())
-"
+pytest -q
 ```
 
-## Legacy RSS Ingestion
+Current checkpoint:
+
+```text
+619 passed
+```
+
+## Visualization Tests
+
+```bash
+pytest tests/test_visualization_models.py -v
+```
+
+## Commissioner Suite Tests
+
+```bash
+pytest tests/test_commissioner_suite.py tests/test_league_exports.py -v
+```
+
+## Live-Signal Loader Tests
+
+```bash
+pytest tests/test_news_loader_persisted_signals.py -v
+```
+
+## Launch GridironGPT
+
+From the `gridiron_gpt` project directory:
+
+```bash
+PYTHONPATH=. streamlit run streamlit_app.py
+```
+
+## Live RSS Ingestion
 
 ```bash
 PYTHONPATH=. python - <<'PY'
@@ -80,19 +61,66 @@ print(fetch_and_persist_from_env())
 PY
 ```
 
-This command is retained for legacy compatibility. New ingestion development should use the unified `SourceAdapter` / `IngestionService` architecture.
+Expected output includes per-source fetched/saved/skipped counts and total signals persisted. Duplicate stories should be reported as skipped rather than raising a unique-key exception.
 
-## Run Recommendation Engine
+## Verify Live Signals Reach Scoring
 
 ```bash
-PYTHONPATH=. python -c "
-from gridiron_gpt.data_ingest.player_scores import build_recommendations_report
-print(build_recommendations_report())
-"
+PYTHONPATH=. python - <<'PY'
+from gridiron_gpt.data_ingest.news_loader import load_news
+from gridiron_gpt.data_ingest.player_scores import calculate_player_scores
+
+news = load_news()
+scores = calculate_player_scores()
+
+print(f"Loaded news/signals: {len(news)}")
+print(f"Scored players: {len(scores)}")
+
+for (player, team), data in sorted(
+    scores.items(),
+    key=lambda item: item[1]["score"],
+    reverse=True,
+)[:15]:
+    if data["score"] != 0:
+        print(player, team, data["score"], len(data["signals"]))
+PY
 ```
 
-## Launch Dashboard
+## Test Supabase Connection
 
 ```bash
+PYTHONPATH=. python - <<'PY'
+from gridiron_gpt.storage.supabase_client import get_supabase_client
+print(get_supabase_client())
+PY
+```
+
+## Recommendation Report
+
+```bash
+PYTHONPATH=. python - <<'PY'
+from gridiron_gpt.data_ingest.player_scores import build_recommendations_report
+print(build_recommendations_report())
+PY
+```
+
+## Ingestion Smoke Test
+
+```bash
+python scripts/smoke_nfl_news_ingestion.py
+```
+
+## Git Status
+
+```bash
+git branch --show-current
+git status
+```
+
+## Typical Development Checkpoint
+
+```bash
+git pull origin refactor/extract-cortex
+pytest -q
 PYTHONPATH=. streamlit run streamlit_app.py
 ```
