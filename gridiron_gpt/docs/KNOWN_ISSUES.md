@@ -1,280 +1,98 @@
 # GridironGPT Known Issues
 
-This document tracks active technical limitations, unresolved architectural concerns, and areas requiring future validation. Completed work belongs in project history rather than remaining listed as an active blocker.
+This file tracks active limitations only. Completed work belongs in the changelog.
 
----
+## Live Ingestion Coverage
 
-# Data Coverage
+Live multi-source ingestion is operational and duplicate-safe. Current gaps are primarily classification/coverage issues rather than pipeline failures.
 
-The Phase C ingestion architecture is complete and operational for ESPN NFL RSS, RotoWire NFL RSS, and nflverse weekly player statistics.
+- Some headlines contain no resolvable player.
+- Rare aliases and deep-roster players can still be missed.
+- Some resolved stories remain `unknown_impact` because the deterministic vocabulary is intentionally conservative.
+- Additional structured injury, transaction, practice, snap, route, and red-zone evidence would improve context.
 
-Remaining evidence gaps are now **coverage questions**, not ingestion-architecture blockers.
+## Signal / Confidence Calibration
 
-Potential additions include:
+Scoring and confidence are deterministic and explainable, but they have not yet been comprehensively calibrated against historical fantasy outcomes.
 
-- Structured injury reports
-- Transactions
-- Practice participation
-- Snap counts
-- Route participation
-- Red-zone usage
-- Team statistics where they materially improve player context
-
-Additional providers should be added only when they provide meaningful evidence value, reliable access, and acceptable licensing/usage terms.
-
----
-
-# External Provider Limitations
-
-The ingestion reliability layer now supports retries, exponential backoff, timeouts, rate-limit awareness, source isolation, structured provider outcomes, health state, and run observability.
-
-Remaining limitations:
-
-- Python thread-based attempt timeouts cannot forcibly terminate a blocked underlying provider call.
-- Individual HTTP/provider clients should still use request-level network timeouts where supported.
-- Provider-specific rate-limit detection must be implemented by adapters when a source exposes throttling information.
-- Provider health is currently development-oriented and may later require durable cross-process persistence.
-
----
-
-# Player Matching
-
-The matcher prioritizes precision while supporting suffixless aliases, football names, possessive normalization, and multi-player extraction.
-
-Known limitations:
-
-- Ambiguous surnames may intentionally be ignored.
-- Headlines without identifiable player names may be skipped.
-- Rare nickname/provider aliases may still be absent.
-- Some deep-roster players may lag current catalog coverage.
-- Some nflverse depth-chart entries do not contain stable IDs.
-
-Normalized-name fallback mitigates missing identifiers where practical.
-
----
-
-# Statistical Reasoning
-
-Structured player statistics have a dedicated quantitative interpretation path with rolling baselines, workload/production deltas, and team opportunity share.
-
-The remaining limitation is **calibration**.
-
-Current statistical weights are deterministic heuristics rather than historically validated fantasy models.
-
-Future improvements may include:
-
+Needed work:
+- Historical replay
+- Source reliability measurement
 - Position-specific thresholds
-- Configurable rolling windows
-- Strength-of-schedule adjustment
-- Opponent normalization
-- Snap share
-- Route participation
-- Red-zone usage
-- Efficiency metrics
-- Historical outcome calibration
-
-This belongs primarily to Phase E — Intelligence Calibration.
-
----
-
-# Football State / Context
-
-Cortex can reason over events, relationships, and persisted score state, but it does not yet expose a complete canonical representation of a player's current football situation.
-
-This is the primary Phase D gap.
-
-Needed context includes:
-
-- Current roster/team state
-- Depth-chart role
-- Active/inactive status
-- Injury/availability state
-- Transaction history and role movement
-- Schedule/opponent context
-- Durable player/team history
-
----
-
-# Injury / Availability State
-
-Injury-related news can be interpreted as signals, but availability is not yet modeled as a durable state machine with chronology and superseding reports.
-
-Examples that should eventually be represented explicitly:
-
-```text
-healthy
-limited
-questionable
-doubtful
-out
-injured reserve / PUP
-suspended
-returning
-```
-
-This is planned for Phase D.
-
----
-
-# Transactions and Role Movement
-
-Roster and depth-chart relationships exist, but signed/released/traded/waived/promoted/demoted transitions are not yet represented as first-class durable football state changes.
-
-Phase D should make these transitions update current context and, where appropriate, relationship state.
-
----
-
-# Signal Confidence Calibration
-
-Cortex supports evidence-aware confidence, corroboration, contradiction penalties, and statistical-history context, but confidence values remain heuristic.
-
-Future work:
-
-- Historical accuracy tracking
-- Source reliability weighting
-- Provider-specific reliability
 - Signal-category calibration
 - Confidence-vs-outcome analysis
-- Probabilistic calibration where useful
+- Propagation-effectiveness measurement
 
----
+## Advisor Semantics
 
-# Contradiction Detection
+Advisor 2.0 now presents live evidence visually, but natural-language intent coverage is still limited.
 
-Contradiction detection supports polarity conflict, severity, confidence penalties, source attribution, and neutral-source exclusion.
+- Player-name questions are strongest.
+- Broad start/sit, waiver, trade, DST, and multi-player comparison questions need richer intent routing.
+- Health / Opportunity / Momentum / Risk / Upside bars currently derive from available scored evidence; they should eventually consume the full multidimensional Cortex scorecard directly.
 
-Remaining limitations:
+## Dashboard
 
-- Detection remains primarily rule/keyword driven.
-- Temporal precedence is limited.
-- Superseding status reports are not yet modeled explicitly.
-- Semantically incompatible reports may be missed when wording differs substantially.
+Dashboard 2.0 uses live scored data for recommendations, team momentum, and position rankings.
 
-Phase D availability state and Phase E historical calibration should improve this area.
+Remaining work:
+- Latest ingestion/headline activity feed
+- Explicit last-refresh timestamp
+- Live ingestion health summary
+- Remove any remaining development-only status values
+- More historical trend visualization as snapshots accumulate
 
----
+## Cortex Explorer
 
-# Relationship Graph
+A unified player dossier does not yet exist. Player intelligence is currently spread across Players, Trends, Trajectory, Advisor, and Inspector views.
 
-The NFL relationship graph is depth-aware, persistent, dynamically refreshable, and semantically propagated.
+Planned consolidation includes recommendation, score history, confidence history, evidence timeline, availability, opportunity, relationships, propagation, and news.
 
-Current development graph size is approximately 579 active relationships across all 32 NFL teams.
+## Knowledge Graph UI
 
-Remaining limitations:
+Relationship propagation works in the engine, but there is no full interactive graph explorer yet.
 
-- Refresh orchestration still requires an external trigger.
-- Strength/confidence values remain heuristic.
-- Semantic coverage does not yet include the full football ecosystem.
-- Opportunity-share data is not yet used to calibrate relationship strength.
+Needed work:
+- Expand/collapse relationships
+- Relationship type/strength display
+- Propagation direction
+- Evidence-path inspection
+- Player/team navigation
 
-Potential future relationships should be added only when they provide meaningful fantasy intelligence.
+## Commissioner Analytics
 
----
+The Commissioner Suite supports league settings, schedule generation, balancing, alternatives, rivalry constraints, playoff brackets, draft workflows, exports, and league history.
 
-# Multiple Simultaneous Events
+Visual analytics remain to be added for:
+- Schedule fairness
+- Home/away balance
+- Strength of schedule
+- Luck Index
+- Historical standings/team performance
 
-Single events and multi-player articles are covered, but several distinct developments occurring in a short time window still require broader validation.
+## Persistence / Scalability
 
-Example:
+The project currently mixes Supabase-backed live article/signal persistence with repository-based JSON/JSONL development state.
 
-```text
-Starting RB injured
-Backup promoted
-Team signs veteran RB
-Coach announces committee
-```
+Long-term work:
+- Consolidate production persistence strategy
+- Transactional writes where required
+- Efficient historical queries
+- Concurrent/background processing
+- Repository migration without coupling Cortex to a database vendor
 
-Future work includes temporal precedence, competing-signal resolution, score-update consolidation, and recommendation stability.
+## Provider Reliability
 
----
+Provider isolation, retry/backoff, timeout handling, and observability exist, but network clients can still have provider-specific limitations. Provider health should eventually be durable across processes and exposed in the production dashboard.
 
-# Historical Validation
+## Historical Validation
 
-Cortex has not yet been comprehensively replayed against historical NFL seasons.
+This remains the largest intelligence-quality gap. Cortex has not yet been comprehensively replayed against historical NFL seasons to quantify recommendation, prediction, confidence, and relationship accuracy.
 
-This is the central Phase E requirement.
-
-Historical replay should measure:
-
-- Signal accuracy
-- Propagation accuracy
-- Recommendation accuracy
-- Prediction accuracy
-- Confidence calibration
-- Relationship effectiveness
-- Category-specific scoring behavior
-- False-positive and false-negative rates
-
----
-
-# Persistence / Scalability
-
-JSON/JSONL repositories are appropriate for the current development stage but are not intended as the final production persistence architecture.
-
-Known limitations:
-
-- Linear file scans
-- Increasing read cost as history grows
-- Limited concurrent-write support
-- No transactional guarantees
-- Limited query capabilities
-- Manual archival requirements
-
-Repository abstractions intentionally permit later database/cloud migration.
-
----
-
-# Standalone Cortex Extraction
-
-Gridiron Cortex is moving toward an independently reusable engine/library.
-
-Remaining concerns:
-
-- Finalize stable public API
-- Reduce GridironGPT-specific assumptions inside Cortex
-- Formalize extension/plugin interfaces
-- Establish package versioning
-- Determine long-term repository ownership of shared models
-- Prevent duplicated implementations between repositories
-
-The extraction should not interrupt active GridironGPT development.
-
----
-
-# Current Engineering Status
-
-| Component | Status |
-|---|---|
-| Cortex Foundation | ✅ Complete |
-| Intelligence & Reasoning | ✅ Complete |
-| Unified Ingestion Architecture | ✅ Complete |
-| Canonical Evidence / Deduplication | ✅ Complete |
-| Source Reliability | ✅ Complete |
-| Ingestion Observability | ✅ Complete |
-| Football Knowledge & Context | ▶ Phase D |
-| Historical Calibration | Planned |
-| Fantasy Decision Engine | Planned |
-| Production Persistence / Cloud | Future |
-
----
-
-# Primary Next Risk
-
-The primary engineering question has shifted again.
-
-It is no longer:
+## Current Regression Baseline
 
 ```text
-Can Cortex reliably receive clean evidence?
+619 passed
 ```
 
-Phase C established that architecture.
-
-The next question is:
-
-```text
-Can Cortex combine new evidence with a reliable,
-current representation of the player's real football situation?
-```
-
-That is the primary problem Phase D is intended to solve.
+This baseline should remain green through the UI modernization and Cortex Explorer work.
