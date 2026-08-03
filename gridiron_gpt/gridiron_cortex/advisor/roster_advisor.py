@@ -93,7 +93,7 @@ class RosterAdvisor:
 
             if recommendation == action:
                 signals = data.get("signals", [])
-                confidence = self.confidence_from_signals(ignals)
+                confidence = self.confidence_from_signals(signals)
 
                 if confidence == 0:
                     confidence = 60
