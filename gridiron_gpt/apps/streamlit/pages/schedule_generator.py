@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from datetime import datetime, time, timezone
+
 import streamlit as st
 
+from gridiron_gpt.product.league_exports import LeagueExportService
 from gridiron_gpt.product.schedule_email import (
     ScheduleEmailRequest,
     SmtpScheduleMailer,
@@ -127,13 +130,30 @@ def render_schedule_generator() -> None:
     st.dataframe(balance_rows, use_container_width=True, hide_index=True)
 
     csv_data = schedule_csv(schedule, name_by_id)
-    st.download_button(
-        "Download Schedule CSV",
-        data=csv_data,
-        file_name="fantasy_schedule.csv",
-        mime="text/csv",
-        use_container_width=True,
-    )
+    export_col1, export_col2 = st.columns(2)
+    with export_col1:
+        st.download_button(
+            "Download Schedule CSV",
+            data=csv_data,
+            file_name="fantasy_schedule.csv",
+            mime="text/csv",
+            use_container_width=True,
+        )
+    with export_col2:
+        season_start_date = st.date_input("Week 1 date", value=datetime.now().date())
+        season_start = datetime.combine(season_start_date, time.min, tzinfo=timezone.utc)
+        ical_data = LeagueExportService().schedule_ical(
+            schedule,
+            name_by_id,
+            season_start=season_start,
+        )
+        st.download_button(
+            "Download Calendar (.ics)",
+            data=ical_data,
+            file_name="fantasy_schedule.ics",
+            mime="text/calendar",
+            use_container_width=True,
+        )
 
     st.divider()
     st.markdown("### Email Schedule")
