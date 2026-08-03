@@ -29,8 +29,11 @@ def test_navigation_uses_grouped_sections():
     assert "?page=Ingestion" in markup
 
 
-def test_child_navigation_stays_in_current_app_tab():
+def test_child_navigation_replaces_current_streamlit_view():
     markup = build_navigation_markup("Dashboard")
 
-    assert 'target="_self"' in markup
+    # _top replaces the current Streamlit browsing context instead of opening
+    # a child link in a new tab/window or inside an embedded frame.
+    assert 'target="_top"' in markup
     assert 'target="_blank"' not in markup
+    assert 'target="_self"' not in markup
