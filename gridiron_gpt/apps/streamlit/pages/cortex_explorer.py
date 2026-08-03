@@ -7,6 +7,7 @@ from apps.streamlit.components.intelligence_charts import (
     render_cortex_timeline,
     render_signal_breakdown,
 )
+from gridiron_cortex.facade import CortexFacade
 from gridiron_gpt.intelligence.explorer_relationships import (
     build_propagation_rows,
     build_relationship_rows,
@@ -70,7 +71,7 @@ def _render_evidence(signals: list[dict]) -> None:
         st.caption(f"{signal.get('source', 'Unknown source')} · {signal.get('impact', 'unknown')} · {value:+.2f}")
 
 
-def _render_relationships(cortex, player_name: str, signals: list[dict]) -> None:
+def _render_relationships(cortex: CortexFacade, player_name: str, signals: list[dict]) -> None:
     st.markdown("### Relationship Network")
     relationships = cortex.knowledge.get_current_relationships()
     entity_id = find_entity_id(player_name, relationships)
@@ -84,11 +85,9 @@ def _render_relationships(cortex, player_name: str, signals: list[dict]) -> None
     else:
         for row in rows[:12]:
             direction = "→" if row.direction == "outgoing" else "←"
-            st.markdown(f"**{direction} {row.entity_name}** {f'({row.team})' if row.team else ''}")
-            st.caption(
-                f"{row.relationship_type} · strength {row.strength:.2f} · "
-                f"confidence {row.confidence:.0%}"
-            )
+            team = f" ({row.team})" if row.team else ""
+            st.markdown(f"**{direction} {row.entity_name}**{team}")
+            st.caption(f"{row.relationship_type} · strength {row.strength:.2f} · confidence {row.confidence:.0%}")
             if row.reason:
                 st.caption(row.reason)
 
@@ -116,10 +115,8 @@ def _render_relationships(cortex, player_name: str, signals: list[dict]) -> None
 
     for row in propagation[:10]:
         impact_label = "positive" if row.projected_impact > 0 else "negative"
-        with st.expander(
-            f"{row.entity_name} {f'({row.team})' if row.team else ''} · "
-            f"{row.projected_impact:+.3f} {impact_label}"
-        ):
+        team = f" ({row.team})" if row.team else ""
+        with st.expander(f"{row.entity_name}{team} · {row.projected_impact:+.3f} {impact_label}"):
             metric1, metric2, metric3 = st.columns(3)
             metric1.metric("Hops", row.hop_count)
             metric2.metric("Path Strength", f"{row.strength:.2f}")
@@ -128,12 +125,16 @@ def _render_relationships(cortex, player_name: str, signals: list[dict]) -> None
             st.caption(f"Propagation weight: {row.propagation_weight:+.3f}")
 
 
-def render_cortex_explorer(player_names: list[str], cortex) -> None:
+def render_cortex_explorer(
+    player_names: list[str],
+    cortex: CortexFacade | None = None,
+) -> None:
     """Render the unified Cortex player-intelligence dossier."""
     if not player_names:
         st.warning("No players are available in the current catalog.")
         return
 
+    cortex = cortex or CortexFacade()
     default_player = "Tank Dell" if "Tank Dell" in player_names else player_names[0]
     selected_player = st.selectbox("Player", player_names, index=player_names.index(default_player), key="cortex_explorer_player")
     intel = build_player_intelligence(selected_player)
