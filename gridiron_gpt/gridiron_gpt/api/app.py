@@ -7,6 +7,11 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from gridiron_gpt.product.league_profiles import JsonLeagueProfileRepository
+from gridiron_gpt.product.schedule_generator import (
+    ScheduleConfig,
+    ScheduleGenerator,
+    ScheduleTeam,
+)
 from gridiron_gpt.product.service import GridironProductService
 
 
@@ -22,6 +27,19 @@ class LeaguePayload(BaseModel):
     ir_slots: int = 1
     faab_budget: int = 100
     scoring_format: str = "half_ppr"
+
+
+class ScheduleTeamPayload(BaseModel):
+    team_id: str
+    name: str
+    division: str
+
+
+class SchedulePayload(BaseModel):
+    teams: list[ScheduleTeamPayload]
+    regular_season_weeks: int
+    playoff_start_week: int
+    playoff_weeks: int
 
 
 class PlayersPayload(BaseModel):
@@ -52,8 +70,8 @@ def create_app(data_directory: str | Path = "data/leagues") -> FastAPI:
     service = GridironProductService(JsonLeagueProfileRepository(data_directory))
     app = FastAPI(
         title="GridironGPT API",
-        version="1.0.0",
-        description="Product API for league profiles and fantasy decisions.",
+        version="1.1.0",
+        description="Product API for league profiles, schedules, and fantasy decisions.",
     )
 
     @app.get("/health")
@@ -81,6 +99,42 @@ def create_app(data_directory: str | Path = "data/leagues") -> FastAPI:
     @app.delete("/leagues/{league_id}")
     def delete_league(league_id: str) -> dict:
         return {"deleted": service.delete_league(league_id)}
+
+    @app.post("/schedules/generate")
+    def generate_schedule(payload: SchedulePayload) -> dict:
+        try:
+            config = ScheduleConfig(
+                teams=tuple(
+                    ScheduleTeam(
+                        team_id=team.team_id,
+                        name=team.name,
+                        division=team.division,
+                    )
+                    for team in payload.teams
+                ),
+                regular_season_weeks=payload.regular_season_weeks,
+                playoff_start_week=payload.playoff_start_week,
+                playoff_weeks=payload.playoff_weeks,
+            )
+            schedule = ScheduleGenerator().generate(config)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+        return {
+            "regular_season_weeks": config.regular_season_weeks,
+            "playoff_weeks": list(schedule.playoff_weeks),
+            "home_games": schedule.home_games,
+            "away_games": schedule.away_games,
+            "matchups": [
+                {
+                    "week": game.week,
+                    "home_team_id": game.home_team_id,
+                    "away_team_id": game.away_team_id,
+                    "divisional": game.divisional,
+                }
+                for game in schedule.matchups
+            ],
+        }
 
     @app.post("/decisions/draft/{league_id}")
     def draft(league_id: str, payload: PlayersPayload) -> list[dict]:
