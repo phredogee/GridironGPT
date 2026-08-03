@@ -80,7 +80,11 @@ def test_start_slots_must_be_positive():
 
 def test_waiver_engine_prioritizes_roster_need():
     league = LeagueContext(starting_slots={"QB": 1, "RB": 2, "WR": 2, "TE": 1})
-    roster = [player("QB One", "QB"), player("RB One"), player("WR One", "WR")]
+    roster = [
+        player("QB One", "QB"),
+        player("RB One"), player("RB Two"), player("RB Three"),
+        player("WR One", "WR"), player("WR Two", "WR"), player("WR Three", "WR"),
+    ]
     free_agents = [
         player("TE Target", "TE", projected_points=9),
         player("RB Target", "RB", projected_points=9),
@@ -108,8 +112,14 @@ def test_low_value_waiver_is_pass():
         replacement_value=0,
         confidence=0.5,
     )
+    full_roster = [
+        player("QB", "QB"),
+        player("RB1"), player("RB2"), player("RB3"),
+        player("WR1", "WR"), player("WR2", "WR"), player("WR3", "WR"),
+        player("TE", "TE"),
+    ]
     decision = FantasyDecisionEngine().waiver_recommendations(
-        [candidate], LeagueContext(), [player("QB", "QB"), player("RB1"), player("RB2"), player("RB3"), player("WR1", "WR"), player("WR2", "WR"), player("WR3", "WR"), player("TE", "TE")]
+        [candidate], LeagueContext(), full_roster
     )[0]
     assert decision.action == RecommendationAction.PASS
 
