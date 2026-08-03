@@ -7,7 +7,9 @@ from apps.streamlit.components.intelligence_charts import (
     render_cortex_timeline,
     render_signal_breakdown,
 )
+from apps.streamlit.components.knowledge_graph import render_knowledge_graph
 from gridiron_cortex.facade import CortexFacade
+from gridiron_gpt.intelligence.explorer_graph import build_explorer_graph
 from gridiron_gpt.intelligence.explorer_relationships import (
     build_propagation_rows,
     build_relationship_rows,
@@ -72,13 +74,17 @@ def _render_evidence(signals: list[dict]) -> None:
 
 
 def _render_relationships(cortex: CortexFacade, player_name: str, signals: list[dict]) -> None:
-    st.markdown("### Relationship Network")
     relationships = cortex.knowledge.get_current_relationships()
     entity_id = find_entity_id(player_name, relationships)
     if entity_id is None:
+        st.markdown("### Knowledge Graph")
         st.info("No active Cortex graph relationships were found for this player.")
         return
 
+    graph = build_explorer_graph(entity_id, relationships, max_neighbors=10)
+    render_knowledge_graph(graph)
+
+    st.markdown("### Relationship Network")
     rows = build_relationship_rows(entity_id, relationships)
     if not rows:
         st.info("No immediate graph relationships were found for this player.")
@@ -125,6 +131,15 @@ def _render_relationships(cortex: CortexFacade, player_name: str, signals: list[
             st.caption(f"Propagation weight: {row.propagation_weight:+.3f}")
 
 
+def _requested_player(player_names: list[str], fallback: str) -> str:
+    requested = st.query_params.get("player")
+    if isinstance(requested, list):
+        requested = requested[0] if requested else None
+    if requested in player_names:
+        return requested
+    return fallback
+
+
 def render_cortex_explorer(
     player_names: list[str],
     cortex: CortexFacade | None = None,
@@ -135,8 +150,17 @@ def render_cortex_explorer(
         return
 
     cortex = cortex or CortexFacade()
-    default_player = "Tank Dell" if "Tank Dell" in player_names else player_names[0]
-    selected_player = st.selectbox("Player", player_names, index=player_names.index(default_player), key="cortex_explorer_player")
+    fallback = "Tank Dell" if "Tank Dell" in player_names else player_names[0]
+    default_player = _requested_player(player_names, fallback)
+    selected_player = st.selectbox(
+        "Player",
+        player_names,
+        index=player_names.index(default_player),
+        key="cortex_explorer_player",
+    )
+    if st.query_params.get("player") != selected_player:
+        st.query_params["player"] = selected_player
+
     intel = build_player_intelligence(selected_player)
     if intel.get("status") != "ok":
         st.warning(f"No scored intelligence found for {selected_player}.")
