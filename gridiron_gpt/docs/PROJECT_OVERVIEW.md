@@ -2,138 +2,105 @@
 
 ## Vision
 
-GridironGPT is an AI-powered fantasy football intelligence platform that transforms raw NFL information into structured, persistent, explainable fantasy intelligence.
+GridironGPT is a fantasy-football intelligence and league-management platform powered by **Gridiron Cortex**. It converts live NFL evidence into persistent, explainable player intelligence and combines that intelligence with flexible commissioner, scheduling, draft, and league-history tools.
 
-At the center is **Gridiron Cortex**, the reusable intelligence engine responsible for understanding football events, reasoning over relationships, maintaining historical state, and producing recommendations with traceable evidence.
+GridironGPT is the flagship application built on Cortex. Cortex owns reusable reasoning; GridironGPT owns football-domain workflows and presentation.
 
-## Core Architecture
-
-```text
-External NFL Sources
-        ↓
-Unified Ingestion Layer
-        ↓
-Normalization / Canonical Evidence
-        ↓
-Gridiron Cortex
-        ↓
-Understand → Reason → Evaluate → Predict → Decide → Explain
-        ↓
-Persistent Memory / Knowledge
-        ↓
-GridironGPT and Future Clients
-```
-
-## Current Development Status
-
-### Phase A — Cortex Foundation
-**Complete**
-
-### Phase B — Intelligence & Reasoning
-**Complete**
-
-### Phase C — Data Ingestion
-**Complete**
-
-#### C1 — Ingestion Architecture ✅
-
-- `SourceAdapter` / `SourceRecord`
-- `EventNormalizer`
-- RSS adapters
-- `IngestionService`
-- Ingestion-to-Cortex integration
-
-#### C2 — Deduplication & Evidence Identity ✅
-
-- Persistent canonical-event repository
-- Restart-safe identity
-- Cross-source corroboration
-- Duplicate-evidence suppression
-- Multi-player article identity
-
-#### C3 — Source Expansion & Statistical Context ✅
-
-- ESPN NFL and RotoWire NFL
-- Multi-player extraction
-- Player alias hardening
-- nflverse / nflreadpy player statistics
-- Structured statistical interpretation
-- Rolling historical baselines
-- Workload/production deltas
-- Carry, target, and pass-attempt share
-- Explainable opportunity trends
-
-#### C4 — Ingestion Reliability ✅
-
-- Provider execution boundary
-- Failure isolation
-- Retry and exponential backoff
-- Per-attempt timeout handling
-- Rate-limit / Retry-After awareness
-- Structured provider outcomes
-- Provider health states: healthy, degraded, unavailable
-
-#### C5 — Ingestion Observability ✅
-
-- Run-level summary metrics
-- Provider diagnostics
-- Run duration
-- Records/events totals
-- Health state attached to diagnostics
-- Error type/message reporting
-- Unique run IDs and timestamps
-- Append-only JSONL ingestion-run history
-- Latest-run retrieval
-
-Observable execution path:
+## Current System
 
 ```text
-Providers
-   ↓
-Reliable execution boundary
-   ↓
-ProviderIngestionResult
-   ↓
-ProviderHealthTracker
-   ↓
-IngestionRunSummary
-   ↓
-JsonlIngestionRunRepository
+ESPN / NBC / ProFootballTalk / RotoWire / nflverse
+                    ↓
+             Live Ingestion
+                    ↓
+       Normalize + Deduplicate
+                    ↓
+              Supabase
+                    ↓
+          Gridiron Cortex
+                    ↓
+ Resolve → Classify → Propagate → Score → Recommend → Explain
+                    ↓
+         Visualization Models
+                    ↓
+ Dashboard / Advisor / Players / Commissioner Suite
 ```
 
-A complete run can now answer:
+## Major Capabilities
 
-- Which providers ran?
-- Which succeeded or failed?
-- Which are degraded/unavailable?
-- How many records and events were produced?
-- How many attempts were required?
-- What error occurred?
-- How long did the run take?
-- What happened in prior ingestion runs?
+### Live Football Intelligence
+- Multi-source RSS ingestion
+- Structured nflverse statistical context
+- Duplicate-safe persistence
+- Player/entity resolution
+- Signal classification and scoring
+- Relationship-aware propagation
+- Confidence and recommendation generation
+- Scorecard and momentum history
 
-## Persistence Strategy
+### Advisor 2.0
+- Natural-language player questions
+- Recommendation, score, and confidence cards
+- Supporting evidence and headlines
+- Signal-impact visualization
+- Cortex timeline
+- Health, opportunity, momentum, risk, and upside profile
+- Collapsed developer/reasoning details
 
-Cortex and ingestion use repository abstractions with JSON/JSONL development implementations. Current persisted history includes events, canonical evidence, player scorecards, relationships, and ingestion runs. Storage can later migrate to SQLite, PostgreSQL, or cloud infrastructure without coupling intelligence logic to a specific implementation.
+### Dashboard 2.0
+- Live player and recommendation metrics
+- BUY/WATCH/risk candidates
+- Recommendation distribution
+- Team momentum
+- Position rankings
+- Cortex-ranked player table
+
+### Commissioner Suite
+- Configurable league settings
+- Team/division management
+- Flexible roster limits
+- Schedule generation
+- Divisional home/away guarantees
+- Cross-division scheduling
+- Home/away balancing
+- Schedule quality analytics and alternate schedules
+- Rivalry constraints
+- CSV/iCalendar exports and schedule delivery support
+- Playoff bracket generation with configurable playoff weeks
+- Draft-room workflows
+- League history and commissioner insights
+
+## Persistence
+
+The project uses repository abstractions so storage can evolve without coupling intelligence logic to a specific backend. Current development combines Supabase-backed live article/signal persistence with repository-based Cortex state and historical snapshots.
+
+## Quality Baseline
+
+Current full-suite checkpoint:
+
+```text
+619 passed
+```
+
+This checkpoint follows live signal integration, Commissioner Suite expansion, Advisor 2.0, and Dashboard 2.0 visualization wiring.
 
 ## Design Principles
 
-1. Cortex owns intelligence; providers supply evidence.
-2. Evidence comes before conclusions.
-3. Preserve provenance and audit history.
-4. Persist meaningful state transitions.
-5. Use football semantics rather than generic weighting alone.
-6. Corroboration strengthens evidence without duplicating score effects.
-7. Keep infrastructure replaceable behind contracts.
-8. A failing provider must not take down healthy ingestion sources.
-9. Operational behavior should be observable, not inferred from logs alone.
+1. Cortex owns intelligence; GridironGPT owns football product behavior.
+2. Evidence and provenance come before conclusions.
+3. Live data must be deduplicated and auditable.
+4. User-facing recommendations should explain why.
+5. League configuration should be flexible rather than hard-coded to one platform.
+6. Visualization models remain separate from Streamlit rendering.
+7. Shared UI components should be reused across product surfaces.
+8. Provider failures should not take down unrelated ingestion sources.
+9. Infrastructure should remain replaceable behind contracts.
+10. Tests define the regression boundary for every major development batch.
 
-## Next Major Direction
+## Product Direction
 
-Phase C is closed. Future source additions should be evidence-driven rather than extensions of the ingestion architecture itself.
+The current development focus is the user experience around the proven intelligence engine: richer live dashboards, Cortex Explorer player dossiers, knowledge-graph visualization, commissioner analytics, and production deployment.
 
-Potential subsequent work includes Gridiron Codex historical knowledge, draft-class intelligence, historical prediction evaluation/calibration, REST API access, league-specific intelligence, and advanced visualization.
+The long-term question GridironGPT should answer is:
 
-The long-term objective remains:
-
-> Why does this football event matter, who does it affect, how confident are we, and what should a fantasy manager do about it?
+> What happened, why does it matter, who else is affected, how confident is Cortex, and what should a fantasy manager or commissioner do next?
