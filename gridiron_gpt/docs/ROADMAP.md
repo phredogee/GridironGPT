@@ -29,17 +29,15 @@ Applications / APIs / Dashboards
 | A | Cortex Foundation | ✅ Complete |
 | B | Intelligence & Reasoning | ✅ Complete |
 | C | Data Ingestion | ✅ Complete |
-| D | Football Knowledge & Context | ▶ Next |
+| D | Football Knowledge & Context | 🚧 In Progress — D1–D3 complete |
 | E | Intelligence Calibration | Planned |
 | F | Fantasy Decision Engine | Planned |
 | G | Product / API Integration | Planned |
 | H | Production & Cloud | Long-term |
 
-Phase C closed with a focused reliability/observability regression gate of:
+Phase C closed with a focused reliability/observability regression gate of `43 passed`.
 
-```text
-43 passed
-```
+Phase D has now established canonical player state, availability reasoning, and multi-player roster consequences. The latest focused D3 integration gate is `42 passed`.
 
 The full project test suite should continue to be run at major phase boundaries.
 
@@ -62,7 +60,6 @@ Established domain-aware football reasoning, including canonical evidence, corro
 Established a resilient, normalized, observable multi-source ingestion layer.
 
 ## C1 — Ingestion Architecture ✅
-
 - `SourceAdapter` / `SourceRecord`
 - `EventNormalizer`
 - RSS adapter foundation
@@ -70,7 +67,6 @@ Established a resilient, normalized, observable multi-source ingestion layer.
 - Ingestion-to-Cortex integration
 
 ## C2 — Deduplication & Evidence Identity ✅
-
 - Persistent canonical-event repository
 - Restart-safe canonical identity
 - Duplicate-evidence suppression
@@ -79,7 +75,6 @@ Established a resilient, normalized, observable multi-source ingestion layer.
 - Player-specific identity for multi-player articles
 
 ## C3 — Source Expansion & Statistical Context ✅
-
 - ESPN NFL RSS
 - RotoWire NFL RSS
 - nflverse / nflreadpy weekly player statistics
@@ -92,7 +87,6 @@ Established a resilient, normalized, observable multi-source ingestion layer.
 - Explainable opportunity trends
 
 ## C4 — Ingestion Reliability ✅
-
 - Provider execution boundary
 - Failure isolation
 - Retry and exponential backoff
@@ -102,7 +96,6 @@ Established a resilient, normalized, observable multi-source ingestion layer.
 - Provider health states: healthy, degraded, unavailable
 
 ## C5 — Ingestion Observability ✅
-
 - Run-level summaries
 - Provider diagnostics
 - Run duration
@@ -112,37 +105,93 @@ Established a resilient, normalized, observable multi-source ingestion layer.
 - Append-only JSONL ingestion-run history
 - Latest-run retrieval
 
-Phase C established the principle that a provider failure degrades ingestion rather than taking down the pipeline.
-
 ---
 
-# Phase D — Football Knowledge & Context ▶
+# Phase D — Football Knowledge & Context 🚧
 
 ## Objective
 
 Teach Cortex the durable football state surrounding incoming events so it can reason about more than an isolated headline or box score.
 
-Phase D should enrich the existing Cortex pipeline rather than create a second intelligence system.
+Phase D enriches the existing Cortex pipeline rather than creating a second intelligence system.
 
-## D1 — Canonical NFL State
+## D1 — Canonical NFL State ✅
 
-Create queryable current-state models for players, teams, rosters, depth-chart roles, active/inactive status, position, and role.
+- Canonical player-state model
+- Repository contract and append-only JSONL implementation
+- Catalog-to-state promotion service
+- Meaningful state-change detection
+- Duplicate snapshot suppression
+- Team, position, roster-status, and depth-chart transitions
+- Structured state-change events into the normal Cortex pipeline
 
-First target question:
+Cortex can now answer the baseline question: **What is this player's current football situation, and what changed?**
 
-> What is this player's current football situation?
+## D2 — Availability & Injury State ✅
 
-## D2 — Availability & Injury State
+- Canonical availability model
+- Explicit designation and practice-participation vocabulary
+- Multi-report reconciliation with official-source precedence
+- Evidence preservation and auditability
+- Availability trajectory classification: improving, stable, worsening, recovered, unavailable, unknown
+- Separate current-risk and trajectory evidence
+- Availability events integrated through `SignalProcessor`
 
-Represent current availability explicitly rather than only through news sentiment. Support chronology and superseding reports.
+Important semantic rule: **improving does not mean healthy**. Current availability risk and direction remain separate evidence dimensions.
 
-## D3 — Transactions & Role Movement
+## D3 — Transactions & Roster Movement ✅
 
-Track signed, released, traded, waived, promoted, demoted, practice-squad, and depth-chart transitions. These changes should update football context and relationships.
+- Roster opportunity consequence model
+- One-hop opportunity derivation through the existing relationship graph
+- Backup and competition relationships interpreted as opportunity effects
+- Opportunity changes converted into affected-player Cortex evidence
+- Multi-player consequence orchestration
+- Duplicate consequence suppression
+- Self/circular propagation guards
+- Causal traceability to the originating event fingerprint
 
-## D4 — Opportunity Context
+Example causal chain:
 
-Expand durable role indicators where reliable data exists: snap share, route participation, target share, carry share, red-zone usage, and team opportunity concentration.
+```text
+Starter becomes unavailable
+    ↓
+Negative source-player impact
+    ↓
+Relationship graph
+    ↓
+Backup opportunity increases
+    ↓
+Affected-player RawEvent
+    ↓
+Normal Cortex scoring / recommendation pipeline
+```
+
+## D4 — Snap / Route / Opportunity Context ▶ Next
+
+### D4.1 — Canonical Usage State
+
+Represent observed usage explicitly, including where reliable data exists:
+
+- snaps / snap share
+- routes / route participation
+- carries
+- targets / target share
+- red-zone usage
+- team opportunity concentration
+
+### D4.2 — Usage Baseline & Trend
+
+Compare current workload against recent historical usage and identify meaningful changes.
+
+### D4.3 — Opportunity Reconciliation
+
+Reconcile **derived opportunity** from roster movement with **observed opportunity** from actual usage.
+
+This should allow Cortex to distinguish narrative opportunity from confirmed opportunity.
+
+### D4.4 — Cortex Integration
+
+Convert usage state and usage trajectories into structured, explainable Cortex evidence.
 
 ## D5 — Schedule & Opponent Context
 
