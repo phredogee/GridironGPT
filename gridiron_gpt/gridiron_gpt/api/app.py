@@ -7,7 +7,13 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from gridiron_gpt.product.league_profiles import JsonLeagueProfileRepository
+from gridiron_gpt.product.schedule_email import (
+    ScheduleEmailRequest,
+    ScheduleMailer,
+    SmtpScheduleMailer,
+)
 from gridiron_gpt.product.schedule_generator import (
+    GeneratedSchedule,
     ScheduleConfig,
     ScheduleGenerator,
     ScheduleTeam,
@@ -42,6 +48,16 @@ class SchedulePayload(BaseModel):
     playoff_weeks: int
 
 
+class ScheduleEmailPayload(BaseModel):
+    schedule: SchedulePayload
+    recipients: list[str]
+    subject: str = "Fantasy Football League Schedule"
+    message: str = "The league schedule is attached."
+    sender_name: str = "GridironGPT"
+    reply_to: str | None = None
+    attachment_name: str = "fantasy_schedule.csv"
+
+
 class PlayersPayload(BaseModel):
     players: list[dict[str, Any]]
 
@@ -66,12 +82,18 @@ class RosterPayload(BaseModel):
     roster: list[dict[str, Any]]
 
 
-def create_app(data_directory: str | Path = "data/leagues") -> FastAPI:
+def create_app(
+    data_directory: str | Path = "data/leagues",
+    schedule_mailer: ScheduleMailer | None = None,
+) -> FastAPI:
     service = GridironProductService(JsonLeagueProfileRepository(data_directory))
     app = FastAPI(
         title="GridironGPT API",
-        version="1.1.0",
-        description="Product API for league profiles, schedules, and fantasy decisions.",
+        version="1.2.0",
+        description=(
+            "Product API for league profiles, schedule generation and delivery, "
+            "and fantasy decisions."
+        ),
     )
 
     @app.get("/health")
@@ -103,37 +125,34 @@ def create_app(data_directory: str | Path = "data/leagues") -> FastAPI:
     @app.post("/schedules/generate")
     def generate_schedule(payload: SchedulePayload) -> dict:
         try:
-            config = ScheduleConfig(
-                teams=tuple(
-                    ScheduleTeam(
-                        team_id=team.team_id,
-                        name=team.name,
-                        division=team.division,
-                    )
-                    for team in payload.teams
-                ),
-                regular_season_weeks=payload.regular_season_weeks,
-                playoff_start_week=payload.playoff_start_week,
-                playoff_weeks=payload.playoff_weeks,
-            )
-            schedule = ScheduleGenerator().generate(config)
+            schedule, _ = _build_schedule(payload)
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
+        return _schedule_payload(schedule)
 
+    @app.post("/schedules/email")
+    def email_schedule(payload: ScheduleEmailPayload) -> dict:
+        try:
+            schedule, names = _build_schedule(payload.schedule)
+            request = ScheduleEmailRequest(
+                recipients=tuple(payload.recipients),
+                subject=payload.subject,
+                message=payload.message,
+                sender_name=payload.sender_name,
+                reply_to=payload.reply_to,
+                attachment_name=payload.attachment_name,
+            )
+            mailer = schedule_mailer or SmtpScheduleMailer.from_environment()
+            result = mailer.send(request, schedule, names)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        except (RuntimeError, OSError) as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
         return {
-            "regular_season_weeks": config.regular_season_weeks,
-            "playoff_weeks": list(schedule.playoff_weeks),
-            "home_games": schedule.home_games,
-            "away_games": schedule.away_games,
-            "matchups": [
-                {
-                    "week": game.week,
-                    "home_team_id": game.home_team_id,
-                    "away_team_id": game.away_team_id,
-                    "divisional": game.divisional,
-                }
-                for game in schedule.matchups
-            ],
+            "sent": result.sent,
+            "recipient_count": result.recipient_count,
+            "provider": result.provider,
+            "detail": result.detail,
         }
 
     @app.post("/decisions/draft/{league_id}")
@@ -170,6 +189,38 @@ def create_app(data_directory: str | Path = "data/leagues") -> FastAPI:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     return app
+
+
+def _build_schedule(payload: SchedulePayload) -> tuple[GeneratedSchedule, dict[str, str]]:
+    teams = tuple(
+        ScheduleTeam(team_id=team.team_id, name=team.name, division=team.division)
+        for team in payload.teams
+    )
+    config = ScheduleConfig(
+        teams=teams,
+        regular_season_weeks=payload.regular_season_weeks,
+        playoff_start_week=payload.playoff_start_week,
+        playoff_weeks=payload.playoff_weeks,
+    )
+    return ScheduleGenerator().generate(config), {team.team_id: team.name for team in teams}
+
+
+def _schedule_payload(schedule: GeneratedSchedule) -> dict:
+    return {
+        "regular_season_weeks": schedule.config.regular_season_weeks,
+        "playoff_weeks": list(schedule.playoff_weeks),
+        "home_games": schedule.home_games,
+        "away_games": schedule.away_games,
+        "matchups": [
+            {
+                "week": game.week,
+                "home_team_id": game.home_team_id,
+                "away_team_id": game.away_team_id,
+                "divisional": game.divisional,
+            }
+            for game in schedule.matchups
+        ],
+    }
 
 
 app = create_app()
