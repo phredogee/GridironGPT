@@ -22,93 +22,21 @@ Gridiron Cortex
 
 ## D1 — Canonical NFL State ✅
 
-### Components
-
-- `CanonicalPlayerState`
-- `PlayerStateRepository`
-- `JsonlPlayerStateRepository`
-- `PlayerStateService`
-- `PlayerStateChange`
-- `PlayerStateEventFactory`
-
-### Behavior
-
-The existing nflverse player catalog is promoted into a queryable canonical state rather than duplicated by another roster loader.
-
-Meaningful changes include:
-
-- team
-- position
-- roster status
-- depth-chart position
-
-Identical refreshes do not create duplicate snapshots. Meaningful transitions are converted into structured `RawEvent` evidence for Cortex.
+Components include `CanonicalPlayerState`, player-state repositories/services, change detection, and `PlayerStateEventFactory`. The existing nflverse player catalog is promoted into queryable canonical state. Meaningful team, position, roster-status, and depth-chart changes become structured Cortex evidence while identical refreshes are suppressed.
 
 ## D2 — Injury & Availability State ✅
 
-### Components
+Components include canonical availability state/report models, `AvailabilityReconciler`, `AvailabilityTrajectoryService`, and `AvailabilityEventFactory`.
 
-- `CanonicalAvailabilityState`
-- `AvailabilityDesignation`
-- `PracticeParticipation`
-- `AvailabilityReport`
-- `AvailabilityReconciler`
-- `AvailabilityTrajectoryService`
-- `AvailabilityEventFactory`
+Official evidence takes precedence over unofficial evidence for the same field, while newer official evidence supersedes older official evidence. Designation and practice participation reconcile independently.
 
-### Reconciliation
-
-Multiple observations can describe different dimensions of the same player state. Official evidence takes precedence over unofficial evidence for the same field, while newer official evidence supersedes older official evidence.
-
-Designation and practice participation reconcile independently.
-
-### Trajectory
-
-Supported trajectory classifications:
-
-- improving
-- stable
-- worsening
-- recovered
-- unavailable
-- unknown
-
-Current state and direction remain separate evidence dimensions.
-
-Example:
-
-```text
-QUESTIONABLE + DNP
-        ↓
-QUESTIONABLE + LIMITED
-        ↓
-Current risk: negative
-Trajectory: improving
-```
-
-Cortex therefore does not mistake an improving injured player for a healthy player.
+Supported trajectories are improving, stable, worsening, recovered, unavailable, and unknown. Current risk and direction remain separate evidence dimensions, so Cortex does not mistake an improving injured player for a healthy player.
 
 ## D3 — Transactions & Roster Movement ✅
 
-### Components
+Components include `OpportunityChange`, `RosterOpportunityService`, `OpportunityEventFactory`, and `RosterConsequenceOrchestrator`.
 
-- `OpportunityChange`
-- `RosterOpportunityService`
-- `OpportunityEventFactory`
-- `RosterConsequenceOrchestrator`
-
-### Relationship Reuse
-
-D3 reuses the existing Phase B relationship graph and propagation semantics rather than creating a separate roster-consequence graph.
-
-Opportunity relationships include:
-
-- `backs_up`
-- `competes_with`
-- `target_competitor`
-- `depth_chart_competitor`
-
-### Causal Chain
+D3 reuses the Phase B relationship graph and propagation semantics. Opportunity relationships include `backs_up`, `competes_with`, `target_competitor`, and `depth_chart_competitor`.
 
 ```text
 Source player event
@@ -122,45 +50,90 @@ OpportunityChange
 Affected-player RawEvent
     ↓
 SignalProcessor
-    ↓
-Score / recommendation
 ```
 
-Derived opportunity events preserve causal metadata pointing to the originating event fingerprint.
+Safety guards prevent zero-impact/unresolved propagation, self-consequences, recursive opportunity propagation, and duplicate consequences. Derived events preserve causal metadata pointing to the originating event fingerprint.
 
-### Safety Guards
+## D4 — Snap / Route / Opportunity Context ✅
 
-- no zero-impact propagation
-- no unresolved-player propagation
-- no self-consequence back onto the source player
-- no opportunity-event recursive propagation
-- duplicate consequences collapsed within an orchestration pass
+### Canonical Usage State
 
-## D4 — Snap / Route / Opportunity Context ▶ Next
+`CanonicalUsageState` represents observed participation and opportunity:
 
-D4 will add observed usage state and compare it against the opportunity Cortex inferred from roster movement.
+- snaps / snap share
+- routes / route participation
+- carries / carry share
+- targets / target share
+- red-zone carries and targets
+- red-zone opportunities
+- derived touches
+- derived opportunity concentration
+
+Partial provider coverage is explicitly valid. A source can contribute useful carry/target information even when snap or route data is unavailable.
+
+### Usage Baseline & Trend
+
+`UsageTrendService` compares the current game with a configurable recent-game baseline (three prior games by default).
+
+Trend vocabulary:
+
+- rising
+- stable
+- falling
+- mixed
+- unknown
+
+Small changes below meaningful thresholds are treated as stable rather than noise.
+
+### Opportunity Reconciliation
+
+`OpportunityReconciliationService` compares D3's predicted opportunity with D4's observed usage.
+
+```text
+Predicted opportunity ↑ + observed usage RISING  → CONFIRMED
+Predicted opportunity ↑ + observed usage FALLING → CONTRADICTED
+Predicted opportunity ↓ + observed usage FALLING → CONFIRMED
+Stable / mixed / unknown usage                    → INCONCLUSIVE
+```
+
+Confidence accounts for available baseline history and predicted opportunity magnitude.
+
+### Cortex Integration
+
+`UsageEventFactory` converts both usage trends and opportunity reconciliation into normal `RawEvent` evidence.
+
+Rising usage is positive evidence, falling usage is negative evidence, and non-directional usage remains neutral. Confirmation is interpreted relative to the original prediction: confirming a predicted decrease is negative, while confirming a predicted increase is positive.
+
+This creates the end-to-end chain:
+
+```text
+Roster change
+    ↓
+Opportunity predicted
+    ↓
+Usage observed
+    ↓
+Baseline/trend comparison
+    ↓
+Prediction confirmed / contradicted
+    ↓
+Cortex evidence
+    ↓
+Scoring / recommendation
+```
+
+D4 therefore distinguishes **narrative opportunity** from **confirmed opportunity**.
+
+## D5 — Schedule & Opponent Context ▶ Next
 
 Planned sequence:
 
-1. Canonical usage-state model
-2. Usage baseline and trend
-3. Derived-vs-observed opportunity reconciliation
-4. Cortex evidence integration
+1. Canonical game context
+2. Upcoming schedule / bye / rest context
+3. Evidence-based opponent and matchup context
+4. Cortex integration
 
-Target reasoning example:
-
-```text
-Starter unavailable
-    ↓
-Backup opportunity predicted
-    ↓
-Next game: snap share 28% → 67%
-           touches 7 → 18
-    ↓
-Opportunity confirmed by observed usage
-```
-
-This distinction between **narrative opportunity** and **confirmed opportunity** is a core Phase D objective.
+Schedule facts should remain separate from fantasy interpretation so matchup heuristics can later be calibrated independently.
 
 ## Validation
 
@@ -173,5 +146,9 @@ Focused checkpoints completed during Phase D development:
 - D3.1 import/integration gate: 29 passing tests
 - D3.2 gate: 34 passing tests
 - D3 complete focused gate: 42 passing tests
+- D4.1 gate: 8 passing tests
+- D4.2 gate: 17 passing tests
+- D4.3 gate: 26 passing tests
+- D4 complete focused gate: 35 passing tests
 
 The full repository suite should be run at the Phase D boundary.
