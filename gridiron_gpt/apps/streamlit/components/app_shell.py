@@ -88,6 +88,22 @@ def _inject_shell_styles() -> None:
             padding-bottom: 4.4rem;
         }
 
+        section[data-testid="stSidebar"] div[data-testid="stImage"] {
+            max-width: 15rem;
+            margin: 0 auto;
+            padding: 0.35rem;
+            border-radius: 50%;
+            background: #08110d;
+            overflow: hidden;
+        }
+
+        section[data-testid="stSidebar"] div[data-testid="stImage"] img {
+            display: block;
+            border-radius: 50%;
+            clip-path: circle(49% at 50% 50%);
+            background: #08110d;
+        }
+
         .gridiron-shell-brand { text-align: center; margin: 0 auto 0.8rem; }
         .gridiron-shell-name {
             color: var(--cortex-text); font-size: 1.55rem; font-weight: 800;
@@ -223,7 +239,6 @@ def _inject_shell_styles() -> None:
             box-shadow: 0 0 8px rgba(121, 255, 159, 0.85);
         }
 
-        /* Compact, high-contrast controls throughout the application. */
         div[data-baseweb="select"],
         div[data-testid="stTextInput"],
         div[data-testid="stNumberInput"],
@@ -300,16 +315,16 @@ def build_navigation_markup(selected_page: str) -> str:
     sections: list[str] = ['<nav class="gridiron-nav" aria-label="Primary navigation">']
     for section in NAVIGATION_SECTIONS:
         active_section = selected_page in section["pages"]
-        children = []
+        children: list[str] = []
         for page in section["pages"]:
             item = NAVIGATION_ITEMS[page]
             active = " active" if page == selected_page else ""
+            current = ' aria-current="page"' if page == selected_page else ""
             children.append(
-                f'<a class="gridiron-nav-child{active}" href="?page={quote(page)}" '
-                f'aria-current="page"' if page == selected_page else
-                f'<a class="gridiron-nav-child{active}" href="?page={quote(page)}"'
+                f'<a class="gridiron-nav-child{active}" '
+                f'href="?page={quote(page)}" target="_self"{current}>'
+                f'{escape(item["label"])}</a>'
             )
-            children[-1] += f'>{escape(item["label"])}</a>'
 
         section_class = "gridiron-nav-section active" if active_section else "gridiron-nav-section"
         sections.append(
