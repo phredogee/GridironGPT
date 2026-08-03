@@ -27,3 +27,10 @@ def test_navigation_uses_grouped_sections():
     assert ">Operations<" in markup
     assert "?page=Advisor" in markup
     assert "?page=Ingestion" in markup
+
+
+def test_child_navigation_stays_in_current_app_tab():
+    markup = build_navigation_markup("Dashboard")
+
+    assert 'target="_self"' in markup
+    assert 'target="_blank"' not in markup
