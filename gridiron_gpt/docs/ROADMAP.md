@@ -29,7 +29,7 @@ Applications / APIs / Dashboards
 | A | Cortex Foundation | ✅ Complete |
 | B | Intelligence & Reasoning | ✅ Complete |
 | C | Data Ingestion | ✅ Complete |
-| D | Football Knowledge & Context | 🚧 In Progress — D1–D3 complete |
+| D | Football Knowledge & Context | 🚧 In Progress — D1–D4 complete |
 | E | Intelligence Calibration | Planned |
 | F | Fantasy Decision Engine | Planned |
 | G | Product / API Integration | Planned |
@@ -37,7 +37,7 @@ Applications / APIs / Dashboards
 
 Phase C closed with a focused reliability/observability regression gate of `43 passed`.
 
-Phase D has now established canonical player state, availability reasoning, and multi-player roster consequences. The latest focused D3 integration gate is `42 passed`.
+Phase D now includes canonical player state, availability reasoning, multi-player roster consequences, and observed usage/opportunity reconciliation. The D4 focused validation gate is `35 passed`.
 
 The full project test suite should continue to be run at major phase boundaries.
 
@@ -125,77 +125,77 @@ Phase D enriches the existing Cortex pipeline rather than creating a second inte
 - Team, position, roster-status, and depth-chart transitions
 - Structured state-change events into the normal Cortex pipeline
 
-Cortex can now answer the baseline question: **What is this player's current football situation, and what changed?**
-
 ## D2 — Availability & Injury State ✅
 
 - Canonical availability model
 - Explicit designation and practice-participation vocabulary
 - Multi-report reconciliation with official-source precedence
 - Evidence preservation and auditability
-- Availability trajectory classification: improving, stable, worsening, recovered, unavailable, unknown
+- Availability trajectory classification
 - Separate current-risk and trajectory evidence
 - Availability events integrated through `SignalProcessor`
 
-Important semantic rule: **improving does not mean healthy**. Current availability risk and direction remain separate evidence dimensions.
+Important semantic rule: **improving does not mean healthy**.
 
 ## D3 — Transactions & Roster Movement ✅
 
 - Roster opportunity consequence model
-- One-hop opportunity derivation through the existing relationship graph
+- One-hop opportunity derivation through the relationship graph
 - Backup and competition relationships interpreted as opportunity effects
 - Opportunity changes converted into affected-player Cortex evidence
 - Multi-player consequence orchestration
-- Duplicate consequence suppression
-- Self/circular propagation guards
-- Causal traceability to the originating event fingerprint
+- Duplicate/self/circular propagation guards
+- Causal traceability to originating evidence
 
-Example causal chain:
+## D4 — Snap / Route / Opportunity Context ✅
+
+- Canonical usage state for snaps, routes, carries, targets, shares, and red-zone opportunity
+- Partial-provider coverage support
+- Recent-game usage baselines
+- Rising/stable/falling/mixed/unknown trend classification
+- Derived opportunity reconciled against observed usage
+- Confirmed/contradicted/inconclusive prediction outcomes
+- Usage and opportunity-confirmation evidence integrated through `SignalProcessor`
+
+D4 allows Cortex to distinguish **narrative opportunity** from **confirmed opportunity**.
 
 ```text
-Starter becomes unavailable
+Starter unavailable
     ↓
-Negative source-player impact
+Backup opportunity predicted
     ↓
-Relationship graph
+Observed usage rises
     ↓
-Backup opportunity increases
+Opportunity confirmed
     ↓
-Affected-player RawEvent
-    ↓
-Normal Cortex scoring / recommendation pipeline
+Structured Cortex evidence
 ```
 
-## D4 — Snap / Route / Opportunity Context ▶ Next
+## D5 — Schedule & Opponent Context ▶ Next
 
-### D4.1 — Canonical Usage State
+### D5.1 — Canonical Game Context
 
-Represent observed usage explicitly, including where reliable data exists:
+Represent the stable facts surrounding an NFL game:
 
-- snaps / snap share
-- routes / route participation
-- carries
-- targets / target share
-- red-zone usage
-- team opportunity concentration
+- season / week / season type
+- game ID
+- kickoff time
+- home team / away team
+- opponent
+- home/away designation
+- completed/scheduled status
 
-### D4.2 — Usage Baseline & Trend
+### D5.2 — Upcoming Schedule Context
 
-Compare current workload against recent historical usage and identify meaningful changes.
+Resolve each player's/team's next relevant game, bye weeks, rest windows, and schedule transitions.
 
-### D4.3 — Opportunity Reconciliation
+### D5.3 — Opponent / Matchup Context
 
-Reconcile **derived opportunity** from roster movement with **observed opportunity** from actual usage.
+Attach evidence-based opponent context without hard-coding simplistic matchup narratives. Initial context should favor observable team/position metrics and preserve provenance.
 
-This should allow Cortex to distinguish narrative opportunity from confirmed opportunity.
+### D5.4 — Cortex Integration
 
-### D4.4 — Cortex Integration
-
-Convert usage state and usage trajectories into structured, explainable Cortex evidence.
-
-## D5 — Schedule & Opponent Context
-
-Add upcoming opponent, home/away, bye week, and evidence-based matchup context for forward-looking reasoning.
+Convert schedule and matchup context into structured evidence for forward-looking reasoning while keeping raw schedule facts separate from fantasy interpretation.
 
 ## D6 — Rookie / Draft-Class Knowledge
 
