@@ -22,39 +22,83 @@ class ScheduleAnalytics:
 class ScheduleAnalyticsService:
     def analyze(self, schedule: GeneratedSchedule) -> ScheduleAnalytics:
         team_ids = sorted(schedule.home_games)
-        longest_home = {team_id: self._streak(schedule.matchups, team_id, home=True) for team_id in team_ids}
-        longest_away = {team_id: self._streak(schedule.matchups, team_id, home=False) for team_id in team_ids}
-        repeats = {team_id: self._repeat_count(schedule.matchups, team_id) for team_id in team_ids}
+        longest_home = {
+            team_id: self._streak(schedule.matchups, team_id, home=True)
+            for team_id in team_ids
+        }
+        longest_away = {
+            team_id: self._streak(schedule.matchups, team_id, home=False)
+            for team_id in team_ids
+        }
+        repeats = {
+            team_id: self._repeat_count(schedule.matchups, team_id)
+            for team_id in team_ids
+        }
         divisional = {
-            week: sum(1 for game in schedule.matchups if game.week == week and game.divisional)
+            week: sum(
+                1
+                for game in schedule.matchups
+                if game.week == week and game.divisional
+            )
             for week in range(1, schedule.config.regular_season_weeks + 1)
         }
-        balances = [schedule.home_games[team_id] - schedule.away_games[team_id] for team_id in team_ids]
+        balances = [
+            schedule.home_games[team_id] - schedule.away_games[team_id]
+            for team_id in team_ids
+        ]
         spread = max(balances) - min(balances) if balances else 0
-        penalty = spread + sum(max(0, value - 2) for value in longest_home.values())
-        penalty += sum(max(0, value - 2) for value in longest_away.values())
-        penalty += pstdev(list(divisional.values())) if len(divisional) > 1 else 0.0
+
+        # Streaks and divisional clustering should influence quality without
+        # making an otherwise valid schedule score zero. Divisional repeats are
+        # required by league rules, so repeat_opponents is descriptive rather
+        # than a penalty by itself.
+        streak_excess = sum(max(0, value - 2) for value in longest_home.values())
+        streak_excess += sum(max(0, value - 2) for value in longest_away.values())
+        divisional_variance = (
+            pstdev(list(divisional.values())) if len(divisional) > 1 else 0.0
+        )
+        penalty = (5.0 * spread) + (2.5 * streak_excess) + (2.0 * divisional_variance)
+
         return ScheduleAnalytics(
             home_away_spread=spread,
             longest_home_streak=longest_home,
             longest_away_streak=longest_away,
             repeat_opponents=repeats,
             divisional_games_by_week=divisional,
-            score=round(max(0.0, 100.0 - 10.0 * penalty), 2),
+            score=round(max(1.0, 100.0 - penalty), 2),
         )
 
     @staticmethod
-    def _streak(games: tuple[ScheduledMatchup, ...], team_id: str, *, home: bool) -> int:
+    def _streak(
+        games: tuple[ScheduledMatchup, ...],
+        team_id: str,
+        *,
+        home: bool,
+    ) -> int:
         result = 0
         current = 0
-        for game in sorted((g for g in games if team_id in {g.home_team_id, g.away_team_id}), key=lambda g: g.week):
-            matched = game.home_team_id == team_id if home else game.away_team_id == team_id
+        for game in sorted(
+            (
+                game
+                for game in games
+                if team_id in {game.home_team_id, game.away_team_id}
+            ),
+            key=lambda game: game.week,
+        ):
+            matched = (
+                game.home_team_id == team_id
+                if home
+                else game.away_team_id == team_id
+            )
             current = current + 1 if matched else 0
             result = max(result, current)
         return result
 
     @staticmethod
-    def _repeat_count(games: tuple[ScheduledMatchup, ...], team_id: str) -> int:
+    def _repeat_count(
+        games: tuple[ScheduledMatchup, ...],
+        team_id: str,
+    ) -> int:
         opponents: dict[str, int] = {}
         for game in games:
             if team_id == game.home_team_id:
@@ -113,7 +157,11 @@ class PlayoffBracketGenerator:
                 PlayoffMatchup(2, None, None, "Semifinal 2"),
                 PlayoffMatchup(3, None, None, "Championship"),
             )
-        return PlayoffBracket(playoff_teams, self.SUPPORTED[playoff_teams], games)
+        return PlayoffBracket(
+            playoff_teams,
+            self.SUPPORTED[playoff_teams],
+            games,
+        )
 
 
 @dataclass(frozen=True)
@@ -139,14 +187,21 @@ class JsonLeagueHistoryRepository:
     def save(self, archive: LeagueSeasonArchive) -> Path:
         path = self.directory / archive.league_id / f"{archive.season}.json"
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(archive.to_dict(), indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        path.write_text(
+            json.dumps(archive.to_dict(), indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
         return path
 
     def load(self, league_id: str, season: int) -> LeagueSeasonArchive:
         path = self.directory / league_id / f"{season}.json"
         if not path.exists():
-            raise FileNotFoundError(f"league season not found: {league_id}/{season}")
-        return LeagueSeasonArchive(**json.loads(path.read_text(encoding="utf-8")))
+            raise FileNotFoundError(
+                f"league season not found: {league_id}/{season}"
+            )
+        return LeagueSeasonArchive(
+            **json.loads(path.read_text(encoding="utf-8"))
+        )
 
     def seasons(self, league_id: str) -> list[int]:
         directory = self.directory / league_id
@@ -160,12 +215,24 @@ class CommissionerInsightService:
         if not standings:
             return ["No standings data is available yet."]
         insights: list[str] = []
-        by_points = sorted(standings, key=lambda row: float(row.get("points_for", 0)), reverse=True)
-        by_wins = sorted(standings, key=lambda row: int(row.get("wins", 0)), reverse=True)
+        by_points = sorted(
+            standings,
+            key=lambda row: float(row.get("points_for", 0)),
+            reverse=True,
+        )
+        by_wins = sorted(
+            standings,
+            key=lambda row: int(row.get("wins", 0)),
+            reverse=True,
+        )
         if by_points:
-            insights.append(f"{by_points[0]['team']} leads the league in points scored.")
+            insights.append(
+                f"{by_points[0]['team']} leads the league in points scored."
+            )
         if by_wins:
-            insights.append(f"{by_wins[0]['team']} currently owns the best record.")
+            insights.append(
+                f"{by_wins[0]['team']} currently owns the best record."
+            )
         luck = []
         for row in standings:
             expected = float(row.get("expected_wins", row.get("wins", 0)))
@@ -173,5 +240,8 @@ class CommissionerInsightService:
             luck.append((actual - expected, row["team"]))
         luck.sort(reverse=True)
         if luck and luck[0][0] > 0:
-            insights.append(f"{luck[0][1]} has outperformed expected wins by {luck[0][0]:.1f}.")
+            insights.append(
+                f"{luck[0][1]} has outperformed expected wins by "
+                f"{luck[0][0]:.1f}."
+            )
         return insights
