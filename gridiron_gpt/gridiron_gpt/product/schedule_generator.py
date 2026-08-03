@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from itertools import combinations
 from typing import Iterable
 
@@ -36,17 +36,15 @@ class ScheduleConfig:
         if self.playoff_weeks <= 0:
             raise ValueError("playoff_weeks must be positive")
 
-        divisions: dict[str, int] = Counter(team.division for team in self.teams)
+        divisions = Counter(team.division for team in self.teams)
         if len(divisions) < 2:
             raise ValueError("at least two divisions are required")
         if len(set(divisions.values())) != 1:
             raise ValueError("divisions must contain the same number of teams")
-
-        minimum = self.minimum_regular_season_weeks
-        if self.regular_season_weeks < minimum:
+        if self.regular_season_weeks < self.minimum_regular_season_weeks:
             raise ValueError(
-                f"regular season requires at least {minimum} weeks to play "
-                "division opponents twice and all other teams once"
+                f"regular season requires at least {self.minimum_regular_season_weeks} weeks "
+                "to play division opponents twice and all other teams once"
             )
 
     @property
@@ -55,8 +53,6 @@ class ScheduleConfig:
 
     @property
     def minimum_regular_season_weeks(self) -> int:
-        # Two games against each divisional opponent plus one against every
-        # non-divisional opponent.
         return 2 * (self.division_size - 1) + (len(self.teams) - self.division_size)
 
 
@@ -78,48 +74,39 @@ class GeneratedSchedule:
 
     def games_for(self, team_id: str) -> tuple[ScheduledMatchup, ...]:
         return tuple(
-            game
-            for game in self.matchups
+            game for game in self.matchups
             if team_id in {game.home_team_id, game.away_team_id}
         )
 
 
 class ScheduleGenerator:
-    """Generate deterministic balanced schedules with divisional guarantees."""
+    """Generate deterministic schedules with divisional and balance guarantees."""
 
     def generate(self, config: ScheduleConfig) -> GeneratedSchedule:
-        required_pairs = self._required_pair_counts(config)
+        pair_counts = self._required_pair_counts(config)
         extra_weeks = config.regular_season_weeks - config.minimum_regular_season_weeks
-        if extra_weeks:
-            self._add_balanced_extra_games(config, required_pairs, extra_weeks)
-
-        weekly_pairs = self._factor_into_weeks(config, required_pairs)
-        oriented = self._orient_home_away(config, weekly_pairs)
-
-        home_games = Counter(game.home_team_id for game in oriented)
-        away_games = Counter(game.away_team_id for game in oriented)
-        for team in config.teams:
-            home_games.setdefault(team.team_id, 0)
-            away_games.setdefault(team.team_id, 0)
-
+        self._add_balanced_extra_games(config, pair_counts, extra_weeks)
+        weekly_pairs = self._factor_into_weeks(config, pair_counts)
+        games = self._orient_home_away(config, weekly_pairs)
+        home = Counter(game.home_team_id for game in games)
+        away = Counter(game.away_team_id for game in games)
         return GeneratedSchedule(
             config=config,
-            matchups=tuple(oriented),
+            matchups=tuple(games),
             playoff_weeks=tuple(
                 range(config.playoff_start_week, config.playoff_start_week + config.playoff_weeks)
             ),
-            home_games=dict(home_games),
-            away_games=dict(away_games),
+            home_games={team.team_id: home[team.team_id] for team in config.teams},
+            away_games={team.team_id: away[team.team_id] for team in config.teams},
         )
 
     @staticmethod
     def _required_pair_counts(config: ScheduleConfig) -> dict[tuple[str, str], int]:
-        division_by_team = {team.team_id: team.division for team in config.teams}
-        counts: dict[tuple[str, str], int] = {}
-        for left, right in combinations(sorted(division_by_team), 2):
-            same_division = division_by_team[left] == division_by_team[right]
-            counts[(left, right)] = 2 if same_division else 1
-        return counts
+        divisions = {team.team_id: team.division for team in config.teams}
+        return {
+            (left, right): 2 if divisions[left] == divisions[right] else 1
+            for left, right in combinations(sorted(divisions), 2)
+        }
 
     def _add_balanced_extra_games(
         self,
@@ -127,12 +114,11 @@ class ScheduleGenerator:
         counts: dict[tuple[str, str], int],
         extra_weeks: int,
     ) -> None:
-        """Add full extra rounds while keeping repeat counts as even as possible."""
-        team_ids = sorted(team.team_id for team in config.teams)
-        rounds = self._round_robin_rounds(team_ids)
+        if extra_weeks <= 0:
+            return
+        rounds = self._round_robin_rounds(sorted(team.team_id for team in config.teams))
         for index in range(extra_weeks):
-            for left, right in rounds[index % len(rounds)]:
-                pair = tuple(sorted((left, right)))
+            for pair in rounds[index % len(rounds)]:
                 counts[pair] = counts.get(pair, 0) + 1
 
     def _factor_into_weeks(
@@ -141,43 +127,36 @@ class ScheduleGenerator:
         pair_counts: dict[tuple[str, str], int],
     ) -> list[tuple[tuple[str, str], ...]]:
         team_ids = tuple(sorted(team.team_id for team in config.teams))
-        all_matchings = tuple(self._perfect_matchings(team_ids))
-        target_weeks = config.regular_season_weeks
+        matchings = tuple(self._perfect_matchings(team_ids))
         memo: set[tuple[tuple[tuple[str, str], int], ...]] = set()
 
-        def search(
-            remaining: dict[tuple[str, str], int],
-            weeks: list[tuple[tuple[str, str], ...]],
-        ) -> list[tuple[tuple[str, str], ...]] | None:
+        def search(remaining, weeks):
             if not remaining:
-                return weeks if len(weeks) == target_weeks else None
-            if len(weeks) >= target_weeks:
+                return weeks if len(weeks) == config.regular_season_weeks else None
+            if len(weeks) >= config.regular_season_weeks:
                 return None
-
             state = tuple(sorted(remaining.items()))
             if state in memo:
                 return None
             memo.add(state)
 
-            # Start with the most constrained remaining edge.
             edge = min(
                 remaining,
                 key=lambda pair: sum(
-                    1
-                    for matching in all_matchings
-                    if pair in matching and all(remaining.get(item, 0) > 0 for item in matching)
+                    1 for matching in matchings
+                    if pair in matching
+                    and all(remaining.get(item, 0) > 0 for item in matching)
                 ),
             )
             candidates = [
-                matching
-                for matching in all_matchings
-                if edge in matching and all(remaining.get(item, 0) > 0 for item in matching)
+                matching for matching in matchings
+                if edge in matching
+                and all(remaining.get(item, 0) > 0 for item in matching)
             ]
             candidates.sort(
                 key=lambda matching: sum(remaining[item] for item in matching),
                 reverse=True,
             )
-
             for matching in candidates:
                 updated = dict(remaining)
                 for pair in matching:
@@ -213,14 +192,12 @@ class ScheduleGenerator:
     @staticmethod
     def _round_robin_rounds(team_ids: list[str]) -> list[list[tuple[str, str]]]:
         rotating = list(team_ids)
-        rounds: list[list[tuple[str, str]]] = []
+        rounds = []
         for _ in range(len(team_ids) - 1):
-            rounds.append(
-                [
-                    tuple(sorted((rotating[index], rotating[-index - 1])))
-                    for index in range(len(team_ids) // 2)
-                ]
-            )
+            rounds.append([
+                tuple(sorted((rotating[index], rotating[-index - 1])))
+                for index in range(len(team_ids) // 2)
+            ])
             rotating = [rotating[0], rotating[-1], *rotating[1:-1]]
         return rounds
 
@@ -229,23 +206,20 @@ class ScheduleGenerator:
         config: ScheduleConfig,
         weekly_pairs: list[tuple[tuple[str, str], ...]],
     ) -> list[ScheduledMatchup]:
-        division_by_team = {team.team_id: team.division for team in config.teams}
+        divisions = {team.team_id: team.division for team in config.teams}
         home = Counter()
         away = Counter()
         divisional_seen = Counter()
-        games: list[ScheduledMatchup] = []
+        games = []
 
         for week, pairs in enumerate(weekly_pairs, start=1):
             for left, right in pairs:
-                divisional = division_by_team[left] == division_by_team[right]
                 pair = tuple(sorted((left, right)))
-
+                divisional = divisions[left] == divisions[right]
                 if divisional:
-                    # The two guaranteed divisional meetings are exact reversals.
-                    if divisional_seen[pair] % 2 == 0:
-                        home_team, away_team = pair
-                    else:
-                        away_team, home_team = pair
+                    home_team, away_team = (
+                        pair if divisional_seen[pair] % 2 == 0 else (pair[1], pair[0])
+                    )
                     divisional_seen[pair] += 1
                 else:
                     left_balance = home[left] - away[left]
@@ -254,61 +228,61 @@ class ScheduleGenerator:
                         home_team, away_team = left, right
                     elif right_balance < left_balance:
                         home_team, away_team = right, left
-                    elif (week + sum(ord(char) for char in left)) % 2 == 0:
+                    elif (week + sum(map(ord, left))) % 2 == 0:
                         home_team, away_team = left, right
                     else:
                         home_team, away_team = right, left
-
                 home[home_team] += 1
                 away[away_team] += 1
-                games.append(
-                    ScheduledMatchup(
-                        week=week,
-                        home_team_id=home_team,
-                        away_team_id=away_team,
-                        divisional=divisional,
-                    )
-                )
+                games.append(ScheduledMatchup(week, home_team, away_team, divisional))
 
-        # Home/away totals in an odd-length season must differ by exactly one.
-        if any(abs(home[team.team_id] - away[team.team_id]) > 1 for team in config.teams):
-            games = self._rebalance_cross_division_games(config, games)
-        return games
+        return self._rebalance_cross_division_games(config, games)
 
     @staticmethod
     def _rebalance_cross_division_games(
         config: ScheduleConfig,
         games: list[ScheduledMatchup],
     ) -> list[ScheduledMatchup]:
+        """Flip cross-division games until total home/away imbalance is minimal."""
         adjusted = list(games)
-        for _ in range(len(adjusted) * 2):
-            home = Counter(game.home_team_id for game in adjusted)
-            away = Counter(game.away_team_id for game in adjusted)
-            surplus = {
-                team.team_id
-                for team in config.teams
-                if home[team.team_id] - away[team.team_id] > 1
-            }
-            deficit = {
-                team.team_id
-                for team in config.teams
-                if away[team.team_id] - home[team.team_id] > 1
-            }
-            if not surplus and not deficit:
-                return adjusted
-            changed = False
+        team_ids = [team.team_id for team in config.teams]
+
+        def balances(candidate_games):
+            home = Counter(game.home_team_id for game in candidate_games)
+            away = Counter(game.away_team_id for game in candidate_games)
+            return {team_id: home[team_id] - away[team_id] for team_id in team_ids}
+
+        def penalty(values):
+            return sum(abs(value) for value in values.values())
+
+        while True:
+            current = balances(adjusted)
+            current_penalty = penalty(current)
+            best_index = None
+            best_penalty = current_penalty
+
             for index, game in enumerate(adjusted):
                 if game.divisional:
                     continue
-                if game.home_team_id in surplus and game.away_team_id in deficit:
-                    adjusted[index] = ScheduledMatchup(
-                        week=game.week,
-                        home_team_id=game.away_team_id,
-                        away_team_id=game.home_team_id,
-                        divisional=False,
-                    )
-                    changed = True
-                    break
-            if not changed:
+                proposed = dict(current)
+                proposed[game.home_team_id] -= 2
+                proposed[game.away_team_id] += 2
+                proposed_penalty = penalty(proposed)
+                if proposed_penalty < best_penalty:
+                    best_penalty = proposed_penalty
+                    best_index = index
+
+            if best_index is None:
                 break
+            game = adjusted[best_index]
+            adjusted[best_index] = ScheduledMatchup(
+                week=game.week,
+                home_team_id=game.away_team_id,
+                away_team_id=game.home_team_id,
+                divisional=False,
+            )
+
+        final = balances(adjusted)
+        if any(abs(value) > 1 for value in final.values()):
+            raise ValueError("unable to balance home and away games within one game")
         return adjusted
