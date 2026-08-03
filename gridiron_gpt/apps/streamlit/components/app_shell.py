@@ -138,6 +138,7 @@ def _inject_shell_styles() -> None:
 
         .gridiron-nav { display: flex; flex-direction: column; gap: 0.3rem; }
         .gridiron-nav-section {
+            position: relative;
             border: 1px solid transparent;
             border-radius: 9px;
             overflow: hidden;
@@ -155,6 +156,7 @@ def _inject_shell_styles() -> None:
             font-size: 0.93rem;
             font-weight: 650;
             text-decoration: none !important;
+            cursor: pointer;
             transition: background 170ms ease, color 170ms ease, box-shadow 170ms ease;
         }
         .gridiron-nav-heading::before {
@@ -174,20 +176,24 @@ def _inject_shell_styles() -> None:
             font-size: 0.72rem;
             transition: transform 170ms ease, color 170ms ease;
         }
-        .gridiron-nav-section:hover {
+        .gridiron-nav-section:hover,
+        .gridiron-nav-section:focus-within {
             border-color: rgba(97, 255, 145, 0.48);
             box-shadow: 0 0 14px rgba(57, 222, 111, 0.16);
         }
-        .gridiron-nav-section:hover .gridiron-nav-heading {
+        .gridiron-nav-section:hover .gridiron-nav-heading,
+        .gridiron-nav-section:focus-within .gridiron-nav-heading {
             color: #ffffff !important;
             background: linear-gradient(90deg, rgba(38, 132, 73, 0.96), rgba(55, 201, 105, 0.72));
             box-shadow: inset 0 0 18px rgba(113, 255, 157, 0.13);
         }
-        .gridiron-nav-section:hover .gridiron-nav-heading::before {
+        .gridiron-nav-section:hover .gridiron-nav-heading::before,
+        .gridiron-nav-section:focus-within .gridiron-nav-heading::before {
             background: #79ff9f;
             box-shadow: 0 0 10px rgba(121, 255, 159, 0.85);
         }
         .gridiron-nav-section:hover .gridiron-nav-chevron,
+        .gridiron-nav-section:focus-within .gridiron-nav-chevron,
         .gridiron-nav-section.active .gridiron-nav-chevron {
             color: #ffffff;
             transform: rotate(90deg);
@@ -202,18 +208,14 @@ def _inject_shell_styles() -> None:
         }
 
         .gridiron-nav-children {
-            max-height: 0;
-            opacity: 0;
-            overflow: hidden;
-            padding: 0 0.34rem;
-            background: #070b08;
-            transition: max-height 210ms ease, opacity 150ms ease, padding 210ms ease;
-        }
-        .gridiron-nav-section:hover .gridiron-nav-children,
-        .gridiron-nav-section.active .gridiron-nav-children {
-            max-height: 22rem;
-            opacity: 1;
+            display: none;
             padding: 0.34rem;
+            background: #070b08;
+        }
+        .gridiron-nav-section:hover > .gridiron-nav-children,
+        .gridiron-nav-section:focus-within > .gridiron-nav-children,
+        .gridiron-nav-section.active > .gridiron-nav-children {
+            display: block;
         }
         .gridiron-nav-child {
             position: relative;
@@ -360,7 +362,7 @@ def build_navigation_markup(selected_page: str) -> str:
 
         section_class = "gridiron-nav-section active" if active_section else "gridiron-nav-section"
         sections.append(
-            f'<div class="{section_class}">'
+            f'<div class="{section_class}" tabindex="0">'
             f'<div class="gridiron-nav-heading">'
             f'<span>{escape(section["icon"])}</span>'
             f'<span>{escape(section["label"])}</span>'
