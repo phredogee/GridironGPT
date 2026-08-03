@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-import csv
-import io
-
 import streamlit as st
 
+from gridiron_gpt.product.schedule_email import (
+    ScheduleEmailRequest,
+    SmtpScheduleMailer,
+    schedule_csv,
+)
 from gridiron_gpt.product.schedule_generator import (
     ScheduleConfig,
     ScheduleGenerator,
@@ -33,20 +35,12 @@ def _team_rows(team_count: int, division_count: int) -> list[ScheduleTeam]:
     return teams
 
 
-def _csv(schedule, name_by_id: dict[str, str]) -> str:
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(["Week", "Away Team", "Home Team", "Divisional"])
-    for game in schedule.matchups:
-        writer.writerow(
-            [
-                game.week,
-                name_by_id[game.away_team_id],
-                name_by_id[game.home_team_id],
-                "Yes" if game.divisional else "No",
-            ]
-        )
-    return output.getvalue()
+def _recipient_tuple(raw: str) -> tuple[str, ...]:
+    return tuple(
+        value.strip()
+        for value in raw.replace(";", ",").split(",")
+        if value.strip()
+    )
 
 
 def render_schedule_generator() -> None:
@@ -132,10 +126,55 @@ def render_schedule_generator() -> None:
     ]
     st.dataframe(balance_rows, use_container_width=True, hide_index=True)
 
+    csv_data = schedule_csv(schedule, name_by_id)
     st.download_button(
         "Download Schedule CSV",
-        data=_csv(schedule, name_by_id),
+        data=csv_data,
         file_name="fantasy_schedule.csv",
         mime="text/csv",
         use_container_width=True,
     )
+
+    st.divider()
+    st.markdown("### Email Schedule")
+    st.caption(
+        "Sends the generated schedule as a CSV attachment using the server's "
+        "configured SMTP provider. Credentials are read from environment variables."
+    )
+
+    recipients = st.text_area(
+        "Recipients",
+        placeholder="commissioner@example.com, owner2@example.com",
+        help="Separate multiple addresses with commas or semicolons.",
+    )
+    subject = st.text_input("Subject", value="Fantasy Football League Schedule")
+    message = st.text_area(
+        "Message",
+        value=(
+            "The regular-season schedule is attached. "
+            f"Playoffs run from Week {schedule.playoff_weeks[0]} "
+            f"through Week {schedule.playoff_weeks[-1]}."
+        ),
+    )
+    reply_to = st.text_input("Reply-to address (optional)")
+
+    if st.button("Email Schedule", use_container_width=True):
+        try:
+            request = ScheduleEmailRequest(
+                recipients=_recipient_tuple(recipients),
+                subject=subject,
+                message=message,
+                reply_to=reply_to.strip() or None,
+            )
+            result = SmtpScheduleMailer.from_environment().send(
+                request,
+                schedule,
+                name_by_id,
+            )
+        except (ValueError, RuntimeError, OSError) as exc:
+            st.error(str(exc))
+        else:
+            st.success(
+                f"Schedule sent to {result.recipient_count} recipient"
+                f"{'s' if result.recipient_count != 1 else ''}."
+            )
