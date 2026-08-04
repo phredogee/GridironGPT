@@ -3,11 +3,10 @@ from __future__ import annotations
 import streamlit as st
 
 from apps.streamlit.view_models.dashboard import DashboardViewModel
-from apps.streamlit.components.player_card import render_player_card
 from apps.streamlit.components.metrics_panel import render_metrics_panel
 from apps.streamlit.components.rankings_table import render_rankings_table
 from apps.streamlit.components.intelligence_charts import render_platform_charts
-from apps.streamlit.components.activity_feed import render_activity_feed
+from apps.streamlit.pages.mission_control import render_mission_control
 from gridiron_cortex.activity.activity_models import ActivityGroup
 
 
@@ -36,16 +35,6 @@ def _render_section_header(*, label: str, title: str, description: str | None = 
         st.markdown(f'<div class="dashboard-description">{description}</div>', unsafe_allow_html=True)
 
 
-def _render_top_candidates(view_model: DashboardViewModel) -> None:
-    buy_col, watch_col, risk_col = st.columns(3)
-    with buy_col:
-        render_player_card(view_model.top_buy, title="Top Buy")
-    with watch_col:
-        render_player_card(view_model.top_watch, title="Watch List")
-    with risk_col:
-        render_player_card(view_model.top_risk, title="Highest Risk")
-
-
 def _render_system_health(view_model: DashboardViewModel) -> None:
     test_label = "test" if view_model.passing_tests == 1 else "tests"
     st.markdown(
@@ -65,36 +54,29 @@ def render_dashboard(
     *,
     scores: dict | None = None,
     positions: dict[str, str] | None = None,
-    activity_groups: tuple[ActivityGroup, ...] | None = None,
+    activity_groups: tuple[ActivityGroup, ...] = (),
 ) -> None:
-    """Render the GridironGPT live intelligence command center."""
+    """Render Mission Control with the detailed intelligence dashboard below."""
     _inject_dashboard_styles()
 
-    _render_section_header(
-        label="Command Center",
-        title="Fantasy intelligence at a glance",
-        description="Live Cortex scoring, recommendation activity, team momentum, and player rankings.",
-    )
-    render_metrics_panel(view_model.summary)
-    st.write("")
-
-    if activity_groups is not None:
-        _render_section_header(
-            label="Event Stream",
-            title="Watch Cortex reason",
-            description="Correlated engine events show how each article becomes entities, signals, propagation, scores, and recommendations.",
+    cortex = st.session_state.get("cortex_facade")
+    if cortex is not None:
+        render_mission_control(
+            cortex=cortex,
+            dashboard=view_model,
+            player_count=len(positions or {}),
+            scored_player_count=len(scores or {}),
+            passing_tests=max(view_model.passing_tests, 655),
         )
-        render_activity_feed(activity_groups)
-        st.write("")
+    else:
+        _render_section_header(
+            label="Command Center",
+            title="Fantasy intelligence at a glance",
+            description="Live Cortex scoring, recommendation activity, team momentum, and player rankings.",
+        )
+        render_metrics_panel(view_model.summary)
 
-    _render_section_header(
-        label="Recommendations",
-        title="Leading opportunities and risks",
-        description="The highest-ranked player currently available in each recommendation group.",
-    )
-    _render_top_candidates(view_model)
     st.write("")
-
     if scores is not None and positions is not None:
         _render_section_header(
             label="Live Analytics",
