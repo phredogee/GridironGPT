@@ -6,6 +6,7 @@ from apps.streamlit.pages.cortex_explorer import render_cortex_explorer
 from apps.streamlit.components.intelligence_charts import render_confidence_panel, render_cortex_timeline, render_signal_breakdown
 from gridiron_cortex.presentation.builders.dashboard_builder import build_dashboard_view_model
 from gridiron_cortex.facade import CortexFacade
+from gridiron_cortex.activity.activity_feed_service import ActivityFeedService
 from gridiron_cortex.advisor.roster_advisor import RosterAdvisor
 from apps.streamlit.pages.cortex_inspector import render_cortex_inspector
 from gridiron_gpt.intelligence.signal_impact_api import generate_signal_impacts
@@ -85,14 +86,19 @@ def _render_advisor_result(question: str, response: dict, ranked) -> None:
 
 st.set_page_config(page_title="GridironGPT | Cortex Engine", page_icon="C", layout="wide", initial_sidebar_state="expanded")
 apply_cortex_theme(); catalog = load_player_catalog(); player_names = sorted({item["player"] for item in catalog}); positions = {item["player"]: item.get("position", "UNK") for item in catalog}; scores = apply_adjusted_scores(calculate_player_scores()); ranked_players = sorted(scores.items(), key=lambda item: item[1].get("adjusted_score", item[1]["score"]), reverse=True); ranked_players = [((player, team), data) for (player, team), data in ranked_players if data["score"] != 0]
-roster_advisor = RosterAdvisor(ranked_players=ranked_players, recommendation_from_score=recommendation_from_score, confidence_from_signals=confidence_from_signals); cortex = CortexFacade(); buy_players = [((player, team), data) for (player, team), data in ranked_players if recommendation_from_score(data.get("adjusted_score", data["score"])) == "BUY"]; watch_players = [((player, team), data) for (player, team), data in ranked_players if recommendation_from_score(data.get("adjusted_score", data["score"])) == "WATCH"]; risk_players = [((player, team), data) for (player, team), data in ranked_players if recommendation_from_score(data.get("adjusted_score", data["score"])) in ["MONITOR", "SELL"]]
+roster_advisor = RosterAdvisor(ranked_players=ranked_players, recommendation_from_score=recommendation_from_score, confidence_from_signals=confidence_from_signals)
+if "cortex_facade" not in st.session_state:
+    st.session_state.cortex_facade = CortexFacade()
+cortex = st.session_state.cortex_facade
+activity_feed = ActivityFeedService(cortex.event_bus)
+buy_players = [((player, team), data) for (player, team), data in ranked_players if recommendation_from_score(data.get("adjusted_score", data["score"])) == "BUY"]; watch_players = [((player, team), data) for (player, team), data in ranked_players if recommendation_from_score(data.get("adjusted_score", data["score"])) == "WATCH"]; risk_players = [((player, team), data) for (player, team), data in ranked_players if recommendation_from_score(data.get("adjusted_score", data["score"])) in ["MONITOR", "SELL"]]
 version = get_project_version(); selected_page = render_sidebar(version=version); page_metadata = NAVIGATION_ITEMS[selected_page]; render_shell_header(page_name=page_metadata["label"], description=page_metadata["description"]); st.divider()
 
 if selected_page == "Inspector": render_cortex_inspector(cortex)
 if selected_page == "Ingestion": render_ingestion_status()
-if selected_page == "Explorer": render_cortex_explorer(player_names)
+if selected_page == "Explorer": render_cortex_explorer(player_names, cortex)
 if selected_page == "Dashboard":
-    dashboard = build_dashboard_view_model(ranked_players=ranked_players, buy_players=buy_players, watch_players=watch_players, risk_players=risk_players, player_count=len(player_names), recommendation_from_score=recommendation_from_score, confidence_from_signals=confidence_from_signals, passing_tests=619); render_dashboard(dashboard, scores=scores, positions=positions)
+    dashboard = build_dashboard_view_model(ranked_players=ranked_players, buy_players=buy_players, watch_players=watch_players, risk_players=risk_players, player_count=len(player_names), recommendation_from_score=recommendation_from_score, confidence_from_signals=confidence_from_signals, passing_tests=652); render_dashboard(dashboard, scores=scores, positions=positions, activity_groups=activity_feed.latest(limit=10))
 if selected_page == "Advisor":
     st.markdown("### Ask Cortex"); st.caption("Ask football questions in natural language."); question = st.text_area("Ask Gridiron Cortex", placeholder="Examples:\n• Who should I start this week?\n• Best waiver pickup over the next 3 weeks?\n• Should I trade Tank Dell?\n• Best DST to stream next week?", height=140)
     if st.button("Ask Cortex", use_container_width=True):
