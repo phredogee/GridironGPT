@@ -64,9 +64,10 @@ def render_dashboard(
         render_mission_control(
             cortex=cortex,
             dashboard=view_model,
+            scores=scores or {},
             player_count=len(positions or {}),
             scored_player_count=len(scores or {}),
-            passing_tests=max(view_model.passing_tests, 655),
+            passing_tests=max(view_model.passing_tests, 658),
         )
     else:
         _render_section_header(
