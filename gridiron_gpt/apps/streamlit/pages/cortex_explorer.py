@@ -73,6 +73,34 @@ def _render_evidence(signals: list[dict]) -> None:
         st.caption(f"{signal.get('source', 'Unknown source')} · {signal.get('impact', 'unknown')} · {value:+.2f}")
 
 
+def _propagation_for_player(
+    cortex: CortexFacade,
+    entity_id: str,
+    signals: list[dict],
+):
+    if not signals:
+        return None, 0.0, []
+
+    strongest_signal = max(
+        signals,
+        key=lambda signal: abs(float(signal.get("value", 0.0))),
+    )
+    source_impact = float(strongest_signal.get("value", 0.0))
+    if source_impact == 0:
+        return strongest_signal, source_impact, []
+
+    candidates = cortex.propagation_planner.plan(
+        source_entity_id=entity_id,
+        max_depth=2,
+        source_impact_score=source_impact,
+    )
+    return (
+        strongest_signal,
+        source_impact,
+        build_propagation_rows(candidates, source_impact),
+    )
+
+
 def _render_relationships(cortex: CortexFacade, player_name: str, signals: list[dict]) -> None:
     relationships = cortex.knowledge.get_current_relationships()
     entity_id = find_entity_id(player_name, relationships)
@@ -81,7 +109,39 @@ def _render_relationships(cortex: CortexFacade, player_name: str, signals: list[
         st.info("No active Cortex graph relationships were found for this player.")
         return
 
-    graph = build_explorer_graph(entity_id, relationships, max_neighbors=10)
+    strongest_signal, source_impact, propagation = _propagation_for_player(
+        cortex,
+        entity_id,
+        signals,
+    )
+    impact_by_entity = {
+        row.entity_id: row.projected_impact for row in propagation
+    }
+    weight_by_entity = {
+        row.entity_id: row.propagation_weight for row in propagation
+    }
+    hops_by_entity = {
+        row.entity_id: row.hop_count for row in propagation
+    }
+    path_by_entity = {
+        row.entity_id: row.reason for row in propagation
+    }
+
+    graph = build_explorer_graph(
+        entity_id,
+        relationships,
+        max_neighbors=10,
+        impact_by_entity=impact_by_entity,
+        weight_by_entity=weight_by_entity,
+        hops_by_entity=hops_by_entity,
+        path_by_entity=path_by_entity,
+        source_impact=source_impact if strongest_signal else None,
+        seed_headline=(
+            strongest_signal.get("headline", "Signal")
+            if strongest_signal
+            else None
+        ),
+    )
     render_knowledge_graph(graph)
 
     st.markdown("### Relationship Network")
@@ -101,19 +161,10 @@ def _render_relationships(cortex: CortexFacade, player_name: str, signals: list[
     if not signals:
         st.info("No recent scored signal is available to seed propagation.")
         return
-
-    strongest_signal = max(signals, key=lambda signal: abs(float(signal.get("value", 0.0))))
-    source_impact = float(strongest_signal.get("value", 0.0))
     if source_impact == 0:
         st.info("The strongest recent signal is neutral, so there is no propagated impact to display.")
         return
 
-    candidates = cortex.propagation_planner.plan(
-        source_entity_id=entity_id,
-        max_depth=2,
-        source_impact_score=source_impact,
-    )
-    propagation = build_propagation_rows(candidates, source_impact)
     st.caption(f"Seed signal: {strongest_signal.get('headline', 'Signal')} ({source_impact:+.2f})")
     if not propagation:
         st.info("No downstream propagation candidates were produced from this signal.")
