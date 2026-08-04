@@ -1,0 +1,138 @@
+from __future__ import annotations
+
+from collections.abc import Iterable
+from hashlib import sha256
+from typing import Any
+
+from gridiron_cortex.events.event import CortexEvent
+from gridiron_cortex.events.event_types import CortexEventType
+from gridiron_cortex.replay.replay_models import ReplayDecision, ReplayStage, ReplayStep
+
+
+_STAGE_BY_EVENT = {
+    CortexEventType.ARTICLE_RECEIVED: ReplayStage.INGESTED,
+    CortexEventType.PLAYER_RESOLVED: ReplayStage.RESOLVED,
+    CortexEventType.SIGNAL_CREATED: ReplayStage.UNDERSTOOD,
+    CortexEventType.SIGNAL_UPDATED: ReplayStage.UNDERSTOOD,
+    CortexEventType.PROPAGATION_COMPLETED: ReplayStage.PROPAGATED,
+    CortexEventType.SCORE_UPDATED: ReplayStage.SCORED,
+    CortexEventType.RECOMMENDATION_CHANGED: ReplayStage.RECOMMENDED,
+    CortexEventType.CONFIDENCE_UPDATED: ReplayStage.CONFIDENCE,
+}
+
+_STAGE_ORDER = {stage: index for index, stage in enumerate(ReplayStage)}
+
+
+def _number(payload: dict[str, Any], *keys: str) -> float | None:
+    for key in keys:
+        value = payload.get(key)
+        if isinstance(value, (int, float)):
+            return float(value)
+    return None
+
+
+def _summary(event: CortexEvent) -> str:
+    payload = dict(event.payload)
+    if event.event_type == CortexEventType.ARTICLE_RECEIVED:
+        return str(payload.get("headline") or "Evidence entered Cortex")
+    if event.event_type == CortexEventType.PLAYER_RESOLVED:
+        confidence = _number(payload, "confidence")
+        suffix = f" · {confidence:.0%}" if confidence is not None and confidence <= 1 else ""
+        return f"{event.entity_name or 'Entity resolved'}{suffix}"
+    if event.event_type in {CortexEventType.SIGNAL_CREATED, CortexEventType.SIGNAL_UPDATED}:
+        impact = _number(payload, "impact_score") or 0.0
+        category = str(payload.get("signal_category") or payload.get("signal_type") or "general")
+        return f"{category.replace('_', ' ').title()} signal · {impact:+.2f}"
+    if event.event_type == CortexEventType.PROPAGATION_COMPLETED:
+        return f"{int(payload.get('impact_count', 0))} downstream impact(s)"
+    if event.event_type == CortexEventType.SCORE_UPDATED:
+        delta = _number(payload, "score_delta", "delta")
+        return f"Score changed {delta:+.2f}" if delta is not None else "Scorecard updated"
+    if event.event_type == CortexEventType.RECOMMENDATION_CHANGED:
+        action = payload.get("recommendation") or payload.get("action") or payload.get("label")
+        return str(action or "Recommendation updated")
+    if event.event_type == CortexEventType.CONFIDENCE_UPDATED:
+        confidence = _number(payload, "confidence")
+        if confidence is None:
+            return "Confidence recalculated"
+        return f"Confidence {confidence:.0%}" if confidence <= 1 else f"Confidence {confidence:.0f}%"
+    return event.event_type.value.replace("_", " ").title()
+
+
+def _title(stage: ReplayStage) -> str:
+    return {
+        ReplayStage.INGESTED: "Article received",
+        ReplayStage.RESOLVED: "Player resolved",
+        ReplayStage.UNDERSTOOD: "Signal understood",
+        ReplayStage.PROPAGATED: "Impact propagated",
+        ReplayStage.SCORED: "Score updated",
+        ReplayStage.RECOMMENDED: "Recommendation produced",
+        ReplayStage.CONFIDENCE: "Confidence updated",
+    }[stage]
+
+
+def build_replay_decision(events: Iterable[CortexEvent]) -> ReplayDecision | None:
+    ordered = sorted(events, key=lambda event: event.timestamp)
+    if not ordered:
+        return None
+
+    correlation_ids = {event.correlation_id for event in ordered}
+    if len(correlation_ids) != 1:
+        raise ValueError("replay events must share one correlation_id")
+
+    steps = tuple(
+        sorted(
+            (
+                ReplayStep(
+                    event_id=event.event_id,
+                    timestamp=event.timestamp,
+                    stage=_STAGE_BY_EVENT[event.event_type],
+                    event_type=event.event_type,
+                    title=_title(_STAGE_BY_EVENT[event.event_type]),
+                    summary=_summary(event),
+                    entity_id=event.entity_id,
+                    entity_name=event.entity_name,
+                    source=event.source,
+                    details=dict(event.payload),
+                )
+                for event in ordered
+                if event.event_type in _STAGE_BY_EVENT
+            ),
+            key=lambda step: (_STAGE_ORDER[step.stage], step.timestamp),
+        )
+    )
+    if not steps:
+        return None
+
+    article = next((event for event in ordered if event.event_type == CortexEventType.ARTICLE_RECEIVED), ordered[0])
+    recommendation_event = next(
+        (event for event in reversed(ordered) if event.event_type == CortexEventType.RECOMMENDATION_CHANGED),
+        None,
+    )
+    confidence_event = next(
+        (event for event in reversed(ordered) if event.event_type == CortexEventType.CONFIDENCE_UPDATED),
+        None,
+    )
+    resolved = next((event for event in ordered if event.event_type == CortexEventType.PLAYER_RESOLVED), None)
+    recommendation_payload = dict(recommendation_event.payload) if recommendation_event else {}
+    confidence_payload = dict(confidence_event.payload) if confidence_event else {}
+    confidence = _number(confidence_payload, "confidence")
+    decision_seed = f"{ordered[0].correlation_id}:{recommendation_event.event_id if recommendation_event else ordered[-1].event_id}"
+
+    return ReplayDecision(
+        decision_id=sha256(decision_seed.encode("utf-8")).hexdigest()[:12],
+        correlation_id=ordered[0].correlation_id,
+        headline=str(dict(article.payload).get("headline") or article.entity_name or "Cortex decision"),
+        started_at=min(event.timestamp for event in ordered),
+        completed_at=max(event.timestamp for event in ordered),
+        steps=steps,
+        entity_name=(resolved.entity_name if resolved else article.entity_name),
+        source=article.source,
+        recommendation=str(
+            recommendation_payload.get("recommendation")
+            or recommendation_payload.get("action")
+            or recommendation_payload.get("label")
+            or ""
+        ) or None,
+        confidence=confidence,
+    )
