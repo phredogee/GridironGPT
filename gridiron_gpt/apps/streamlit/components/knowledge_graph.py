@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from collections import defaultdict
 from html import escape
 from urllib.parse import quote
 
@@ -9,23 +10,32 @@ import streamlit as st
 from gridiron_gpt.intelligence.explorer_graph import ExplorerGraph
 
 
-def _node_positions(graph: ExplorerGraph) -> dict[str, tuple[float, float]]:
-    width = 900.0
-    height = 520.0
-    center = (width / 2, height / 2)
-    positions = {graph.root_id: center}
-    neighbors = [node for node in graph.nodes if not node.is_root]
-    if not neighbors:
-        return positions
+_GRAPH_WIDTH = 1040.0
+_GRAPH_HEIGHT = 680.0
 
-    radius_x = 330.0
-    radius_y = 185.0
-    for index, node in enumerate(neighbors):
-        angle = (2 * math.pi * index / len(neighbors)) - math.pi / 2
-        positions[node.entity_id] = (
-            center[0] + radius_x * math.cos(angle),
-            center[1] + radius_y * math.sin(angle),
-        )
+
+def _node_positions(graph: ExplorerGraph) -> dict[str, tuple[float, float]]:
+    center = (_GRAPH_WIDTH / 2, _GRAPH_HEIGHT / 2)
+    positions = {graph.root_id: center}
+    by_depth: dict[int, list] = defaultdict(list)
+    for node in graph.nodes:
+        if not node.is_root:
+            by_depth[max(1, node.depth)].append(node)
+
+    for depth, nodes in sorted(by_depth.items()):
+        radius_x = min(430.0, 190.0 + (depth - 1) * 120.0)
+        radius_y = min(275.0, 105.0 + (depth - 1) * 78.0)
+        offset = (depth % 2) * (math.pi / max(1, len(nodes)))
+        for index, node in enumerate(nodes):
+            angle = (
+                (2 * math.pi * index / max(1, len(nodes)))
+                - math.pi / 2
+                + offset
+            )
+            positions[node.entity_id] = (
+                center[0] + radius_x * math.cos(angle),
+                center[1] + radius_y * math.sin(angle),
+            )
     return positions
 
 
@@ -49,16 +59,16 @@ def _edge_style(impact: float | None, confidence: float) -> tuple[str, str]:
 
 
 def render_knowledge_graph(graph: ExplorerGraph) -> None:
-    """Render a clickable, propagation-aware Cortex knowledge graph."""
+    """Render a clickable, multi-hop, propagation-aware graph."""
     st.markdown("### Knowledge Graph")
     if len(graph.nodes) <= 1 or not graph.edges:
-        st.info("No active graph connections are available for this player.")
+        st.info("No graph connections match the current filters.")
         return
 
     if graph.seed_headline and graph.source_impact is not None:
         st.caption(
             f"Propagation seed: {graph.seed_headline} "
-            f"({graph.source_impact:+.2f})"
+            f"({graph.source_impact:+.2f}) · depth {graph.max_depth}"
         )
 
     positions = _node_positions(graph)
@@ -69,7 +79,7 @@ def render_knowledge_graph(graph: ExplorerGraph) -> None:
             continue
         x1, y1 = positions[edge.source_id]
         x2, y2 = positions[edge.target_id]
-        width = 1.5 + max(0.0, edge.strength) * 3.2
+        width = 1.4 + max(0.0, edge.strength) * 3.0
         label_x = (x1 + x2) / 2
         label_y = (y1 + y2) / 2
         stroke, marker = _edge_style(edge.projected_impact, edge.confidence)
@@ -91,8 +101,8 @@ def render_knowledge_graph(graph: ExplorerGraph) -> None:
             f'<g><title>{edge_title}</title>'
             f'<line x1="{x1:.1f}" y1="{y1:.1f}" x2="{x2:.1f}" y2="{y2:.1f}" '
             f'stroke="{stroke}" stroke-width="{width:.2f}" marker-end="url(#{marker})" />'
-            f'<rect x="{label_x - 66:.1f}" y="{label_y - 13:.1f}" width="132" height="22" rx="7" fill="#07130b" opacity="0.95" />'
-            f'<text x="{label_x:.1f}" y="{label_y + 2:.1f}" text-anchor="middle" fill="#c3cec7" font-size="10.5">'
+            f'<rect x="{label_x - 62:.1f}" y="{label_y - 12:.1f}" width="124" height="21" rx="7" fill="#07130b" opacity="0.95" />'
+            f'<text x="{label_x:.1f}" y="{label_y + 2:.1f}" text-anchor="middle" fill="#c3cec7" font-size="10">'
             f'{escape(edge.relationship_type)}{impact_suffix}</text></g>'
         )
 
@@ -103,7 +113,9 @@ def render_knowledge_graph(graph: ExplorerGraph) -> None:
         x, y = positions[node.entity_id]
         fill, stroke, impact_label = _impact_style(node.projected_impact)
         magnitude = abs(node.projected_impact or 0.0)
-        radius = 62 if node.is_root else 46 + min(magnitude, 1.0) * 16
+        radius = 60 if node.is_root else 40 + min(magnitude, 1.0) * 13
+        if node.depth >= 2 and not node.is_root:
+            radius = max(34, radius - 5)
         if node.is_root:
             fill = "#1b7f43"
             stroke = "#b0ffc6"
@@ -116,25 +128,26 @@ def render_knowledge_graph(graph: ExplorerGraph) -> None:
             else ""
         )
         tooltip = escape(
-            f"{node.name} ({node.team or 'UNK'})"
+            f"{node.name} ({node.team or 'UNK'}); graph depth {node.depth}"
             + (
                 f"; {impact_label} projected impact {node.projected_impact:+.3f}"
                 if node.projected_impact is not None
                 else "; no propagated impact on current seed"
             )
             + (
-                f"; {node.hop_count} hop(s)"
+                f"; {node.hop_count} propagation hop(s)"
                 if node.hop_count is not None
                 else ""
             )
         )
         node_markup.append(
             f'<a href="{href}" target="_top"><g><title>{tooltip}</title>'
-            f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{radius:.1f}" fill="{fill}" stroke="{stroke}" stroke-width="2.6" />'
-            f'<text x="{x:.1f}" y="{y - 7:.1f}" text-anchor="middle" fill="#ffffff" font-size="13" font-weight="700">{label}</text>'
-            f'<text x="{x:.1f}" y="{y + 11:.1f}" text-anchor="middle" fill="#b6c3bb" font-size="10.5">{team}</text>'
+            f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{radius:.1f}" fill="{fill}" stroke="{stroke}" stroke-width="2.4" />'
+            f'<text x="{x:.1f}" y="{y - 8:.1f}" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="700">{label}</text>'
+            f'<text x="{x:.1f}" y="{y + 8:.1f}" text-anchor="middle" fill="#b6c3bb" font-size="10">{team}</text>'
+            f'<text x="{x:.1f}" y="{y + 23:.1f}" text-anchor="middle" fill="#85968b" font-size="9.5">hop {node.depth}</text>'
             + (
-                f'<text x="{x:.1f}" y="{y + 29:.1f}" text-anchor="middle" fill="{stroke}" font-size="11.5" font-weight="700">{impact_text}</text>'
+                f'<text x="{x:.1f}" y="{y + 37:.1f}" text-anchor="middle" fill="{stroke}" font-size="10.5" font-weight="700">{impact_text}</text>'
                 if impact_text
                 else ""
             )
@@ -144,7 +157,7 @@ def render_knowledge_graph(graph: ExplorerGraph) -> None:
     st.markdown(
         f"""
         <div style="overflow-x:auto;border:1px solid rgba(82,214,124,.18);border-radius:12px;background:#050906;padding:.4rem;">
-        <svg viewBox="0 0 900 520" width="100%" style="min-width:720px;max-height:560px;">
+        <svg viewBox="0 0 {_GRAPH_WIDTH:.0f} {_GRAPH_HEIGHT:.0f}" width="100%" style="min-width:820px;max-height:700px;">
           <defs>
             <marker id="arrow-positive" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L8,3 z" fill="#69f091" /></marker>
             <marker id="arrow-negative" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L8,3 z" fill="#ff6b78" /></marker>
@@ -158,6 +171,7 @@ def render_knowledge_graph(graph: ExplorerGraph) -> None:
           <span><b style="color:#79ff9f">● Positive</b></span>
           <span><b style="color:#ff6b78">● Negative</b></span>
           <span><b style="color:#a3b0a8">● No current propagated effect</b></span>
+          <span>Rings = graph hops</span>
           <span>Node size = impact magnitude</span>
           <span>Edge width = relationship strength</span>
         </div>
@@ -182,6 +196,12 @@ def render_knowledge_graph(graph: ExplorerGraph) -> None:
             with st.expander(f"{node.name}{team} · {impact:+.3f}"):
                 c1, c2, c3 = st.columns(3)
                 c1.metric("Projected Impact", f"{impact:+.3f}")
-                c2.metric("Propagation Weight", f"{(node.propagation_weight or 0.0):+.3f}")
-                c3.metric("Hops", node.hop_count if node.hop_count is not None else "—")
+                c2.metric(
+                    "Propagation Weight",
+                    f"{(node.propagation_weight or 0.0):+.3f}",
+                )
+                c3.metric(
+                    "Hops",
+                    node.hop_count if node.hop_count is not None else "—",
+                )
                 st.code(node.evidence_path, language=None)
