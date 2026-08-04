@@ -106,3 +106,59 @@ def test_explorer_graph_remains_backward_compatible_without_intelligence():
     assert wr.projected_impact is None
     assert wr.evidence_path is None
     assert graph.source_impact is None
+
+
+def test_explorer_graph_expands_to_multiple_hops():
+    graph = build_explorer_graph(
+        "qb",
+        [
+            relationship("qb", "wr", "throws_to", 0.9, 0.9),
+            relationship("wr", "te", "target_competitor", 0.8, 0.8),
+            relationship("te", "rb", "teammate", 0.7, 0.7),
+        ],
+        max_depth=2,
+    )
+
+    depths = {node.entity_id: node.depth for node in graph.nodes}
+    assert depths == {"qb": 0, "wr": 1, "te": 2}
+    assert "rb" not in depths
+    assert graph.max_depth == 2
+
+
+def test_explorer_graph_filters_relationship_types():
+    graph = build_explorer_graph(
+        "qb",
+        [
+            relationship("qb", "wr", "throws_to", 0.9, 0.9),
+            relationship("qb", "rb", "hands_off_to", 0.8, 0.8),
+        ],
+        relationship_types={"throws_to"},
+    )
+
+    assert {node.entity_id for node in graph.nodes} == {"qb", "wr"}
+    assert {edge.relationship_type for edge in graph.edges} == {"throws_to"}
+
+
+def test_explorer_graph_filters_by_propagation_direction():
+    relationships = [
+        relationship("root", "positive", "throws_to", 0.9, 0.9),
+        relationship("root", "negative", "target_competitor", 0.8, 0.8),
+        relationship("root", "neutral", "teammate", 0.7, 0.7),
+    ]
+    impacts = {"positive": 0.5, "negative": -0.4, "neutral": 0.0}
+
+    positive = build_explorer_graph(
+        "root",
+        relationships,
+        impact_by_entity=impacts,
+        impact_direction="positive",
+    )
+    negative = build_explorer_graph(
+        "root",
+        relationships,
+        impact_by_entity=impacts,
+        impact_direction="negative",
+    )
+
+    assert {node.entity_id for node in positive.nodes} == {"root", "positive"}
+    assert {node.entity_id for node in negative.nodes} == {"root", "negative"}
