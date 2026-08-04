@@ -7,6 +7,8 @@ from apps.streamlit.components.player_card import render_player_card
 from apps.streamlit.components.metrics_panel import render_metrics_panel
 from apps.streamlit.components.rankings_table import render_rankings_table
 from apps.streamlit.components.intelligence_charts import render_platform_charts
+from apps.streamlit.components.activity_feed import render_activity_feed
+from gridiron_cortex.activity.activity_models import ActivityGroup
 
 
 def _inject_dashboard_styles() -> None:
@@ -63,6 +65,7 @@ def render_dashboard(
     *,
     scores: dict | None = None,
     positions: dict[str, str] | None = None,
+    activity_groups: tuple[ActivityGroup, ...] | None = None,
 ) -> None:
     """Render the GridironGPT live intelligence command center."""
     _inject_dashboard_styles()
@@ -74,6 +77,15 @@ def render_dashboard(
     )
     render_metrics_panel(view_model.summary)
     st.write("")
+
+    if activity_groups is not None:
+        _render_section_header(
+            label="Event Stream",
+            title="Watch Cortex reason",
+            description="Correlated engine events show how each article becomes entities, signals, propagation, scores, and recommendations.",
+        )
+        render_activity_feed(activity_groups)
+        st.write("")
 
     _render_section_header(
         label="Recommendations",
