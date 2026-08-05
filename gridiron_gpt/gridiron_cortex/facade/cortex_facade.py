@@ -4,6 +4,7 @@ from typing import Any
 
 from gridiron_cortex.engine.cortex_engine import CortexEngine
 from gridiron_cortex.events.event_bus import CortexEventBus
+from gridiron_cortex.events.jsonl_event_store import JsonlCortexEventStore
 from gridiron_cortex.events.pipeline_publisher import PipelineEventPublisher
 from gridiron_cortex.understand.entity_resolver import EntityResolver
 from gridiron_cortex.explain.explanation_engine import ExplanationEngine
@@ -48,15 +49,13 @@ class CortexFacade:
         player_scorecard_repository = JsonPlayerScorecardRepository(
             data_path / "player_scorecards.jsonl"
         )
-        evidence_aggregator = EvidenceAggregator(
-            repository=canonical_event_repository,
-        )
+        evidence_aggregator = EvidenceAggregator(repository=canonical_event_repository)
         evidence_analyzer = EvidenceAnalyzer()
-        relationship_repository = JsonRelationshipRepository(
-            data_path / "relationships.jsonl"
-        )
+        relationship_repository = JsonRelationshipRepository(data_path / "relationships.jsonl")
 
-        self.event_bus = event_bus or CortexEventBus()
+        self.event_bus = event_bus or CortexEventBus(
+            store=JsonlCortexEventStore(data_path / "cortex_events.jsonl")
+        )
         self.pipeline_events = PipelineEventPublisher(
             self.event_bus,
             engine_version=engine_version,
@@ -67,25 +66,17 @@ class CortexFacade:
             player_scorecard_repository=player_scorecard_repository,
             relationship_repository=relationship_repository,
         )
-        self.knowledge_graph = KnowledgeGraphManager(
-            knowledge_service=self.knowledge
-        )
-        self.propagation_planner = PropagationPlanner(
-            knowledge_graph=self.knowledge_graph,
-        )
+        self.knowledge_graph = KnowledgeGraphManager(knowledge_service=self.knowledge)
+        self.propagation_planner = PropagationPlanner(knowledge_graph=self.knowledge_graph)
         self.engine = CortexEngine(
             entity_resolver=EntityResolver(),
-            player_enrichment=PlayerEnrichmentService(
-                catalog_loader=catalog_loader,
-            ),
+            player_enrichment=PlayerEnrichmentService(catalog_loader=catalog_loader),
             signal_processor=SignalProcessor(),
             relationship_engine=RelationshipEngine(
                 repository=relationship_repository,
                 propagation_planner=self.propagation_planner,
             ),
-            score_engine=ScoreEngine(
-                repository=player_scorecard_repository,
-            ),
+            score_engine=ScoreEngine(repository=player_scorecard_repository),
             recommendation_engine=RecommendationEngine(),
             explanation_engine=ExplanationEngine(),
             player_snapshot_factory=PlayerSnapshotFactory(),
@@ -105,16 +96,8 @@ class CortexFacade:
         self.pipeline_events.publish_result(result, correlation_id)
         return result
 
-    def get_event_history(
-        self,
-        *,
-        entity_id: str | None = None,
-        correlation_id: str | None = None,
-    ):
-        return self.event_bus.history(
-            entity_id=entity_id,
-            correlation_id=correlation_id,
-        )
+    def get_event_history(self, *, entity_id: str | None = None, correlation_id: str | None = None):
+        return self.event_bus.history(entity_id=entity_id, correlation_id=correlation_id)
 
     def get_latest_events(self, limit: int = 20):
         return self.event_bus.latest(limit)
@@ -131,34 +114,20 @@ class CortexFacade:
             "incoming": self.knowledge.get_incoming_relationships(entity_id),
         }
 
-    def get_entity_graph(
-        self,
-        entity_id: str,
-        max_depth: int = 2,
-        direction: str = "outgoing",
-    ):
+    def get_entity_graph(self, entity_id: str, max_depth: int = 2, direction: str = "outgoing"):
         return self.knowledge_graph.build_graph(
             root_entity_id=entity_id,
             max_depth=max_depth,
             direction=direction,
         )
 
-    def get_affected_entities(
-        self,
-        entity_id: str,
-        max_depth: int = 2,
-    ):
+    def get_affected_entities(self, entity_id: str, max_depth: int = 2):
         return self.knowledge_graph.get_affected_entities(
             source_entity_id=entity_id,
             max_depth=max_depth,
         )
 
-    def find_relationship_paths(
-        self,
-        source_entity_id: str,
-        target_entity_id: str,
-        max_depth: int = 3,
-    ):
+    def find_relationship_paths(self, source_entity_id: str, target_entity_id: str, max_depth: int = 3):
         return self.knowledge_graph.find_paths(
             source_entity_id=source_entity_id,
             target_entity_id=target_entity_id,
