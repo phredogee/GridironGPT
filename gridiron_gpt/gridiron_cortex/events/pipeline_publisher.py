@@ -23,15 +23,17 @@ def _serialize(value: Any) -> Any:
     return str(value)
 
 
+def _first_confidence(*values: Any) -> float | None:
+    for value in values:
+        if isinstance(value, (int, float)):
+            return float(value)
+    return None
+
+
 class PipelineEventPublisher:
     """Publish one correlated event trail for a Cortex engine run."""
 
-    def __init__(
-        self,
-        bus: CortexEventBus,
-        *,
-        engine_version: str = "cortex-dev",
-    ) -> None:
+    def __init__(self, bus: CortexEventBus, *, engine_version: str = "cortex-dev") -> None:
         self.bus = bus
         self.engine_version = engine_version
 
@@ -93,17 +95,14 @@ class PipelineEventPublisher:
                 )
             )
 
-        impacts = getattr(result, "impacts", ()) or ()
+        impacts = tuple(getattr(result, "impacts", ()) or ())
         if impacts:
             published.append(
                 self._publish(
                     CortexEventType.PROPAGATION_COMPLETED,
                     correlation_id=correlation_id,
                     source=source,
-                    payload={
-                        "impact_count": len(impacts),
-                        "impacts": _serialize(impacts),
-                    },
+                    payload={"impact_count": len(impacts), "impacts": _serialize(impacts)},
                 )
             )
 
@@ -119,7 +118,8 @@ class PipelineEventPublisher:
                 )
             )
 
-        for recommendation in getattr(result, "recommendations", ()) or ():
+        recommendations = tuple(getattr(result, "recommendations", ()) or ())
+        for recommendation in recommendations:
             published.append(
                 self._publish(
                     CortexEventType.RECOMMENDATION_CHANGED,
@@ -132,11 +132,16 @@ class PipelineEventPublisher:
             )
 
         confidence_result = getattr(result, "confidence_result", None)
-        if confidence_result is not None or signal is not None:
-            confidence = (
-                getattr(confidence_result, "final_confidence", None)
-                if confidence_result is not None
-                else getattr(signal, "confidence", None)
+        if confidence_result is not None or signal is not None or recommendations:
+            calibrated = getattr(confidence_result, "final_confidence", None) if confidence_result is not None else None
+            signal_confidence = getattr(signal, "confidence", None) if signal is not None else None
+            recommendation_confidences = [
+                getattr(item, "confidence", None) for item in recommendations
+            ]
+            confidence = _first_confidence(
+                calibrated,
+                *recommendation_confidences,
+                signal_confidence,
             )
             published.append(
                 self._publish(
@@ -145,6 +150,9 @@ class PipelineEventPublisher:
                     source=source,
                     payload={
                         "confidence": confidence,
+                        "calibrated_confidence": calibrated,
+                        "recommendation_confidences": recommendation_confidences,
+                        "signal_confidence": signal_confidence,
                         "calibration": _serialize(confidence_result),
                     },
                 )
