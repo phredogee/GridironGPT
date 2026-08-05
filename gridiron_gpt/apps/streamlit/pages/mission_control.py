@@ -10,6 +10,7 @@ from apps.streamlit.components.knowledge_graph import render_knowledge_graph
 from apps.streamlit.components.player_card import render_player_card
 from apps.streamlit.components.replay_timeline import replay_option_label, render_replay_timeline
 from gridiron_cortex.activity.activity_feed_service import ActivityFeedService
+from gridiron_cortex.models.raw_event import RawEvent
 from gridiron_cortex.replay.replay_engine import ReplayEngine
 from gridiron_gpt.intelligence.explorer_graph import build_explorer_graph
 from gridiron_gpt.intelligence.explorer_relationships import build_propagation_rows, find_entity_id
@@ -46,6 +47,37 @@ def select_default_context(contexts: tuple[MissionPlayerContext, ...]) -> Missio
     if not contexts:
         return None
     return next((item for item in contexts if item.entity_id), None) or contexts[0]
+
+
+def build_raw_event_from_signal(context: MissionPlayerContext, signal: Mapping) -> RawEvent:
+    """Normalize one real scored-news signal back into a Cortex input event."""
+    value = float(signal.get("value", 0.0) or 0.0)
+    impact = str(signal.get("impact") or "news")
+    source = str(signal.get("source") or "GridironGPT")
+    headline = str(signal.get("headline") or f"{context.player} fantasy update")
+    source_id = signal.get("story_hash") or signal.get("article_id") or signal.get("id") or signal.get("url") or headline
+    sentiment = "positive" if value > 0 else "negative" if value < 0 else "neutral"
+    return RawEvent(
+        headline=headline,
+        source=source,
+        player=context.player,
+        team=context.team,
+        summary=signal.get("summary") or signal.get("description"),
+        event_type=impact,
+        published_at=signal.get("published_at") or signal.get("timestamp") or signal.get("created_at"),
+        url=signal.get("url") or signal.get("link"),
+        sentiment=sentiment,
+        impact_score=value,
+        confidence=signal.get("confidence"),
+        evidence={"source_id": str(source_id), "origin": "mission_control_live_signal"},
+        player_id=context.entity_id,
+        position=signal.get("position"),
+    )
+
+
+def latest_signal(data: Mapping) -> Mapping | None:
+    signals = data.get("signals", []) or []
+    return signals[-1] if signals else None
 
 
 def _inject_styles() -> None:
@@ -88,11 +120,27 @@ def render_mission_control(*, cortex, dashboard, scores: Mapping[tuple[str, str]
     replay_engine = ReplayEngine(cortex.event_bus)
 
     selected_context = None
+    selected_data = None
     if default_context is not None:
         labels = [f"{item.player} · {item.team}" for item in contexts]
         selected_label = st.selectbox("Mission Control player context", labels, index=contexts.index(default_context), key="mission_control_player")
         selected_context = contexts[labels.index(selected_label)]
+        selected_data = scores[(selected_context.player, selected_context.team)]
         st.markdown(f'<div class="mc-context"><div class="mc-context-name">{selected_context.player} · {selected_context.team}</div><div class="mc-context-meta">Cortex score {selected_context.score:+.2f} · {selected_context.signal_count} signals · {"Graph connected" if selected_context.entity_id else "No graph entity"}</div></div>', unsafe_allow_html=True)
+
+        signal = latest_signal(selected_data)
+        if signal is not None:
+            st.caption(f"Latest scored evidence: {signal.get('source', 'Unknown source')} · {signal.get('headline', 'Signal')}")
+            if st.button("Process latest signal through Cortex", key="mission_control_process_live_signal"):
+                before = len(replay_engine.latest(limit=None))
+                cortex.process_event(build_raw_event_from_signal(selected_context, signal))
+                after = len(replay_engine.latest(limit=None))
+                if after > before:
+                    newest = replay_engine.latest(limit=1)[0]
+                    st.success(f"Cortex decision created: {newest.decision_id}. Replay is now available below.")
+                else:
+                    st.info("Cortex processed the signal, but it did not create a new replay decision. It may already have been processed.")
+                st.rerun()
 
     left, right = st.columns([.92, 1.08])
     with left:
@@ -107,7 +155,7 @@ def render_mission_control(*, cortex, dashboard, scores: Mapping[tuple[str, str]
         if selected_context is None:
             st.info("No scored player context is available.")
         else:
-            graph = _graph_for_context(cortex, selected_context, scores[(selected_context.player, selected_context.team)])
+            graph = _graph_for_context(cortex, selected_context, selected_data)
             if graph is None: st.info("This player is not currently represented in the Cortex relationship graph.")
             else: render_knowledge_graph(graph)
 
@@ -115,7 +163,7 @@ def render_mission_control(*, cortex, dashboard, scores: Mapping[tuple[str, str]
     st.markdown('<div class="mc-panel-title">Cortex Replay</div>', unsafe_allow_html=True)
     decisions = replay_engine.by_player(selected_context.player, limit=10) if selected_context else replay_engine.latest(limit=10)
     if not decisions:
-        st.info("No replayable Cortex decisions are available for this context yet. Process new events to build a decision trail.")
+        st.info("No replayable Cortex decisions are available for this context yet. Use 'Process latest signal through Cortex' above to create one from real scored evidence.")
     else:
         decision_labels = [replay_option_label(decision) for decision in decisions]
         selected_decision_label = st.selectbox("Replay decision", decision_labels, key="mission_control_replay_decision")
