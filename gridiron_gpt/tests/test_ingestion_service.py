@@ -18,12 +18,14 @@ class FakeSourceAdapter(SourceAdapter):
     ):
         self._source_name = source_name
         self._records = records
+        self.fetch_calls = 0
 
     @property
     def source_name(self) -> str:
         return self._source_name
 
     def fetch(self) -> list[SourceRecord]:
+        self.fetch_calls += 1
         return self._records
 
 
@@ -120,3 +122,39 @@ def test_ingestion_service_handles_empty_source():
     events = IngestionService().ingest(adapter)
 
     assert events == []
+
+
+def test_ingestion_service_sends_normalized_events_to_processor():
+    adapter = FakeSourceAdapter(
+        source_name="Test Source",
+        records=[
+            SourceRecord(source="Test Source", headline="Player One update.", player="Player One"),
+            SourceRecord(source="Test Source", headline="Player Two update.", player="Player Two"),
+        ],
+    )
+    processed = []
+
+    events = IngestionService(event_processor=processed.append).ingest(adapter)
+
+    assert processed == events
+    assert [event.player for event in processed] == ["Player One", "Player Two"]
+
+
+def test_ingestion_processor_failure_is_fail_open_and_does_not_refetch_provider():
+    adapter = FakeSourceAdapter(
+        source_name="Test Source",
+        records=[SourceRecord(source="Test Source", headline="Player update.", player="Player One")],
+    )
+
+    def unavailable_processor(event):
+        raise RuntimeError("Cortex unavailable")
+
+    result = IngestionService(
+        event_processor=unavailable_processor,
+        max_attempts=3,
+        backoff_seconds=0,
+    ).ingest_result(adapter)
+
+    assert result.success is True
+    assert result.event_count == 1
+    assert adapter.fetch_calls == 1
