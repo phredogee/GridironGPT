@@ -36,7 +36,6 @@ def replay_option_label(decision: ReplayDecision) -> str:
 
 
 def build_replay_snapshot(decision: ReplayDecision, step_number: int) -> ReplaySnapshot:
-    """Reconstruct the observable decision state through one replay step."""
     if not decision.steps:
         raise ValueError("Replay decision has no steps")
     bounded = min(max(1, int(step_number)), len(decision.steps))
@@ -55,6 +54,22 @@ def build_replay_snapshot(decision: ReplayDecision, step_number: int) -> ReplayS
     return ReplaySnapshot(bounded, len(decision.steps), visible[-1], visible, stages, recommendation, confidence)
 
 
+def replay_position(current: int, total: int, action: str) -> int:
+    """Return the bounded replay position for a navigation action."""
+    if total < 1:
+        raise ValueError("Replay must contain at least one step")
+    current = min(max(1, int(current)), total)
+    actions = {
+        "beginning": 1,
+        "previous": current - 1,
+        "next": current + 1,
+        "end": total,
+    }
+    if action not in actions:
+        raise ValueError(f"Unknown replay action: {action}")
+    return min(max(1, actions[action]), total)
+
+
 def _confidence_text(value: float) -> str:
     return f"{value:.0%}" if value <= 1 else f"{value:.0f}%"
 
@@ -65,19 +80,32 @@ def render_replay_timeline(decision: ReplayDecision) -> None:
     st.caption(f"Decision ID `{decision.decision_id}` · {status} · {decision.stage_count} lifecycle stages")
     if decision.headline:
         st.markdown(f"**{decision.headline}**")
-
     if not decision.steps:
         st.info("This decision does not contain replay steps.")
         return
+
+    position_key = f"replay_position_{decision.decision_id}"
+    if position_key not in st.session_state:
+        st.session_state[position_key] = len(decision.steps)
+
+    controls = st.columns(4)
+    actions = (
+        ("⏮ Beginning", "beginning"),
+        ("◀ Previous", "previous"),
+        ("Next ▶", "next"),
+        ("End ⏭", "end"),
+    )
+    for column, (label, action) in zip(controls, actions):
+        if column.button(label, key=f"replay_{action}_{decision.decision_id}", use_container_width=True):
+            st.session_state[position_key] = replay_position(st.session_state[position_key], len(decision.steps), action)
 
     step_number = st.slider(
         "Replay position",
         min_value=1,
         max_value=len(decision.steps),
-        value=len(decision.steps),
         step=1,
-        key=f"replay_position_{decision.decision_id}",
-        help="Move backward through Cortex's reasoning state one event at a time.",
+        key=position_key,
+        help="Scrub directly through Cortex's reasoning state, or use the navigation controls above.",
     )
     snapshot = build_replay_snapshot(decision, step_number)
 
