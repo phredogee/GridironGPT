@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any
+import time
 
 import streamlit as st
 
@@ -34,8 +35,15 @@ def replay_position(current: int, total: int, action: str) -> int:
     if action not in actions: raise ValueError(f"Unknown replay action: {action}")
     return min(max(1, actions[action]), total)
 
-def _confidence_text(value: float) -> str: return f"{value:.0%}" if value <= 1 else f"{value:.0f}%"
+def autoplay_next_position(current: int, total: int) -> tuple[int, bool]:
+    """Advance autoplay one frame and report whether playback should continue."""
+    if total < 1: raise ValueError("Replay must contain at least one step")
+    current = min(max(1, int(current)), total)
+    if current >= total: return total, False
+    next_position = current + 1
+    return next_position, next_position < total
 
+def _confidence_text(value: float) -> str: return f"{value:.0%}" if value <= 1 else f"{value:.0f}%"
 def _first(details: dict[str, Any], *keys: str) -> Any:
     for key in keys:
         value = details.get(key)
@@ -43,7 +51,6 @@ def _first(details: dict[str, Any], *keys: str) -> Any:
     return None
 
 def stage_card_fields(step: ReplayStep) -> tuple[tuple[str, str], ...]:
-    """Extract human-readable highlights from a replay event payload."""
     d = dict(step.details); fields: list[tuple[str, str]] = []
     def add(label: str, value: Any, *, number: bool = False, confidence: bool = False) -> None:
         if value is None: return
@@ -78,12 +85,23 @@ def render_replay_timeline(decision: ReplayDecision) -> None:
     status = "Complete" if decision.is_complete else "Partial"; st.caption(f"Decision ID `{decision.decision_id}` · {status} · {decision.stage_count} lifecycle stages")
     if decision.headline: st.markdown(f"**{decision.headline}**")
     if not decision.steps: st.info("This decision does not contain replay steps."); return
-    position_key = f"replay_position_{decision.decision_id}"
+    position_key = f"replay_position_{decision.decision_id}"; playing_key = f"replay_playing_{decision.decision_id}"; speed_key = f"replay_speed_{decision.decision_id}"
     if position_key not in st.session_state: st.session_state[position_key] = len(decision.steps)
-    controls = st.columns(4); actions = (("⏮ Beginning", "beginning"), ("◀ Previous", "previous"), ("Next ▶", "next"), ("End ⏭", "end"))
-    for column, (label, action) in zip(controls, actions):
-        if column.button(label, key=f"replay_{action}_{decision.decision_id}", use_container_width=True): st.session_state[position_key] = replay_position(st.session_state[position_key], len(decision.steps), action)
-    step_number = st.slider("Replay position", min_value=1, max_value=len(decision.steps), step=1, key=position_key, help="Scrub directly through Cortex's reasoning state, or use the navigation controls above.")
+    if playing_key not in st.session_state: st.session_state[playing_key] = False
+    controls = st.columns([1, 1, 1, 1, 1, 1.15])
+    actions = (("⏮ Beginning", "beginning"), ("◀ Previous", "previous"))
+    for column, (label, action) in zip(controls[:2], actions):
+        if column.button(label, key=f"replay_{action}_{decision.decision_id}", use_container_width=True): st.session_state[playing_key] = False; st.session_state[position_key] = replay_position(st.session_state[position_key], len(decision.steps), action)
+    play_label = "⏸ Pause" if st.session_state[playing_key] else "▶ Play"
+    if controls[2].button(play_label, key=f"replay_play_{decision.decision_id}", use_container_width=True):
+        if st.session_state[playing_key]: st.session_state[playing_key] = False
+        else:
+            if st.session_state[position_key] >= len(decision.steps): st.session_state[position_key] = 1
+            st.session_state[playing_key] = True
+    for column, (label, action) in zip(controls[3:5], (("Next ▶", "next"), ("End ⏭", "end"))):
+        if column.button(label, key=f"replay_{action}_{decision.decision_id}", use_container_width=True): st.session_state[playing_key] = False; st.session_state[position_key] = replay_position(st.session_state[position_key], len(decision.steps), action)
+    speed = controls[5].selectbox("Speed", (0.5, 1.0, 1.5, 2.0), index=1, format_func=lambda value: f"{value:g}×", key=speed_key, label_visibility="collapsed")
+    step_number = st.slider("Replay position", min_value=1, max_value=len(decision.steps), step=1, key=position_key, help="Scrub directly through Cortex's reasoning state, or use the playback controls above.")
     snapshot = build_replay_snapshot(decision, step_number)
     c1, c2, c3 = st.columns(3); c1.metric("Playback", f"{snapshot.step_number}/{snapshot.total_steps}"); c2.metric("Current Stage", snapshot.current.stage.value.title()); current_recommendation = snapshot.recommendation or (decision.recommendation if snapshot.step_number == snapshot.total_steps else "Pending"); c3.metric("Recommendation", current_recommendation)
     reached = " → ".join(stage.value.title() for stage in snapshot.reached_stages); st.caption(f"State reached: {reached}")
@@ -99,3 +117,5 @@ def render_replay_timeline(decision: ReplayDecision) -> None:
                 with st.expander("Raw event payload", expanded=False): st.json(dict(step.details), expanded=True)
     hidden = snapshot.total_steps - snapshot.step_number
     if hidden: st.caption(f"{hidden} later replay step{'s' if hidden != 1 else ''} hidden at this playback position.")
+    if st.session_state[playing_key]:
+        next_position, keep_playing = autoplay_next_position(snapshot.step_number, snapshot.total_steps); time.sleep(0.8 / float(speed)); st.session_state[position_key] = next_position; st.session_state[playing_key] = keep_playing; st.rerun()
