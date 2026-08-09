@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import time
 import uuid
 from collections.abc import Callable
@@ -16,13 +17,21 @@ from gridiron_gpt.ingestion.services.ingestion_run_repository import JsonlIngest
 from gridiron_gpt.ingestion.services.provider_health_tracker import ProviderHealthTracker
 from gridiron_gpt.ingestion.sources.base import SourceAdapter
 
+logger = logging.getLogger(__name__)
+
 
 class ProviderTimeoutError(TimeoutError):
     """Raised when a provider fetch exceeds the configured attempt timeout."""
 
 
 class IngestionService:
-    """Coordinate resilient source retrieval, normalization, health, and observability."""
+    """Coordinate resilient source retrieval, normalization, health, and observability.
+
+    An optional event processor can be injected to consume every normalized RawEvent.
+    This is the integration boundary for Cortex. Processor failures are fail-open so a
+    downstream intelligence outage never turns a successful provider fetch into an
+    ingestion failure or causes the provider to be fetched again.
+    """
 
     def __init__(
         self,
@@ -34,6 +43,7 @@ class IngestionService:
         sleep: Callable[[float], None] = time.sleep,
         health_tracker: ProviderHealthTracker | None = None,
         run_repository: JsonlIngestionRunRepository | None = None,
+        event_processor: Callable[[RawEvent], object] | None = None,
         clock: Callable[[], datetime] | None = None,
         monotonic: Callable[[], float] = time.monotonic,
     ):
@@ -51,6 +61,7 @@ class IngestionService:
         self.sleep = sleep
         self.health_tracker = health_tracker or ProviderHealthTracker()
         self.run_repository = run_repository
+        self.event_processor = event_processor
         self.clock = clock or (lambda: datetime.now(timezone.utc))
         self.monotonic = monotonic
 
@@ -78,6 +89,19 @@ class IngestionService:
         self.health_tracker.record(result)
         return result
 
+    def _process_events(self, events: list[RawEvent]) -> None:
+        if self.event_processor is None:
+            return
+        for event in events:
+            try:
+                self.event_processor(event)
+            except Exception:
+                logger.exception(
+                    "Downstream event processor failed for source=%s source_id=%s; ingestion remains successful",
+                    event.source,
+                    event.source_id,
+                )
+
     def ingest_result(self, adapter: SourceAdapter) -> ProviderIngestionResult:
         source_name = adapter.source_name
         last_error: Exception | None = None
@@ -85,14 +109,18 @@ class IngestionService:
             try:
                 records = self._fetch_with_timeout(adapter)
                 events = self.normalizer.normalize_many(records)
-                return self._record_result(ProviderIngestionResult(
-                    source_name=source_name, success=True, events=events,
-                    records_received=len(records), attempts=attempt,
-                ))
             except Exception as exc:
                 last_error = exc
                 if attempt < self.max_attempts:
                     self.sleep(self._retry_delay(exc, attempt))
+                continue
+
+            self._process_events(events)
+            return self._record_result(ProviderIngestionResult(
+                source_name=source_name, success=True, events=events,
+                records_received=len(records), attempts=attempt,
+            ))
+
         assert last_error is not None
         return self._record_result(ProviderIngestionResult(
             source_name=source_name, success=False, attempts=self.max_attempts,
