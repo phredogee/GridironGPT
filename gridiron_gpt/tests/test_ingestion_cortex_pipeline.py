@@ -40,15 +40,26 @@ class FakeRSSAdapter(SourceAdapter):
         ]
 
 
-def test_ingestion_pipeline_reaches_cortex(
+def test_ingestion_pipeline_automatically_reaches_cortex(
     tmp_path: Path,
 ):
-    ingestion = IngestionService()
+    cortex = CortexFacade(
+        data_directory=tmp_path,
+    )
+    processed_results = []
+
+    def process_event(event):
+        result = cortex.process_event(event)
+        processed_results.append(result)
+        return result
+
+    ingestion = IngestionService(event_processor=process_event)
     adapter = FakeRSSAdapter()
 
     events = ingestion.ingest(adapter)
 
     assert len(events) == 1
+    assert len(processed_results) == 1
 
     event = events[0]
 
@@ -60,13 +71,8 @@ def test_ingestion_pipeline_reaches_cortex(
     assert event.impact_score is None
     assert event.confidence is None
 
-    cortex = CortexFacade(
-        data_directory=tmp_path,
-    )
-
-    result = cortex.process_event(event)
-
-    # Cortex performs interpretation.
+    # Cortex processing is triggered automatically at the normalized-event boundary.
+    result = processed_results[0]
     assert result.signal is not None
     assert result.signal.impact_score > 0
     assert result.signal.sentiment == "positive"
