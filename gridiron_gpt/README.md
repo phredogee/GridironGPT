@@ -1,261 +1,140 @@
 <p align="center">
-  <img
-    src="assets/banners/cortex_engine_banner.png"
-    alt="Gridiron Cortex Engine"
-    width="100%"
-  >
+  <img src="assets/banners/cortex_engine_banner.png" alt="Gridiron Cortex Engine" width="100%">
 </p>
 
+# GridironGPT
 
+**Fantasy Football Intelligence Platform powered by Gridiron Cortex**
 
+GridironGPT converts NFL news and structured football evidence into persistent, explainable fantasy-football intelligence. The application owns football-domain workflows and presentation; **Gridiron Cortex** owns reusable intelligence processing, scoring, propagation, recommendations, explanations, and decision history.
 
----
-
-# 🏈 GridironGPT
-
-![Python](https://img.shields.io/badge/Python-3.11+-blue)
-![Status](https://img.shields.io/badge/Status-Active-brightgreen)
-![License](https://img.shields.io/badge/License-MIT-yellow)
-
-### Fantasy Football Intelligence Platform
-
-**Introducing Gridiron Cortex**
-
-GridironGPT transforms NFL news, injuries, roster movement, and player developments into explainable fantasy football intelligence through a modular AI reasoning engine.
-
----
-
-## Contents
-
-- [Overview](#overview)
-- [Intelligence Pipeline](#-intelligence-pipeline)
-- [Powered by Gridiron Cortex](#-powered-by-gridiron-cortex)
-- [Core Features](#-core-features)
-- [Architecture](#-architecture)
-- [Technology Stack](#-technology-stack)
-- [Project Structure](#-project-structure)
-- [Getting Started](#getting-started)
-- [Usage](#usage)
-- [Roadmap](#-roadmap)
-- [License](#license)
-
----
-
-## Overview
-
-GridironGPT continuously monitors NFL news and football data, transforming raw information into structured intelligence for fantasy football managers.
-
-Rather than relying solely on rankings or keyword matching, the platform evaluates evidence, calibrates confidence, propagates impacts across related players and teams, predicts downstream effects, and produces explainable recommendations.
-
-At the heart of the platform is **Gridiron Cortex**, a modular intelligence engine designed for scalable AI reasoning.
-
-
-## 🚧 Current Status
-
-GridironGPT is under active development.
-
-Recent milestones include:
-
-- ✅ Gridiron Cortex intelligence engine
-- ✅ Evidence aggregation
-- ✅ Confidence calibration
-- ✅ Prediction engine
-- ✅ Historical player scorecards
-- 🚧 Multi-source ingestion expansion
-- 🚧 Knowledge graph enrichment
-
----
-
-## 🧠 Intelligence Pipeline
+## v1.0 Intelligence Pipeline
 
 ```text
-    ┌───────────┐
-    │ NFL News  │
-    └─────┬─────┘
-          │
-          ▼
-┌────────────────────┐
-│ Evidence Analysis  │
-└─────────┬──────────┘
-          │
-          ▼
-┌────────────────────┐
-│ Confidence Engine  │
-└─────────┬──────────┘
-          │
-          ▼
-┌────────────────────┐
-│ Entity Resolution  │
-└─────────┬──────────┘
-          │
-          ▼
-┌────────────────────┐
-│ Signal Processing  │
-└─────────┬──────────┘
-          │
-          ▼
-┌────────────────────┐
-│ Relationship Graph │
-└─────────┬──────────┘
-          │
-          ▼
-┌────────────────────┐
-│ Score Engine       │
-└─────────┬──────────┘
-          │
-          ▼
-┌────────────────────┐
-│ Prediction Engine  │
-└─────────┬──────────┘
-          │
-          ▼
-┌────────────────────┐
-│ Recommendation AI  │
-└─────────┬──────────┘
-          │
-          ▼
-┌────────────────────┐
-│ Explainable Output │
-└────────────────────┘
+NFL Providers
+    ↓
+Provider Adapters
+    ↓
+IngestionService
+    ↓
+Normalize + Deduplicate
+    ↓
+RawEvent
+    ↓
+Gridiron Cortex
+    ↓
+Resolve → Classify → Propagate → Score
+    ↓
+Recommend → Explain
+    ↓
+Event Bus + Persistent Scorecards
+    ↓
+Replay / Dashboard / Advisor / Explorer / Inspector
 ```
----
 
-## 🧠 Powered by Gridiron Cortex
+Runtime ingestion automatically forwards normalized events into Cortex through an injected event-processor boundary. If Cortex is temporarily unavailable, ingestion remains fail-open so a successful provider fetch is not incorrectly retried.
 
-<p align="center">
-  <img src="assets/banners/cortex_engine_design_and_vatiations.png" width="90%">
-</p>
-Gridiron Cortex is the intelligence engine that powers GridironGPT.
+## Gridiron Cortex
 
-Rather than relying on simple keyword matching, Cortex transforms football news into structured intelligence through a modular reasoning pipeline.
+Cortex provides the reusable reasoning layer behind GridironGPT:
 
-Its architecture includes:
+- entity resolution
+- signal interpretation
+- evidence and confidence handling
+- football relationship propagation
+- multidimensional scorecards
+- recommendations
+- explanations and evidence chains
+- event-bus observability
+- persisted decision history
+- Replay reconstruction
 
-- Evidence aggregation
-- Confidence calibration
-- Entity resolution
-- Signal propagation
-- Knowledge graph reasoning
-- Prediction engine
-- Recommendation engine
-- Explainable AI
+## Product Surfaces
 
----
+- **Dashboard** — recommendation metrics, rankings, momentum, and activity
+- **Advisor** — natural-language fantasy questions with evidence
+- **Players** — score, confidence, trend, momentum, and recent signals
+- **Cortex Explorer** — player dossiers and knowledge-graph views
+- **Cortex Inspector** — diagnostic event processing through the real facade
+- **Ingestion Status** — provider health and run history
+- **Replay / Mission Control** — persisted decision-trail inspection
+- **Commissioner Suite** — configurable league and scheduling workflows
 
-## ✨ Core Features
+## Persistence and Replay
 
-- 📰 Multi-source NFL news ingestion
-- 🧠 AI-powered evidence analysis
-- 📈 Confidence calibration
-- 👤 Player and team entity resolution
-- 🔗 Relationship propagation
-- 📊 Historical score tracking
-- 🎯 Prediction engine
-- 💡 Explainable recommendations
-- 📚 Knowledge graph integration
-- ⚡ Modular Cortex architecture
+Cortex persists core engine artifacts through repository-backed JSON/JSONL implementations during local development. Event history and player scorecards survive application restarts.
 
----
+A production-path integration test verifies:
 
-## 🏗️ Architecture
+```text
+Provider record
+    ↓
+Runtime ingestion
+    ↓
+Cortex decision
+    ↓
+Event + scorecard persistence
+    ↓
+Application restart
+    ↓
+Replay reconstruction
+```
 
-GridironGPT is organized into independent components that separate data ingestion, intelligence processing, prediction, and presentation.
+Replay rebuilds the prior decision from persisted correlated events rather than reprocessing the original article.
 
-This modular architecture allows new data sources, reasoning engines, and user interfaces to be added with minimal impact on the rest of the platform.
+## Quality Baseline
 
-*Architecture diagram coming soon.*
+Current verified regression checkpoint:
 
----
+```text
+702 passed
+```
 
-## 🛠 Technology Stack
-
-### Artificial Intelligence
-
-- Ollama
-- Large Language Models (LLMs)
-- Retrieval-Augmented Generation (RAG)
-- Knowledge Graphs
-- Rule-Based Reasoning
-
-### Backend
-
-- Python
-- Streamlit
-- FAISS
-- JSON
-- RSS
-
-### Development
-
-- Git
-- GitHub
-- pytest
-
----
-
-## 📁 Project Structure
+## Project Structure
 
 ```text
 gridiron_gpt/
-├── gridiron_cortex/    # Intelligence engine
-├── data_ingest/        # NFL news ingestion
-├── semantic/           # Embeddings & retrieval
-├── pipelines/          # Processing workflows
-├── interface/          # User interfaces
-├── dashboard/          # Streamlit application
-├── tests/              # Automated testing
-└── assets/             # Branding & documentation
+├── apps/streamlit/        # Streamlit pages and reusable components
+├── data_ingest/           # Football data and legacy presentation scoring paths
+├── ingestion/             # Provider adapters, normalization, runtime composition
+├── intelligence/          # Football-product intelligence helpers
+├── gridiron_cortex/       # Cortex engine and facade
+├── docs/                  # Architecture, roadmap, commands, known issues, deployment
+├── scripts/               # Smoke/utility scripts
+├── tests/                 # Regression and integration tests
+├── assets/                # Branding assets
+└── streamlit_app.py       # Main application entry point
 ```
 
----
+## Run Locally
 
-## Getting Started
+From this directory:
 
 ```bash
-git clone git@github.com:phredogee/GridironGPT.git
-
-cd GridironGPT
-
 python -m venv venv
-
 source venv/bin/activate
-
 pip install -r requirements.txt
+pytest -q
+PYTHONPATH=. streamlit run streamlit_app.py
 ```
 
----
+## Core Documentation
 
-## Usage
+Start with:
 
-Launch the Streamlit dashboard:
+- `docs/PROJECT_OVERVIEW.md`
+- `docs/ARCHITECTURE.md`
+- `docs/CHANGELOG.md`
+- `docs/ROADMAP.md`
+- `docs/COMMANDS.md`
+- `docs/KNOWN_ISSUES.md`
+- `docs/DEPLOYMENT_PLAN.md`
 
-```bash
-streamlit run streamlit_app.py
-```
+Specialized documents cover cognitive architecture, ingestion, data pipelines, the domain model, design system, and commissioner features.
 
-Additional CLI commands and API examples will be documented as development progresses.
+## Current Status
 
----
-
-## 🚀 Roadmap
-
-- [x] Multi-source news ingestion
-- [x] Entity resolution
-- [x] Signal propagation
-- [x] Confidence calibration
-- [x] Explainable recommendations
-- [ ] Knowledge graph expansion
-- [ ] Historical trend analysis
-- [ ] Draft intelligence dashboard
-- [ ] Cloud deployment
-
----
-
-## Contributing
-
-GridironGPT is an active project. Contributions, ideas, and discussions are welcome as the platform continues to evolve.
-
----
+The core Cortex architecture is complete for the v1.0 stabilization boundary. Automatic ingestion, persistent scorecards, event-bus decision history, knowledge-graph reasoning, and Replay are implemented. Current work is release validation and later production/cloud hardening rather than adding another major engine subsystem.
 
 ## License
 
