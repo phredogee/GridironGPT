@@ -96,10 +96,11 @@ class IngestionService:
             try:
                 self.event_processor(event)
             except Exception:
+                source_id = event.metadata.get("source_id") if event.metadata else None
                 logger.exception(
                     "Downstream event processor failed for source=%s source_id=%s; ingestion remains successful",
                     event.source,
-                    event.source_id,
+                    source_id,
                 )
 
     def ingest_result(self, adapter: SourceAdapter) -> ProviderIngestionResult:
