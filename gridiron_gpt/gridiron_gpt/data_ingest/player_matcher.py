@@ -46,10 +46,24 @@ def get_alias_index() -> dict[str, list[dict]]:
     return alias_index
 
 
+@lru_cache(maxsize=1)
+def get_sorted_alias_items() -> tuple[tuple[str, tuple[dict, ...]], ...]:
+    """Return aliases longest-first without sorting the full catalog per article."""
+    return tuple(
+        (normalized_alias, tuple(alias_entries))
+        for normalized_alias, alias_entries in sorted(
+            get_alias_index().items(),
+            key=lambda item: len(item[0]),
+            reverse=True,
+        )
+    )
+
+
 def clear_catalog_cache() -> None:
-    """Clear cached catalog and alias index."""
+    """Clear cached catalog and derived alias indexes."""
     get_cached_catalog.cache_clear()
     get_alias_index.cache_clear()
+    get_sorted_alias_items.cache_clear()
 
 
 def normalize_text(value: str) -> str:
@@ -63,11 +77,7 @@ def normalize_text(value: str) -> str:
         "  Tank   Dell " -> "tank dell"
     """
     normalized = value.casefold()
-
-    # Remove English possessive endings before stripping punctuation so
-    # "Samuel's" becomes "samuel" rather than "samuels".
     normalized = re.sub(r"(?<=[a-z0-9])['’]s\b", "", normalized)
-
     normalized = re.sub(r"[.'’`-]", "", normalized)
     normalized = re.sub(r"[^a-z0-9\s]", " ", normalized)
     normalized = re.sub(r"\s+", " ", normalized)
@@ -89,18 +99,7 @@ def calculate_confidence(alias: str) -> float:
             return 0.90
 
         if first_part.upper() in {
-            "QB",
-            "RB",
-            "WR",
-            "TE",
-            "K",
-            "DST",
-            "DL",
-            "DE",
-            "DT",
-            "LB",
-            "CB",
-            "S",
+            "QB", "RB", "WR", "TE", "K", "DST", "DL", "DE", "DT", "LB", "CB", "S",
         }:
             return 0.88
 
@@ -124,14 +123,7 @@ def strip_name_suffix(player_name: str) -> str:
 
 
 def build_default_aliases(player: dict) -> set[str]:
-    """
-    Return stored catalog aliases plus safe generated fallbacks.
-
-    In addition to the official full name, include football-name and
-    suffixless variants. News providers commonly omit Jr./Sr./roman-numeral
-    suffixes, so "Chris Rodriguez" must still resolve to
-    "Chris Rodriguez Jr." without requiring a manual alias.
-    """
+    """Return stored catalog aliases plus safe generated fallbacks."""
     player_name = get_player_name(player)
 
     if not player_name:
@@ -181,11 +173,7 @@ def build_default_aliases(player: dict) -> set[str]:
 
     aliases.update(MANUAL_ALIASES.get(player_name, []))
 
-    return {
-        alias.strip()
-        for alias in aliases
-        if alias and alias.strip()
-    }
+    return {alias.strip() for alias in aliases if alias and alias.strip()}
 
 
 def get_player_name(player: dict) -> str:
@@ -211,11 +199,7 @@ def get_player_team(player: dict) -> str:
 
 def get_player_position(player: dict) -> str:
     """Return the player's position abbreviation."""
-    return str(
-        player.get("position")
-        or player.get("pos")
-        or ""
-    ).strip().upper()
+    return str(player.get("position") or player.get("pos") or "").strip().upper()
 
 
 def text_contains_alias(text: str, alias: str) -> bool:
@@ -264,10 +248,7 @@ def score_match(
     return round(max(0.0, min(confidence, 1.0)), 3)
 
 
-def find_alias_span(
-    normalized_text: str,
-    normalized_alias: str,
-) -> tuple[int, int] | None:
+def find_alias_span(normalized_text: str, normalized_alias: str) -> tuple[int, int] | None:
     """Return the first complete-phrase span for an alias."""
     if not normalized_text or not normalized_alias:
         return None
@@ -296,14 +277,14 @@ def find_player_matches(
     best_matches: dict[str, PlayerMatch] = {}
     accepted_spans: list[tuple[int, int]] = []
 
-    alias_items = sorted(
-        get_alias_index().items(),
-        key=lambda item: len(item[0]),
-        reverse=True,
-    )
-
-    for normalized_alias, alias_entries in alias_items:
+    for normalized_alias, alias_entries in get_sorted_alias_items():
         if not normalized_alias:
+            continue
+
+        # A regex boundary check can only succeed if the literal normalized alias
+        # occurs in the text. This inexpensive C-level substring test eliminates
+        # almost every alias before the more expensive regex search.
+        if normalized_alias not in normalized_text:
             continue
 
         span = find_alias_span(normalized_text, normalized_alias)
@@ -328,7 +309,6 @@ def find_player_matches(
         for entry in alias_entries:
             player = entry["player"]
             alias = entry["alias"]
-
             player_name = get_player_name(player)
 
             if not player_name:
@@ -336,7 +316,6 @@ def find_player_matches(
 
             team = get_player_team(player)
             position = get_player_position(player)
-
             confidence = score_match(
                 alias=alias,
                 player_name=player_name,
@@ -374,7 +353,6 @@ def find_player_matches(
         ),
         reverse=True,
     )
-
     return matches
 
 
@@ -423,11 +401,7 @@ def match_player(
     position_hint: Optional[str] = None,
 ) -> Optional[PlayerMatch]:
     """Backward-compatible entry point for resolving one player."""
-    return resolve_player(
-        text,
-        team_hint=team_hint,
-        position_hint=position_hint,
-    )
+    return resolve_player(text, team_hint=team_hint, position_hint=position_hint)
 
 
 def extract_players_from_text(
