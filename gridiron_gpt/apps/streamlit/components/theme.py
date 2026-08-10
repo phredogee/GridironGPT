@@ -163,24 +163,48 @@ def apply_cortex_theme() -> None:
         div[data-baseweb="input"] > div,
         div[data-baseweb="textarea"] > div,
         div[data-baseweb="select"] > div {
-            background: var(--cortex-surface);
-            border-color: var(--cortex-border);
+            background: var(--cortex-surface) !important;
+            border-color: var(--cortex-border) !important;
             border-radius: 7px;
         }
 
         div[data-baseweb="input"] > div:focus-within,
         div[data-baseweb="textarea"] > div:focus-within,
         div[data-baseweb="select"] > div:focus-within {
-            border-color: var(--gridiron-green-light);
+            border-color: var(--gridiron-green-light) !important;
             box-shadow: 0 0 0 1px rgba(79, 200, 121, 0.20);
         }
 
-        input,
-        textarea,
-        div[data-baseweb="select"] span,
-        div[data-baseweb="select"] input {
+        [data-testid="stTextInput"] input,
+        [data-testid="stTextArea"] textarea,
+        div[data-baseweb="select"] input,
+        div[data-baseweb="select"] span {
+            background: transparent !important;
             color: var(--cortex-text) !important;
             -webkit-text-fill-color: var(--cortex-text) !important;
+        }
+
+        [data-testid="stTextInput"] input:disabled,
+        [data-testid="stTextArea"] textarea:disabled {
+            background: transparent !important;
+            color: var(--cortex-text) !important;
+            -webkit-text-fill-color: var(--cortex-text) !important;
+            opacity: 1 !important;
+        }
+
+        [data-testid="stTextInput"] div[data-baseweb="input"],
+        [data-testid="stTextInput"] div[data-baseweb="input"] > div,
+        [data-testid="stTextArea"] div[data-baseweb="textarea"],
+        [data-testid="stTextArea"] div[data-baseweb="textarea"] > div,
+        [data-testid="stSelectbox"] div[data-baseweb="select"],
+        [data-testid="stSelectbox"] div[data-baseweb="select"] > div {
+            background: var(--cortex-surface) !important;
+        }
+
+        [data-testid="stTextInput"] label,
+        [data-testid="stTextArea"] label,
+        [data-testid="stSelectbox"] label {
+            color: var(--gridiron-green-light) !important;
         }
 
         div[data-baseweb="popover"] ul,
