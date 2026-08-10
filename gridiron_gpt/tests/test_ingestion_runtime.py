@@ -56,3 +56,23 @@ def test_runtime_ingestion_keeps_run_repository_enabled(tmp_path):
     assert summary.events_created == 1
     assert repository.latest() is not None
     assert len(cortex.events) == 1
+
+
+def test_ingest_all_uses_runtime_cortex_pipeline(monkeypatch, tmp_path):
+    import gridiron_gpt.ingestion.ingest as ingest_module
+
+    cortex = FakeCortex()
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(
+        ingest_module,
+        "default_nfl_news_adapters",
+        lambda: [FakeAdapter()],
+    )
+
+    summary = ingest_module.ingest_all(cortex)
+
+    assert summary.success is True
+    assert summary.events_created == 1
+    assert len(cortex.events) == 1
+    assert cortex.events[0].player == "Tank Dell"
+    assert (tmp_path / "data" / "ingestion" / "ingestion_runs.jsonl").exists()
