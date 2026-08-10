@@ -1,98 +1,100 @@
 # GridironGPT Known Issues
 
-This file tracks active limitations only. Completed work belongs in the changelog.
+This file tracks active limitations only. Completed work belongs in `CHANGELOG.md`.
 
-## Live Ingestion Coverage
+## Historical Calibration
 
-Live multi-source ingestion is operational and duplicate-safe. Current gaps are primarily classification/coverage issues rather than pipeline failures.
-
-- Some headlines contain no resolvable player.
-- Rare aliases and deep-roster players can still be missed.
-- Some resolved stories remain `unknown_impact` because the deterministic vocabulary is intentionally conservative.
-- Additional structured injury, transaction, practice, snap, route, and red-zone evidence would improve context.
-
-## Signal / Confidence Calibration
-
-Scoring and confidence are deterministic and explainable, but they have not yet been comprehensively calibrated against historical fantasy outcomes.
+This is the largest remaining intelligence-quality gap. Cortex has not yet been comprehensively replayed against historical NFL seasons to quantify recommendation, prediction, confidence, and propagation accuracy.
 
 Needed work:
-- Historical replay
+- Historical season replay
+- Recommendation-vs-outcome measurement
 - Source reliability measurement
 - Position-specific thresholds
 - Signal-category calibration
 - Confidence-vs-outcome analysis
-- Propagation-effectiveness measurement
+- Relationship-propagation effectiveness
 
-## Advisor Semantics
+## Player and Signal Coverage
 
-Advisor 2.0 now presents live evidence visually, but natural-language intent coverage is still limited.
+The ingestion/runtime pipeline is operational; remaining gaps are mostly interpretation and identity coverage.
 
-- Player-name questions are strongest.
-- Broad start/sit, waiver, trade, DST, and multi-player comparison questions need richer intent routing.
-- Health / Opportunity / Momentum / Risk / Upside bars currently derive from available scored evidence; they should eventually consume the full multidimensional Cortex scorecard directly.
+- Some headlines contain no resolvable player.
+- Rare aliases and deep-roster players can still be missed.
+- Some stories remain `unknown_impact` because deterministic classification is intentionally conservative.
+- Structured injury, transaction, practice, snap, route, and red-zone evidence can be expanded.
 
-## Dashboard
+These are intelligence-quality limitations, not failures of the automatic ingestion → Cortex handoff.
 
-Dashboard 2.0 uses live scored data for recommendations, team momentum, and position rankings.
+## Advisor Intent Coverage
 
-Remaining work:
-- Latest ingestion/headline activity feed
-- Explicit last-refresh timestamp
-- Live ingestion health summary
-- Remove any remaining development-only status values
-- More historical trend visualization as snapshots accumulate
+Advisor behavior is strongest for questions that clearly identify players. Broader fantasy intent still needs richer routing and context.
 
-## Cortex Explorer
+Examples needing continued improvement:
+- start/sit questions
+- waiver prioritization
+- multi-player comparisons
+- trade evaluation
+- DST streaming
+- roster-aware recommendations
 
-A unified player dossier does not yet exist. Player intelligence is currently spread across Players, Trends, Trajectory, Advisor, and Inspector views.
+Some presentation profiles are still derived from the scored-player evidence map rather than consuming every Cortex scorecard dimension directly.
 
-Planned consolidation includes recommendation, score history, confidence history, evidence timeline, availability, opportunity, relationships, propagation, and news.
+## Dual Presentation / Cortex Scoring Paths
+
+Some existing Streamlit product surfaces still consume the established `data_ingest.player_scores` scored-player map while Cortex owns the newer persistent multidimensional intelligence model.
+
+This is intentional for v1.0 compatibility, but post-v1 work should reduce duplicated concepts and move presentation toward engine-owned scorecards where practical. Presentation code must not become an independent reasoning engine.
 
 ## Knowledge Graph UI
 
-Relationship propagation works in the engine, but there is no full interactive graph explorer yet.
+The graph viewer is operational as a first pass, but dense relationship sets can still become visually difficult to inspect.
 
-Needed work:
-- Expand/collapse relationships
-- Relationship type/strength display
-- Propagation direction
-- Evidence-path inspection
-- Player/team navigation
+Future improvements:
+- stronger filtering by relationship type
+- evidence-path inspection
+- historical relationship changes
+- improved navigation for large neighborhoods
+- additional layout controls
 
 ## Commissioner Analytics
 
-The Commissioner Suite supports league settings, schedule generation, balancing, alternatives, rivalry constraints, playoff brackets, draft workflows, exports, and league history.
-
-Visual analytics remain to be added for:
-- Schedule fairness
-- Home/away balance
-- Strength of schedule
-- Luck Index
-- Historical standings/team performance
+The Commissioner Suite supports league settings, scheduling, balancing, alternatives, rivalry constraints, playoff brackets, draft workflows, exports, and league history. Deeper visual analytics remain post-v1 work, including schedule fairness, strength of schedule, Luck Index, and historical team-performance analysis.
 
 ## Persistence / Scalability
 
-The project currently mixes Supabase-backed live article/signal persistence with repository-based JSON/JSONL development state.
+Cortex core state uses repository-backed local JSON/JSONL implementations while parts of the live article/signal path can use Supabase. This is suitable for current local development and v1 architecture validation but is not the final scale-out persistence design.
 
-Long-term work:
-- Consolidate production persistence strategy
-- Transactional writes where required
-- Efficient historical queries
-- Concurrent/background processing
-- Repository migration without coupling Cortex to a database vendor
+Long-term needs:
+- production database strategy
+- transactional writes where required
+- efficient historical queries
+- concurrent/background processing
+- repository migration tooling
+- retention and backup policies
+
+## Multi-process / Multi-user Runtime
+
+The Streamlit application shares one Cortex facade per session, which is correct for the current application model. A future multi-worker or multi-user deployment will need explicit coordination around shared persistent state, concurrent writes, caching, and background ingestion.
 
 ## Provider Reliability
 
-Provider isolation, retry/backoff, timeout handling, and observability exist, but network clients can still have provider-specific limitations. Provider health should eventually be durable across processes and exposed in the production dashboard.
+Provider isolation, retry/backoff, fail-open downstream processing, and ingestion observability exist. Live providers can still experience network, schema, rate-limit, or upstream availability changes outside GridironGPT's control.
 
-## Historical Validation
+Provider health should eventually be durable across processes and surfaced with production alerting.
 
-This remains the largest intelligence-quality gap. Cortex has not yet been comprehensively replayed against historical NFL seasons to quantify recommendation, prediction, confidence, and relationship accuracy.
+## Deployment
+
+The local runtime architecture is validated, but production deployment is not yet the v1.0 acceptance target. Authentication, background scheduling, worker topology, secrets management, monitoring, backups, and deployment automation remain productionization work.
+
+## Branch Reconciliation
+
+`refactor/extract-cortex` contains the current architecture. `main` has a small set of later README-only commits that are not yet reconciled with the branch. Those documentation changes should be reviewed during release preparation rather than merged blindly because they predate the final Cortex architecture.
 
 ## Current Regression Baseline
 
 ```text
-619 passed
+702 passed
 ```
 
-This baseline should remain green through the UI modernization and Cortex Explorer work.
+This is the verified regression boundary entering final v1.0 stabilization.
