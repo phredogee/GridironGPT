@@ -1,256 +1,146 @@
-![Python](https://img.shields.io/badge/Python-3.11-blue)
-![Status](https://img.shields.io/badge/Status-Active-brightgreen)
-![License](https://img.shields.io/badge/License-MIT-yellow)
+# GridironGPT
 
-# 🏈 GridironGPT
+**Fantasy Football Intelligence Platform powered by Gridiron Cortex**
 
-### Fantasy Football Intelligence Platform
+GridironGPT turns NFL news, injuries, roster movement, practice reports, and structured football data into persistent, explainable fantasy-football intelligence.
 
-GridironGPT transforms training camp news, injury reports, roster movement, and player updates into actionable fantasy football insights.
+Instead of treating every headline as an isolated update, GridironGPT uses **Gridiron Cortex** to resolve entities, interpret signals, propagate effects through football relationships, update multidimensional player scorecards, generate recommendations, and preserve the full decision trail for Replay.
 
-Instead of manually tracking dozens of news sources, GridironGPT automatically aggregates signals and helps identify:
-
-🔥 Draft Risers
-⚠ Injury Risks
-📈 Positive Momentum
-📉 Negative Trends
-🏆 Draft-Day Opportunities
-
----
-
-## ✨ What It Does
+## Current v1.0 Architecture
 
 ```text
-NFL News
+NFL Providers
     ↓
-Player Matching
+Provider Adapters
     ↓
-Fantasy Signal Engine
+IngestionService
     ↓
-Draft Intelligence
+Normalize + Deduplicate
+    ↓
+RawEvent
+    ↓
+Gridiron Cortex
+    ↓
+Entity Resolution
+    ↓
+Signal Processing
+    ↓
+Knowledge Graph Propagation
+    ↓
+Scorecards + Recommendations + Explanations
+    ↓
+Persistent Event Bus / Replay
+    ↓
+Dashboard / Advisor / Players / Explorer / Inspector
 ```
 
-The platform continuously converts football news into fantasy recommendations through a scoring system that powers reports, comparisons, timelines, and rankings.
+The production ingestion path automatically forwards normalized events into Cortex. Provider ingestion remains **fail-open** if downstream Cortex processing is unavailable, preventing unnecessary provider retries.
 
----
+## Core Capabilities
 
-## 🚀 Key Features
+- Multi-source NFL ingestion
+- Normalized `RawEvent` contract
+- Duplicate-safe processing
+- Player and team entity resolution
+- Deterministic signal interpretation
+- Relationship-aware knowledge-graph propagation
+- Multidimensional player scorecards
+- Confidence and fantasy recommendations
+- Evidence chains and explanations
+- Persistent Cortex event history
+- Restart-safe decision Replay
+- Player trends and trajectory
+- Cortex Explorer and Inspector
+- Dashboard and Advisor experiences
+- Commissioner and league-management workflows
 
-| Feature               | Description                           |
-| --------------------- | ------------------------------------- |
-| 📰 News Ingestion     | Pulls NFL news from RSS feeds         |
-| 🧠 Player Matching    | Maps headlines to real NFL players    |
-| 📈 Draft Watch        | Tracks fantasy risers and fallers     |
-| 📋 Daily Digest       | Consolidated camp intelligence report |
-| ⏱ Player Timelines    | Historical player activity tracking   |
-| 🏈 Team Reports       | Team-wide training camp summaries     |
-| ⚖ Player Comparisons  | Compare fantasy outlooks              |
-| 🎯 Fantasy Scorecards | Signal-based player evaluations       |
+## Persistent Decision Trail
 
----
-
-# 📊 Fantasy Signal Engine
-
-Every player update is converted into a fantasy signal.
-
-| Signal      | Score |
-| ----------- | ----- |
-| 🟢 Positive | +1.0  |
-| 🟡 Monitor  | -0.5  |
-| 🔴 Negative | -1.0  |
-| ⚪ Unknown   | 0.0   |
-
-Example:
+Cortex does more than produce a recommendation. Each decision is correlated to the input event and persisted through the Cortex event bus.
 
 ```text
-Tank Dell
-
-+1.0 First-team reps
-+1.0 Working with first-team offense
-+1.0 Positive camp report
--0.5 Limited practice
-
-Total Score: +2.5
-
-Recommendation:
-BUY / MOVE UP WATCHLIST
+RawEvent fingerprint
+      ↓
+correlation_id
+      ↓
+Cortex processing events
+      ↓
+cortex_events.jsonl
+      ↓
+ReplayEngine
 ```
 
----
+A verified integration test simulates an application restart and reconstructs the prior Cortex decision from persistence without reprocessing the source article.
 
-# 🏈 Player Intelligence
+## Quality Baseline
 
-### Generate Player Reports
-
-```bash
-gg report --player "Tank Dell"
-```
-
-### View Player Timeline
-
-```bash
-gg timeline --player "Tank Dell"
-```
-
-### Generate Fantasy Scorecard
-
-```bash
-gg score --player "Tank Dell"
-```
-
-Example Output:
+Current verified regression checkpoint:
 
 ```text
-🏈 Tank Dell Scorecard
-
-Current Score: +2.5
-
-Recommendation:
-BUY / MOVE UP WATCHLIST
+702 passed
 ```
 
----
+The suite covers engine reasoning, ingestion reliability, automatic runtime handoff, downstream fail-open behavior, persistence, restart semantics, Replay reconstruction, presentation models, and commissioner workflows.
 
-# ⚖ Player Comparisons
+## Application Surfaces
 
-Compare players using current training camp signals.
+The Streamlit application includes:
+
+- **Dashboard** — recommendations, rankings, momentum, and activity
+- **Advisor** — natural-language fantasy questions with supporting evidence
+- **Players** — score, trend, momentum, and recent-signal intelligence
+- **Cortex Explorer** — player dossiers and knowledge-graph exploration
+- **Cortex Inspector** — manual diagnostic events through the real Cortex facade
+- **Ingestion Status** — provider health and persisted ingestion-run diagnostics
+- **Replay / Mission Control** — inspection of prior Cortex decisions and processing history
+
+## Technology
+
+- Python
+- Streamlit
+- pytest
+- RSS and structured NFL data adapters
+- JSON / JSONL repository implementations
+- Supabase-backed live-data paths where configured
+- Knowledge-graph reasoning
+- Repository-driven persistence boundaries
+
+## Running Locally
+
+From the project application directory:
 
 ```bash
-gg compare --player1 "Tank Dell" --player2 "Christian Watson"
+cd gridiron_gpt
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+PYTHONPATH=. streamlit run streamlit_app.py
 ```
 
-Example:
-
-```text
-Tank Dell        +2.5
-Christian Watson +1.0
-
-Edge: Tank Dell
-
-Recommendation:
-Prefer Tank Dell based on current camp signals.
-```
-
----
-
-# 📈 Draft Intelligence
-
-### Draft Watch
+Run the full regression suite with:
 
 ```bash
-gg draft-watch
+pytest -q
 ```
 
-### Camp Risers
+## Documentation
 
-```bash
-gg risers
-```
+Contributor and architecture documentation lives under `gridiron_gpt/docs/`:
 
-### Camp Fallers
+- `PROJECT_OVERVIEW.md`
+- `ARCHITECTURE.md`
+- `CHANGELOG.md`
+- `ROADMAP.md`
+- `COMMANDS.md`
+- `KNOWN_ISSUES.md`
+- `DEPLOYMENT_PLAN.md`
 
-```bash
-gg fallers
-```
-## Draft Watch
+Additional documents cover the cognitive architecture, domain model, ingestion design, data pipelines, design system, and commissioner suite.
 
-<img width="408" height="235" alt="image" src="https://github.com/user-attachments/assets/16908c8c-d20e-4d91-bc1a-ff228e9a5120" />
+## v1.0 Status
 
----
+The core Cortex architecture is in **stabilization/release preparation**, not major subsystem expansion. Automatic ingestion, persistent scorecards, event-bus history, knowledge-graph reasoning, and Replay are implemented. Remaining work is focused on final validation, release reconciliation, and later production/cloud hardening.
 
-# 🏟 Team Intelligence
+## Author
 
-Generate team-wide camp reports.
-
-```bash
-gg report-team --team HOU
-```
-
-Includes:
-
-* Player News
-* Injury Updates
-* Roster Movement
-* Fantasy Outlooks
-
----
-
-# 📰 Daily Workflow
-
-### Update All Sources
-
-```bash
-gg update-all
-```
-
-### Generate Daily Digest
-
-```bash
-gg digest
-```
-
-This creates a consolidated report containing:
-
-* Training Camp News
-* Injury Reports
-* Roster Movement
-* Fantasy Outlooks
-
----
-
-# 🏗 Architecture
-
-```text
-RSS News Feeds
-        │
-        ▼
- Player Matcher
-        │
-        ▼
- Fantasy Signal Engine
-        │
- ┌──────┼──────┐
- ▼      ▼      ▼
-Score  Timeline Reports
-Cards
-        │
-        ▼
- Draft Watch
- Comparisons
- Recommendations
-```
-
----
-
-# 🛠 Technology Stack
-
-* Python 3.11
-* FAISS Vector Search
-* RSS Feed Processing
-* JSON Data Pipelines
-* Fantasy Signal Scoring Engine
-* CLI-Based Workflow
-
----
-
-# 🔮 Roadmap
-
-### Near-Term
-
-* [ ] BUY / HOLD / SELL Recommendations
-* [ ] Additional News Sources
-* [ ] Historical Trend Analysis
-* [ ] Automated Daily Updates
-
-### Future
-
-* [ ] Streamlit Dashboard
-* [ ] Dynasty League Support
-* [ ] LLM-Powered Draft Assistant
-* [ ] Live Fantasy Draft Companion
-
----
-
-## 👨‍💻 Author
-
-Built by Alfredo Garza as part of an ongoing portfolio focused on AI, data engineering, automation, and sports analytics.
+Built by Alfredo Garza as an AI, data-engineering, automation, and sports-analytics portfolio project.
