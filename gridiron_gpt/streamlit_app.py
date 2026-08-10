@@ -98,7 +98,7 @@ if selected_page == "Inspector": render_cortex_inspector(cortex)
 if selected_page == "Ingestion": render_ingestion_status()
 if selected_page == "Explorer": render_cortex_explorer(player_names, cortex)
 if selected_page == "Dashboard":
-    dashboard = build_dashboard_view_model(ranked_players=ranked_players, buy_players=buy_players, watch_players=watch_players, risk_players=risk_players, player_count=len(player_names), recommendation_from_score=recommendation_from_score, confidence_from_signals=confidence_from_signals, passing_tests=652); render_dashboard(dashboard, scores=scores, positions=positions, activity_groups=activity_feed.latest(limit=10))
+    dashboard = build_dashboard_view_model(ranked_players=ranked_players, buy_players=buy_players, watch_players=watch_players, risk_players=risk_players, player_count=len(player_names), recommendation_from_score=recommendation_from_score, confidence_from_signals=confidence_from_signals, passing_tests=702); render_dashboard(dashboard, scores=scores, positions=positions, activity_groups=activity_feed.latest(limit=10))
 if selected_page == "Advisor":
     st.markdown("### Ask Cortex"); st.caption("Ask football questions in natural language."); question = st.text_area("Ask Gridiron Cortex", placeholder="Examples:\n• Who should I start this week?\n• Best waiver pickup over the next 3 weeks?\n• Should I trade Tank Dell?\n• Best DST to stream next week?", height=140)
     if st.button("Ask Cortex", use_container_width=True):
