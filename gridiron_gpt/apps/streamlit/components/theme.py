@@ -176,7 +176,20 @@ def apply_cortex_theme() -> None:
         }
 
         input,
-        textarea {
+        textarea,
+        div[data-baseweb="select"] span,
+        div[data-baseweb="select"] input {
+            color: var(--cortex-text) !important;
+            -webkit-text-fill-color: var(--cortex-text) !important;
+        }
+
+        div[data-baseweb="popover"] ul,
+        div[data-baseweb="menu"] {
+            background: var(--cortex-surface-2) !important;
+        }
+
+        div[data-baseweb="popover"] li,
+        div[data-baseweb="menu"] li {
             color: var(--cortex-text) !important;
         }
 
