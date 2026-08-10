@@ -65,6 +65,20 @@ def test_scheduled_runner_skips_when_another_run_holds_lock(tmp_path: Path):
     assert not called
 
 
+def test_scheduled_runner_recovers_stale_lock(tmp_path: Path):
+    lock_path = tmp_path / "scheduled.lock"
+    lock_path.write_text("999999999\n", encoding="utf-8")
+
+    result = run_scheduled_ingestion_once(
+        lock_path=lock_path,
+        ingest=lambda: _summary(),
+    )
+
+    assert result.status == "success"
+    assert result.exit_code == 0
+    assert not lock_path.exists()
+
+
 def test_scheduled_runner_releases_lock_after_unexpected_failure(tmp_path: Path):
     lock_path = tmp_path / "scheduled.lock"
 
