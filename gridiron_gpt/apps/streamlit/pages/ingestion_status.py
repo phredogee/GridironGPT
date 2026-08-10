@@ -32,16 +32,18 @@ def _status_label(status: str | None) -> str:
 def _render_provider_diagnostic(item: dict[str, Any]) -> None:
     source = item.get("source_name") or "Unknown provider"
     status = _status_label(item.get("status"))
-    attempts = item.get("attempts", 0)
-    records = item.get("records_received", 0)
-    events = item.get("events_created", 0)
 
     st.markdown(f"#### {source}")
     cols = st.columns(4)
     cols[0].metric("Health", status)
-    cols[1].metric("Attempts", attempts)
-    cols[2].metric("Records", records)
-    cols[3].metric("Events", events)
+    cols[1].metric("Attempts", item.get("attempts", 0))
+    cols[2].metric("Records", item.get("records_received", 0))
+    cols[3].metric("Normalized", item.get("events_created", 0))
+
+    cortex_cols = st.columns(3)
+    cortex_cols[0].metric("New Cortex Events", item.get("cortex_events_accepted", 0))
+    cortex_cols[1].metric("Duplicates Ignored", item.get("cortex_duplicates_ignored", 0))
+    cortex_cols[2].metric("Processor Failures", item.get("processor_failures", 0))
 
     error_type = item.get("error_type")
     error_message = item.get("error_message")
@@ -55,14 +57,14 @@ def _render_provider_diagnostic(item: dict[str, Any]) -> None:
 def render_ingestion_status(
     repository: JsonlIngestionRunRepository | None = None,
 ) -> None:
-    """Render persisted Phase C ingestion observability information."""
+    """Render persisted ingestion and Cortex-boundary observability information."""
 
     repository = repository or JsonlIngestionRunRepository()
     runs = repository.load_all()
 
     st.markdown("### Ingestion Operations")
     st.caption(
-        "Phase C provider health, reliability, and persisted ingestion-run history."
+        "Provider health, reliability, persisted run history, and Cortex processing outcomes."
     )
 
     if not runs:
@@ -76,8 +78,7 @@ def render_ingestion_status(
     success = bool(latest.get("success", False))
 
     st.markdown("### Latest Run")
-
-    status_col, providers_col, records_col, events_col, duration_col = st.columns(5)
+    status_col, providers_col, duration_col = st.columns(3)
     status_col.metric("Run Status", "Healthy" if success else "Attention")
     providers_col.metric(
         "Providers",
@@ -88,12 +89,14 @@ def render_ingestion_status(
             else "all successful"
         ),
     )
-    records_col.metric("Records", latest.get("records_received", 0))
-    events_col.metric("Events", latest.get("events_created", 0))
-    duration_col.metric(
-        "Duration",
-        f"{float(latest.get('duration_seconds', 0.0)):.2f}s",
-    )
+    duration_col.metric("Duration", f"{float(latest.get('duration_seconds', 0.0)):.2f}s")
+
+    flow_cols = st.columns(5)
+    flow_cols[0].metric("Records Received", latest.get("records_received", 0))
+    flow_cols[1].metric("Events Normalized", latest.get("events_created", 0))
+    flow_cols[2].metric("New Cortex Events", latest.get("cortex_events_accepted", 0))
+    flow_cols[3].metric("Duplicates Ignored", latest.get("cortex_duplicates_ignored", 0))
+    flow_cols[4].metric("Processor Failures", latest.get("processor_failures", 0))
 
     st.caption(
         f"Run ID: `{latest.get('run_id', 'unknown')}` · "
@@ -123,7 +126,10 @@ def render_ingestion_status(
                 "Providers": run.get("providers_attempted", 0),
                 "Failed": run.get("providers_failed", 0),
                 "Records": run.get("records_received", 0),
-                "Events": run.get("events_created", 0),
+                "Normalized": run.get("events_created", 0),
+                "New Cortex": run.get("cortex_events_accepted", 0),
+                "Duplicates": run.get("cortex_duplicates_ignored", 0),
+                "Processor Failures": run.get("processor_failures", 0),
                 "Duration (s)": round(float(run.get("duration_seconds", 0.0)), 3),
             }
         )
