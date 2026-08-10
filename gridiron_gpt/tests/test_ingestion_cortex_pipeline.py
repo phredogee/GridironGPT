@@ -70,6 +70,6 @@ def test_runtime_ingestion_persists_full_cortex_decision_for_replay(tmp_path: Pa
     assert replay.steps
     assert replay.recommendation is not None
 
-    # Ingestion observability is persisted alongside Cortex state.
-    latest_run = run_repo.latest()
-    assert latest_run is not None
+    # ingest() intentionally processes one provider without creating an ingestion-run
+    # summary. Persistence of run observability is covered separately through ingest_run().
+    assert run_repo.latest() is None
