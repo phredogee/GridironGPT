@@ -6,19 +6,54 @@
 git pull origin refactor/extract-cortex
 ```
 
+## Confirm Branch and Working Tree
+
+```bash
+git branch --show-current
+git status
+```
+
 ## Full Regression Suite
 
-Run after every major implementation batch:
+Run after every significant code or architecture change:
 
 ```bash
 pytest -q
 ```
 
-Current checkpoint:
+Current verified checkpoint:
 
 ```text
-619 passed
+702 passed
 ```
+
+## v1.0 Runtime-Ingestion Tests
+
+```bash
+pytest tests/test_ingestion_service.py -v
+pytest tests/test_ingestion_runtime.py -v
+pytest tests/test_ingestion_cortex_pipeline.py -v
+```
+
+These cover normalization/runtime handoff, downstream fail-open behavior, production composition, persistence, restart behavior, and Replay reconstruction.
+
+## Ingestion Smoke Test
+
+```bash
+python scripts/smoke_nfl_news_ingestion.py
+```
+
+Use this when validating live provider behavior. Network/provider availability can make live smoke tests less deterministic than the unit/integration suite.
+
+## Launch GridironGPT
+
+From the `gridiron_gpt` project directory:
+
+```bash
+PYTHONPATH=. streamlit run streamlit_app.py
+```
+
+For the v1.0 smoke test, open the primary navigation surfaces and verify they render without runtime exceptions, especially Dashboard, Advisor, Players, Cortex Explorer, Cortex Inspector, and Ingestion Status.
 
 ## Visualization Tests
 
@@ -32,21 +67,13 @@ pytest tests/test_visualization_models.py -v
 pytest tests/test_commissioner_suite.py tests/test_league_exports.py -v
 ```
 
-## Live-Signal Loader Tests
+## Persisted-Signal Loader Tests
 
 ```bash
 pytest tests/test_news_loader_persisted_signals.py -v
 ```
 
-## Launch GridironGPT
-
-From the `gridiron_gpt` project directory:
-
-```bash
-PYTHONPATH=. streamlit run streamlit_app.py
-```
-
-## Live RSS Ingestion
+## Live RSS Persistence Path
 
 ```bash
 PYTHONPATH=. python - <<'PY'
@@ -61,9 +88,9 @@ print(fetch_and_persist_from_env())
 PY
 ```
 
-Expected output includes per-source fetched/saved/skipped counts and total signals persisted. Duplicate stories should be reported as skipped rather than raising a unique-key exception.
+Duplicate stories should be skipped rather than raising a unique-key exception.
 
-## Verify Live Signals Reach Scoring
+## Verify Signals Reach Legacy/Presentation Scoring
 
 ```bash
 PYTHONPATH=. python - <<'PY'
@@ -86,6 +113,8 @@ for (player, team), data in sorted(
 PY
 ```
 
+This command checks the scored-player map used by several presentation surfaces; it is separate from the Cortex runtime-ingestion integration tests above.
+
 ## Test Supabase Connection
 
 ```bash
@@ -94,6 +123,8 @@ from gridiron_gpt.storage.supabase_client import get_supabase_client
 print(get_supabase_client())
 PY
 ```
+
+Only use this when validating the Supabase-backed live-data path; Cortex core persistence is repository-backed and does not require this connection for local tests.
 
 ## Recommendation Report
 
@@ -104,23 +135,12 @@ print(build_recommendations_report())
 PY
 ```
 
-## Ingestion Smoke Test
-
-```bash
-python scripts/smoke_nfl_news_ingestion.py
-```
-
-## Git Status
-
-```bash
-git branch --show-current
-git status
-```
-
-## Typical Development Checkpoint
+## Final v1.0 Local Checkpoint
 
 ```bash
 git pull origin refactor/extract-cortex
 pytest -q
 PYTHONPATH=. streamlit run streamlit_app.py
 ```
+
+Do not tag or merge a release candidate until the full regression suite is green and the Streamlit smoke test is complete.
