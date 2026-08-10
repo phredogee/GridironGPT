@@ -58,6 +58,24 @@ def get_recent_signals(limit: int = 10) -> list[dict]:
     return result.data
 
 
+def get_scoring_signals(limit: int = 1000) -> list[dict]:
+    """Return persisted direct signals used by the application score layer."""
+    client = get_supabase_client()
+
+    result = (
+        client.table("signals")
+        .select(
+            "player,team,position,source,headline,signal_type,impact,value,"
+            "confidence,event_date,signal_event_hash,created_at"
+        )
+        .order("event_date", desc=True)
+        .limit(limit)
+        .execute()
+    )
+
+    return result.data or []
+
+
 def get_player_signals(player: str, limit: int = 25) -> list[dict]:
     client = get_supabase_client()
 

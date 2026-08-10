@@ -1,218 +1,146 @@
-![Python](https://img.shields.io/badge/Python-3.11+-blue)
-![Status](https://img.shields.io/badge/Status-Active%20Development-brightgreen)
-![License](https://img.shields.io/badge/License-MIT-yellow)
-![AI](https://img.shields.io/badge/AI-LLM%20%7C%20NLP%20%7C%20RAG-purple)
+# GridironGPT
 
-# 🏈 GridIronGPT
+**Fantasy Football Intelligence Platform powered by Gridiron Cortex**
 
-## AI-Powered Fantasy Football Intelligence
+GridironGPT turns NFL news, injuries, roster movement, practice reports, and structured football data into persistent, explainable fantasy-football intelligence.
 
-**GridIronGPT** is an AI-powered fantasy football intelligence platform that transforms NFL news, injuries, roster moves, player usage, and statistical trends into actionable fantasy football insights.
+Instead of treating every headline as an isolated update, GridironGPT uses **Gridiron Cortex** to resolve entities, interpret signals, propagate effects through football relationships, update multidimensional player scorecards, generate recommendations, and preserve the full decision trail for Replay.
 
-Rather than simply aggregating headlines, GridIronGPT analyzes football events, extracts meaningful fantasy signals, tracks player momentum over time, and generates explainable recommendations through a modular intelligence pipeline.
-
----
-
-## Why GridIronGPT?
-
-Fantasy football managers are overwhelmed by hundreds of articles, tweets, injury reports, and depth chart updates every week.
-
-GridIronGPT was built to answer questions like:
-
-- Which players are trending upward?
-- Which injuries actually matter?
-- Who benefits when another player is injured?
-- Why is a player considered a BUY?
-- Which recent events changed a player's outlook?
-
-Instead of reading everything yourself, GridIronGPT continuously builds player intelligence from structured football events.
-
----
-
-# Features
-
-- 📰 Multi-source NFL news aggregation
-- 🏈 Fantasy signal extraction
-- 📈 Player momentum tracking
-- 📊 Player intelligence scorecards
-- 🩺 Injury and roster movement tracking
-- 🔍 Semantic player search using FAISS
-- 🤖 LLM-powered fantasy advisor
-- 📋 Training camp digest generation
-- ⚖️ Player comparison reports
-- 📺 Interactive Streamlit dashboard
-- 💻 Command-line interface
-- 🧪 Automated testing
-
----
-
-# How It Works
+## Current v1.0 Architecture
 
 ```text
-NFL News Sources
-        │
-        ▼
-Data Ingestion
-        │
-        ▼
-Article Validation
-        │
-        ▼
-Player Matching
-        │
-        ▼
+NFL Providers
+    ↓
+Provider Adapters
+    ↓
+IngestionService
+    ↓
+Normalize + Deduplicate
+    ↓
+RawEvent
+    ↓
+Gridiron Cortex
+    ↓
+Entity Resolution
+    ↓
 Signal Processing
-        │
-        ▼
-Momentum Analysis
-        │
-        ▼
-Player Intelligence
-        │
-        ▼
-Reports & Recommendations
+    ↓
+Knowledge Graph Propagation
+    ↓
+Scorecards + Recommendations + Explanations
+    ↓
+Persistent Event Bus / Replay
+    ↓
+Dashboard / Advisor / Players / Explorer / Inspector
 ```
 
----
+The production ingestion path automatically forwards normalized events into Cortex. Provider ingestion remains **fail-open** if downstream Cortex processing is unavailable, preventing unnecessary provider retries.
 
-# Example Use Cases
+## Core Capabilities
 
-GridIronGPT can answer questions like:
+- Multi-source NFL ingestion
+- Normalized `RawEvent` contract
+- Duplicate-safe processing
+- Player and team entity resolution
+- Deterministic signal interpretation
+- Relationship-aware knowledge-graph propagation
+- Multidimensional player scorecards
+- Confidence and fantasy recommendations
+- Evidence chains and explanations
+- Persistent Cortex event history
+- Restart-safe decision Replay
+- Player trends and trajectory
+- Cortex Explorer and Inspector
+- Dashboard and Advisor experiences
+- Commissioner and league-management workflows
 
-- "Why is Tank Dell a BUY?"
-- "Compare Tank Dell and Christian Watson."
-- "Show Houston Texans training camp news."
-- "Who are today's biggest fantasy risers?"
-- "Generate today's training camp digest."
+## Persistent Decision Trail
 
----
+Cortex does more than produce a recommendation. Each decision is correlated to the input event and persisted through the Cortex event bus.
 
-# Technology Stack
+```text
+RawEvent fingerprint
+      ↓
+correlation_id
+      ↓
+Cortex processing events
+      ↓
+cortex_events.jsonl
+      ↓
+ReplayEngine
+```
 
-### AI & Machine Learning
+A verified integration test simulates an application restart and reconstructs the prior Cortex decision from persistence without reprocessing the source article.
 
-- Sentence Transformers
-- FAISS Vector Search
-- Retrieval-Augmented Generation (RAG)
-- Configurable LLM Providers
+## Quality Baseline
 
-### Backend
+Current verified regression checkpoint:
+
+```text
+702 passed
+```
+
+The suite covers engine reasoning, ingestion reliability, automatic runtime handoff, downstream fail-open behavior, persistence, restart semantics, Replay reconstruction, presentation models, and commissioner workflows.
+
+## Application Surfaces
+
+The Streamlit application includes:
+
+- **Dashboard** — recommendations, rankings, momentum, and activity
+- **Advisor** — natural-language fantasy questions with supporting evidence
+- **Players** — score, trend, momentum, and recent-signal intelligence
+- **Cortex Explorer** — player dossiers and knowledge-graph exploration
+- **Cortex Inspector** — manual diagnostic events through the real Cortex facade
+- **Ingestion Status** — provider health and persisted ingestion-run diagnostics
+- **Replay / Mission Control** — inspection of prior Cortex decisions and processing history
+
+## Technology
 
 - Python
-- Click CLI
 - Streamlit
-- Pandas
-- NumPy
+- pytest
+- RSS and structured NFL data adapters
+- JSON / JSONL repository implementations
+- Supabase-backed live-data paths where configured
+- Knowledge-graph reasoning
+- Repository-driven persistence boundaries
 
-### Data Sources
+## Running Locally
 
-- ESPN
-- RSS News Feeds
-- Injury Reports
-- Roster Transactions
+From the project application directory:
 
-### Development
-
-- Git
-- GitHub
-- Pytest
-- Linux / WSL
-
----
-
-# Repository Layout
-
-```text
-GridIronGPT/
-│
-├── gridiron_gpt/        ← Main application
-├── docs/                ← Documentation
-├── tests/               ← Automated tests
-├── ARCHITECTURE.md
-├── ROADMAP.md
-└── README.md
+```bash
+cd gridiron_gpt
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+PYTHONPATH=. streamlit run streamlit_app.py
 ```
 
----
+Run the full regression suite with:
 
-# Documentation
+```bash
+pytest -q
+```
 
-Additional technical documentation is available in:
+## Documentation
 
-- 📘 **Application Guide:** `gridiron_gpt/README.md`
-- 🏗 **Architecture:** `ARCHITECTURE.md`
-- 🛣 **Roadmap:** `ROADMAP.md`
+Contributor and architecture documentation lives under `gridiron_gpt/docs/`:
 
-The root README provides a high-level overview, while the application README contains detailed setup instructions, architecture notes, CLI usage, and developer documentation.
+- `PROJECT_OVERVIEW.md`
+- `ARCHITECTURE.md`
+- `CHANGELOG.md`
+- `ROADMAP.md`
+- `COMMANDS.md`
+- `KNOWN_ISSUES.md`
+- `DEPLOYMENT_PLAN.md`
 
----
+Additional documents cover the cognitive architecture, domain model, ingestion design, data pipelines, design system, and commissioner suite.
 
-# Project Goals
+## v1.0 Status
 
-GridIronGPT is designed to explore how artificial intelligence can improve fantasy football analysis by combining:
+The core Cortex architecture is in **stabilization/release preparation**, not major subsystem expansion. Automatic ingestion, persistent scorecards, event-bus history, knowledge-graph reasoning, and Replay are implemented. Remaining work is focused on final validation, release reconciliation, and later production/cloud hardening.
 
-- Natural Language Processing
-- Information Retrieval
-- Data Engineering
-- Explainable AI
-- Intelligent Automation
+## Author
 
-The long-term goal is to build a reusable intelligence platform capable of reasoning over football events rather than simply summarizing news.
-
----
-
-# Screenshots
-
-> Screenshots will be added as the dashboard continues to evolve.
-
-Suggested images:
-
-- Home Dashboard
-- Player Intelligence Report
-- Draft Watch
-- Momentum Dashboard
-- Training Camp Digest
-
----
-
-# Roadmap
-
-### Current Focus
-
-- Improve player intelligence
-- Expand supported news providers
-- Strengthen recommendation engine
-- Improve dashboard experience
-
-### Future
-
-- Additional NFL data sources
-- Cloud deployment
-- REST API
-- Team intelligence
-- Draft class analysis
-- Historical trend visualization
-
----
-
-# About the Project
-
-GridIronGPT began as a command-line fantasy football assistant and has evolved into a modular AI platform for football intelligence.
-
-The project serves as both a practical fantasy football tool and a portfolio demonstrating software architecture, AI engineering, information retrieval, and data pipeline design.
-
----
-
-# Author
-
-**Alfredo Garza**
-
-Applied Artificial Intelligence Student
-
-GitHub: https://github.com/phredogee
-
----
-
-## License
-
-This project is licensed under the MIT License.
+Built by Alfredo Garza as an AI, data-engineering, automation, and sports-analytics portfolio project.

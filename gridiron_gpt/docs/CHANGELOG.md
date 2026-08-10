@@ -1,156 +1,84 @@
 # Changelog
 
-## 2026-06-22
+## 2026-08-10 — v1.0 Cortex Runtime Integration & Stabilization
 
 ### Added
-- Added Momentum Engine for player trend acceleration analysis.
-- Added momentum rankings for Top Risers and Top Fallers.
-- Added first-snapshot tracking for players with limited historical data.
-- Added momentum reporting to the daily pipeline.
-- Added Momentum tab to the Streamlit dashboard.
+- Shared runtime ingestion composition through `build_runtime_ingestion_service(cortex)`.
+- Automatic forwarding of normalized `RawEvent` objects into `CortexFacade.process_event()`.
+- Optional downstream `event_processor` hook in `IngestionService`.
+- Persisted ingestion-run repository support in runtime composition.
+- End-to-end production-path coverage from provider record through Cortex persistence and Replay.
+- Restart verification proving persisted Cortex decisions can be reconstructed without reprocessing the source article.
 
 ### Changed
-- Daily pipeline now generates:
-  - RSS ingestion summary
-  - Trend report
-  - Momentum report
-- Dashboard now exposes momentum analytics alongside existing trend analysis.
+- Provider adapters remain source/translation components and no longer need engine-specific processing responsibilities.
+- Runtime ingestion now uses the same Cortex facade contract as the rest of the application.
+- Streamlit runtime architecture documented around one shared session-state `CortexFacade`.
+- Dashboard regression metadata updated from the stale 652 checkpoint to the verified 702 checkpoint.
+- Project overview and architecture documentation rewritten around the implemented v1.0 boundaries.
 
-### Improved
-- Expanded player intelligence layer beyond static recommendations.
-- Created foundation for future momentum-based rankings and alerts.
-- Improved visibility of player movement using historical score snapshots.
+### Reliability
+- Downstream Cortex processor failures are fail-open at the ingestion boundary.
+- Successful provider fetches are not retried because Cortex processing failed.
+- Processor exception logging reads source provenance from the `RawEvent` evidence contract rather than nonexistent event attributes.
+- Duplicate-event handling remains upstream of duplicate downstream decisions.
+
+### Persistence & Replay
+- Cortex event history persists through the event-bus repository.
+- Player scorecards persist independently of Streamlit process lifetime.
+- Correlation IDs connect normalized input events to downstream Cortex decision events.
+- Replay reconstructs decisions from persisted event history after application restart.
+
+### Validation
+
+```text
+702 passed
+```
+
+This is the current verified full regression checkpoint before the final v1.0 stabilization/smoke-test pass.
+
+### Stabilization Remaining
+- Refresh remaining contributor documentation.
+- Review known issues and commands.
+- Complete deployment-plan documentation.
+- Run final full regression suite after documentation/stale-reference cleanup.
+- Perform Streamlit smoke test.
+- Reconcile branch/README history and prepare merge/release boundary.
 
 ---
 
-## 2026-06-21
+## 2026-08-03 — Live Platform & UI Modernization
 
 ### Added
-- Added `story_dedup.py` for duplicate story detection.
-- Added headline normalization for comparing similar news stories.
-- Added stable `story_hash` generation for RSS article records.
-- Added `story_hash` persistence to `raw_articles`.
-- Added `signal_event_hash.py` for signal-level event identity.
-- Added `signal_event_hash` wiring through the signal persistence flow.
-- Added signal-level deduplication using the existing `unique_signal_event_hash` index.
+- Supabase-backed live signal loading into the player scoring path.
+- Duplicate-safe raw article persistence for unique `story_hash` collisions.
+- Shared visualization models and Streamlit intelligence charts.
+- Advisor 2.0 recommendation, confidence, signal-impact, Cortex-profile, timeline, and supporting-headline views.
+- Dashboard 2.0 recommendation distribution, team momentum, position rankings, and live Cortex ranking views.
+- Expanded Commissioner Suite with configurable league settings, schedule generation, schedule alternatives/analytics, rivalry constraints, configurable playoff duration, draft workflows, league history, and schedule exports/delivery support.
 
 ### Changed
-- RSS article records now include `story_hash`.
-- Raw articles continue to upsert by `content_hash`, while also storing `story_hash` for future event-level analysis.
-- Signals now upsert by `signal_event_hash` to prevent duplicate player-impact events from inflating scores.
+- Dashboard and Advisor consume the scored-player map rather than relying only on static presentation data.
+- UI chart calculations are separated from Streamlit rendering.
+- Commissioner scheduling treats divisional home/away requirements as hard constraints where configuration permits and optimizes remaining assignments for balance.
 
-### Fixed / Improved
-- Prevented repeated ingestion runs from creating duplicate fantasy signals for the same story, player, impact, and date.
-- Improved data-quality foundation for future multi-source ingestion.
+### Fixed
+- Duplicate RSS stories no longer terminate ingestion with a Supabase unique-key error.
+- Advisor top-recommendation confidence path typo corrected.
+- Small-league schedule generation no longer assumes every schedule can achieve an impossible home/away spread.
+- Schedule analytics quality scoring handles balanced reference schedules correctly.
+- CSV and iCalendar schedule exports validated against generated schedules.
 
----
+### Validation
 
-## 2026-06-12
+```text
+619 passed
+```
 
-### Added
-
-Article relevance classification
-Player score snapshots
-Snapshot service
-Daily snapshot deduplication
-
----
-
-## 2026-06-11
-
-### Added
-
-Supabase integration
-raw_articles repository
-signals repository
-propagated_signals repository
-ingestion_runs repository
-signal persistence service
-news persistence service
-ingestion tracking
-
-Improved:
-
-Player matcher accuracy
-Alias handling
-Catalog caching
-RSS ingestion pipeline
-
-RSS Improvements:
-
-Multi-player matching
-Summary-aware extraction
-Confidence tracking
-Expanded signal generation
-
-Infrastructure:
-
-Cloud-backed persistence
-Event-driven architecture
-Historical audit capability
-
-Current Pipeline:
-
-RSS Feed
- ↓
-raw_articles
- ↓
-signals
- ↓
-propagated_signals
- ↓
-recommendations
-
-Status:
-V4 Foundation Complete
+This checkpoint preceded the later Cortex runtime-integration work.
 
 ---
 
-## 2026-06-09
+## Historical Milestones
 
-### Added
-
-#### Entity Relationship Engine
-
-* Added JSON-driven relationship framework.
-* Added support for propagating impacts between related entities.
-* Added relationship validation and loading system.
-* Added configurable relationship definitions via `data/relationships.json`.
-
-#### Signal Impact API
-
-* Added `generate_signal_impacts()`.
-* Added `format_signal_impact_report()`.
-* Added support for calculating system-wide impacts from a single signal.
-
-#### Recommendation Integration
-
-* Added propagated impact scoring to recommendation engine.
-* Recommendations now support adjusted scores derived from relationship propagation.
-* Recommendation rankings can incorporate downstream effects from related entities.
-
-### Refactored
-
-* Moved intelligence components into:
-
-  * `gridiron_gpt/intelligence/`
-* Removed duplicate intelligence module locations.
-* Standardized import paths throughout intelligence engine.
-
-### Infrastructure
-
-* Cleaned project dependencies.
-* Split runtime and development dependencies.
-* Added testing support for relationship engine and signal impact API.
-
-### Status
-
-Phase 1 of the Impact Propagation Engine completed.
-
-### V4 Foundation Milestone Reached
-
-- Supabase migration started
-- Event persistence implemented
-- Historical score tracking implemented
-- RSS ingestion operational
-- Article classification operational
+Repository history preserves the detailed development sequence for Cortex foundation, persistent intelligence, semantic propagation, nflverse integration, evidence reasoning, multidimensional scoring, ingestion reliability, football context, Cortex Explorer, knowledge-graph work, event-bus observability, Replay, and intermediate regression checkpoints.

@@ -1,6 +1,8 @@
 click==8.2.1
 faiss-cpu==1.13.2
+fastapi==0.116.1
 feedparser==6.0.12
+httpx==0.28.1
 numpy==2.4.2
 openai==2.40.0
 pandas==3.0.1
@@ -11,3 +13,4 @@ PyYAML==6.0.3
 requests==2.32.5
 rich==14.3.3
 streamlit
+uvicorn==0.35.0

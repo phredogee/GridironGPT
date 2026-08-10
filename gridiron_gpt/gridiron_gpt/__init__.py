@@ -1,5 +1,3 @@
-"""
-Package shim for legacy flat-layout repo.
+from src.merge.align import align_embeddings
 
-This folder exists so imports like `import gridiron_gpt.core` work.
-"""
+__all__ = ["align_embeddings"]

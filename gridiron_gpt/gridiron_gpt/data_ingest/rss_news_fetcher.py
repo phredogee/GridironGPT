@@ -9,6 +9,7 @@ from gridiron_gpt.data_ingest.article_relevance import classify_article_relevanc
 from gridiron_gpt.data_ingest.news_persistence import persist_news_items
 from gridiron_gpt.data_ingest.player_matcher import extract_players_from_text
 from gridiron_gpt.intelligence.story_dedup import story_hash
+from urllib.parse import unquote, urlparse
 
 NEWS_PATH = Path("data/news")
 
@@ -71,6 +72,32 @@ def _guess_impact(title: str, summary: str = "") -> str:
 
     return "unknown"
 
+def _extract_searchable_url_text(url: str) -> str:
+    """
+    Convert a story URL path into searchable text.
+
+    Example:
+    /rams-alaric-jackson-face-felony-charge
+    becomes:
+    rams alaric jackson face felony charge
+    """
+    if not url:
+        return ""
+
+    path = unquote(urlparse(url).path)
+
+    normalized = (
+        path
+        .replace("-", " ")
+        .replace("_", " ")
+        .replace("/", " ")
+    )
+
+    return " ".join(
+        token
+        for token in normalized.split()
+        if not token.isdigit()
+    )
 
 def fetch_rss_news(feed_url: str, source: str = "RSS Feed") -> list[dict]:
     feed = feedparser.parse(feed_url)
@@ -81,7 +108,14 @@ def fetch_rss_news(feed_url: str, source: str = "RSS Feed") -> list[dict]:
         summary = entry.get("summary", "")
         url = entry.get("link", "")
 
-        text = f"{title} {summary}"
+        published_at = (
+            entry.get("published")
+            or entry.get("updated")
+            or date.today().isoformat()
+        )
+
+        url_text = _extract_searchable_url_text(url)
+        text = f"{title} {summary} {url_text}"
         matches = extract_players_from_text(text)
         fantasy_impact = _guess_impact(title, summary)
 
@@ -90,6 +124,8 @@ def fetch_rss_news(feed_url: str, source: str = "RSS Feed") -> list[dict]:
                 items.append(
                     {
                         "date": date.today().isoformat(),
+                        "published_at": published_at,              # actual RSS timestamp
+                        "summary": summary,
                         "player": match["player"],
                         "team": match["team"],
                         "position": match.get("position", "Unknown"),
@@ -117,6 +153,8 @@ def fetch_rss_news(feed_url: str, source: str = "RSS Feed") -> list[dict]:
             items.append(
                 {
                     "date": date.today().isoformat(),
+                    "published_at": published_at,              # actual RSS timestamp
+                    "summary": summary,
                     "player": "Unknown",
                     "team": "UNK",
                     "position": "Unknown",

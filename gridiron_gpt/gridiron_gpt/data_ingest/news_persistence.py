@@ -16,12 +16,14 @@ IMPACT_VALUE_MAP = {
     "negative": -1.0,
 }
 
+
 def persist_news_items(news_items: list[dict], source_name: str = "news_json") -> dict:
     run_id = start_ingestion_run(source_name)
 
     articles_saved = 0
     signals_saved = 0
     skipped = 0
+    skipped_duplicate = 0
     skipped_no_headline = 0
     skipped_no_player = 0
     skipped_unknown_impact = 0
@@ -39,23 +41,28 @@ def persist_news_items(news_items: list[dict], source_name: str = "news_json") -
 
             if not headline:
                 skipped += 1
-                skipped_no_headline  += 1
+                skipped_no_headline += 1
                 continue
 
             article = save_raw_article(
                 source=source,
                 headline=headline,
                 source_url=url,
-                summary=None,
+                summary=item.get("summary"),
                 published_at=event_date,
                 story_hash=item.get("story_hash"),
             )
+
+            if not article.get("_created", True):
+                skipped += 1
+                skipped_duplicate += 1
+                continue
 
             articles_saved += 1
 
             if player == "Unknown":
                 skipped += 1
-                skipped_no_player  += 1
+                skipped_no_player += 1
                 continue
 
             if impact == "unknown":
@@ -67,8 +74,9 @@ def persist_news_items(news_items: list[dict], source_name: str = "news_json") -
 
             if value == 0.0:
                 skipped += 1
-                skipped_zero_value += 1 
+                skipped_zero_value += 1
                 continue
+
             signal_event_hash = build_signal_event_hash_from_article(item)
 
             process_signal(
@@ -102,6 +110,7 @@ def persist_news_items(news_items: list[dict], source_name: str = "news_json") -
             "articles_saved": articles_saved,
             "signals_saved": signals_saved,
             "skipped": skipped,
+            "skipped_duplicate": skipped_duplicate,
             "skipped_no_headline": skipped_no_headline,
             "skipped_no_player": skipped_no_player,
             "skipped_unknown_impact": skipped_unknown_impact,

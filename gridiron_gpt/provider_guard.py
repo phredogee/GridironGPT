@@ -1,13 +1,15 @@
-#gridiron_gpt/provider_guard.py
+# gridiron_gpt/provider_guard.py
 
-from importlib.metadata import version, PackageNotFoundError
+from importlib.metadata import PackageNotFoundError, version
+
 
 def detect_installed_providers():
     providers = []
-    for name in ["mistral", "openai"]:
-        try:
-            version(name)
-            providers.append(name)
-        except PackageNotFoundError:
-            pass
-    return providers or ["unknown"]
+
+    try:
+        version("openai")
+        providers.append("openai")
+    except PackageNotFoundError:
+        pass
+
+    return providers
