@@ -96,7 +96,7 @@ class IngestionService:
             try:
                 self.event_processor(event)
             except Exception:
-                source_id = event.metadata.get("source_id") if event.metadata else None
+                source_id = event.evidence.get("source_id") if event.evidence else None
                 logger.exception(
                     "Downstream event processor failed for source=%s source_id=%s; ingestion remains successful",
                     event.source,
