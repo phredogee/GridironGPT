@@ -1,3 +1,5 @@
+import requests
+
 from gridiron_gpt.ingestion.models.source_record import (
     SourceRecord,
 )
@@ -74,3 +76,45 @@ def test_rss_adapter_does_not_interpret_fantasy_impact():
         record,
         "article_relevance",
     )
+
+
+def test_rss_adapter_fetch_uses_explicit_http_timeout(monkeypatch):
+    observed = {}
+
+    class FakeResponse:
+        content = b"<rss><channel></channel></rss>"
+
+        def raise_for_status(self):
+            observed["raised"] = True
+
+    def fake_get(url, *, timeout, headers):
+        observed["url"] = url
+        observed["timeout"] = timeout
+        observed["headers"] = headers
+        return FakeResponse()
+
+    monkeypatch.setattr(requests, "get", fake_get)
+
+    adapter = RSSSourceAdapter(
+        feed_url="https://example.com/feed",
+        source_name="ESPN",
+        request_timeout_seconds=4.5,
+    )
+
+    assert adapter.fetch() == []
+    assert observed["url"] == "https://example.com/feed"
+    assert observed["timeout"] == 4.5
+    assert observed["raised"] is True
+    assert observed["headers"]["User-Agent"].startswith("GridironGPT/")
+
+
+def test_rss_adapter_rejects_nonpositive_timeout():
+    try:
+        RSSSourceAdapter(
+            feed_url="https://example.com/feed",
+            request_timeout_seconds=0,
+        )
+    except ValueError as exc:
+        assert str(exc) == "request_timeout_seconds must be positive"
+    else:
+        raise AssertionError("Expected ValueError for nonpositive RSS timeout")
