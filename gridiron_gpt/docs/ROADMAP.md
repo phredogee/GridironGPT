@@ -8,114 +8,127 @@ Build GridironGPT into a complete fantasy-football intelligence and commissioner
 
 | Area | Status |
 |---|---|
-| Cortex Foundation | Complete |
-| Intelligence & Reasoning | Complete |
-| Multi-source Ingestion | Complete / operational |
+| Cortex Foundation | Complete for v1.0 |
+| Intelligence & Reasoning Pipeline | Complete for v1.0 |
+| Multidimensional Scorecards | Complete for v1.0 |
+| Event Bus / Decision History | Complete for v1.0 |
+| Replay | Complete for v1.0 |
+| Multi-source Ingestion | Operational |
+| Automatic Ingestion → Cortex Runtime | Complete |
+| Fail-open Downstream Processing | Complete |
+| Persistence / Restart Verification | Complete |
 | Football Context | Operational and expanding |
-| Fantasy Decision Engine | Operational and expanding |
+| Fantasy Decision Engine | Operational |
 | Commissioner Suite | Operational |
-| Advisor 2.0 | Complete first pass |
-| Dashboard 2.0 | Complete first pass |
-| Visualization Layer | Operational |
-| Cortex Explorer | Next |
-| Knowledge Graph UI | Planned |
-| Production / Cloud | Planned |
+| Advisor | Operational |
+| Dashboard | Operational |
+| Cortex Explorer | Operational |
+| Knowledge Graph UI | Operational first pass |
+| v1.0 Stabilization | In progress |
+| Production / Cloud | Post-v1 |
 
-Current full regression checkpoint: **619 passed**.
+Current verified regression checkpoint: **702 passed**.
 
-## UI Modernization — Current
+## v1.0 — Current Phase
 
-### Advisor 2.0 — Complete first pass
-- Structured recommendation cards
-- Confidence visualization
-- Signal impact chart
-- Supporting evidence/headlines
-- Cortex timeline
-- Health / Opportunity / Momentum / Risk / Upside profile
-- Developer workflow collapsed by default
+The core engine architecture is no longer in subsystem-expansion mode. The current goal is to produce a stable release candidate from the architecture already built.
 
-### Dashboard 2.0 — Complete first pass
-- Live recommendation metrics
-- Top BUY/WATCH/risk candidates
-- Recommendation distribution
-- Team momentum visualization
-- Position rankings
-- Live Cortex player rankings
+### Remaining v1.0 work
+- [x] Verify automatic provider ingestion reaches Cortex.
+- [x] Verify downstream Cortex failures remain fail-open for ingestion.
+- [x] Wire the real runtime composition to `cortex.process_event`.
+- [x] Verify event history and scorecards persist.
+- [x] Verify Replay reconstructs a decision after simulated restart.
+- [x] Audit Streamlit for duplicate Cortex facade construction.
+- [x] Audit the manual Inspector path and retain it as a diagnostic tool.
+- [x] Update stale Dashboard regression metadata.
+- [ ] Finish contributor-documentation refresh.
+- [ ] Populate/refresh deployment documentation.
+- [ ] Run final full regression suite.
+- [ ] Perform Streamlit smoke test across primary pages.
+- [ ] Reconcile `main` documentation-only divergence.
+- [ ] Prepare merge/release/tag boundary.
 
-### Cortex Explorer — Next
-Create a player intelligence dossier containing:
-- Current recommendation and confidence
-- Multidimensional Cortex profile
-- Score and confidence history
-- Recent evidence timeline
-- News history
-- Related players and teams
-- Propagation effects
-- Injury/availability context
-- Opportunity context
+## v1.0 Release Criteria
 
-### Knowledge Graph Viewer
-- Interactive player/team relationships
-- Expandable graph navigation
-- Relationship type and strength
-- Propagation direction and effect
-- Evidence path inspection
+A v1.0 release candidate should satisfy all of the following:
 
-## Commissioner Analytics — Next
+1. All normalized runtime events enter Cortex through the shared ingestion boundary.
+2. Provider health is isolated from downstream intelligence failures.
+3. Duplicate evidence does not produce duplicate decisions.
+4. Scorecards and event history survive restart.
+5. Replay reconstructs prior decisions from persisted history.
+6. Streamlit uses a shared Cortex facade rather than independent page engines.
+7. Primary product pages load without runtime errors.
+8. Contributor documentation matches implemented architecture.
+9. Full regression suite passes at or above the current 702-test boundary.
 
-Build visual analytics on top of the completed Commissioner Suite:
-- Schedule fairness
-- Home/away balance
-- Strength of schedule
-- Luck Index
-- Standings history
-- Team performance history
-- Rivalry and divisional schedule analysis
+## Post-v1 — Intelligence Improvements
 
-## Draft Center
+Once v1.0 is stable, improve quality rather than adding unbounded architecture:
+- Expand player alias and identity coverage.
+- Improve unknown/ambiguous impact classification.
+- Deepen injury and availability interpretation.
+- Reconcile usage/opportunity signals across providers.
+- Calibrate confidence against historical outcomes.
+- Measure relationship-propagation effectiveness.
+- Add decision outcome tracking and recommendation calibration.
 
-Expand the existing draft-room foundation into a live draft command center:
-- Snake and configurable draft formats
-- Remaining player tiers
-- Cortex draft value
-- Roster construction
-- Position scarcity
-- Reach/value indicators
-- Recommendations that exclude drafted players
+## Post-v1 — Data and Operations
 
-## Intelligence Improvements
+- Scheduled/background ingestion.
+- Provider freshness and latency monitoring.
+- Durable database-first repositories where scale requires them.
+- Queue/worker execution for expensive processing.
+- Better ingestion dashboards and alerting.
+- Backup/restore procedures.
+- Data-retention policies.
 
-Continue improving the engine using live evidence:
-- Player alias coverage
-- Unknown-impact classification
-- Injury/availability interpretation
-- Opportunity and usage reconciliation
-- Historical calibration
-- Confidence calibration
-- Relationship-effectiveness measurement
+## Post-v1 — Product Expansion
+
+### Cortex Explorer / Knowledge Graph
+- Richer graph filtering and navigation.
+- Evidence-path inspection.
+- Historical relationship changes.
+- Player/team dossier improvements.
+
+### Draft Center
+- Live draft state.
+- Remaining player tiers.
+- Cortex draft value.
+- Position scarcity.
+- Reach/value indicators.
+- Roster construction recommendations.
+
+### Commissioner Analytics
+- Schedule fairness visualizations.
+- Strength of schedule.
+- Luck Index.
+- Standings and team-performance history.
+- Rivalry/divisional analysis.
 
 ## Production / Cloud
 
-After product workflows stabilize:
-- Scheduled ingestion
-- Durable database-first repositories
-- Background workers/queues
-- Authentication
-- Multi-user and multi-league support
-- Monitoring and alerting
-- Backups
-- Deployment automation
-- Cost controls
+Productionization follows the stable local/runtime architecture rather than preceding it:
+- Deployment packaging and environment configuration.
+- Scheduled ingestion/background services.
+- Authentication.
+- Multi-user and multi-league support.
+- Monitoring and alerting.
+- Backups and recovery.
+- Deployment automation.
+- Cost controls.
+- Secrets management.
 
 ## Guiding Principles
 
 1. Cortex owns intelligence.
 2. GridironGPT owns football-domain product behavior.
-3. Evidence comes before conclusions.
-4. Preserve provenance and history.
-5. Prefer football semantics over generic math.
-6. Keep infrastructure replaceable.
-7. Make league settings configurable.
-8. Keep visualization calculations separate from rendering.
-9. Do not ship placeholder metrics when live values are available.
-10. Maintain a passing regression suite after every major implementation batch.
+3. Providers retrieve data; shared ingestion owns normalization and runtime handoff.
+4. Evidence comes before conclusions.
+5. Preserve provenance, history, and correlation.
+6. Prefer football semantics over generic math.
+7. Keep infrastructure replaceable behind contracts.
+8. Keep presentation separate from scoring/reasoning.
+9. Make important decisions replayable and explainable.
+10. Preserve a passing regression suite after every significant implementation batch.
