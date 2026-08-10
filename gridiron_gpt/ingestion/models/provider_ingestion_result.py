@@ -16,6 +16,9 @@ class ProviderIngestionResult:
     attempts: int = 1
     error_type: str | None = None
     error_message: str | None = None
+    cortex_events_accepted: int = 0
+    cortex_duplicates_ignored: int = 0
+    processor_failures: int = 0
 
     @property
     def event_count(self) -> int:
