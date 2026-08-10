@@ -23,25 +23,64 @@ class ScheduledRunResult:
 
 
 class IngestionRunLock:
-    """Small process lock that prevents overlapping scheduled ingestion runs."""
+    """Process lock that prevents overlapping scheduled ingestion runs.
+
+    The lock file stores the owning PID. If a previous process died without
+    cleaning up, a later run detects the stale PID and safely recovers the lock.
+    """
 
     def __init__(self, path: Path = DEFAULT_LOCK_PATH) -> None:
         self.path = path
         self._fd: int | None = None
 
+    def _owner_pid(self) -> int | None:
+        try:
+            raw = self.path.read_text(encoding="utf-8").strip()
+            return int(raw)
+        except (FileNotFoundError, ValueError, OSError):
+            return None
+
+    @staticmethod
+    def _pid_is_running(pid: int | None) -> bool:
+        if pid is None or pid <= 0:
+            return False
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            return False
+        except PermissionError:
+            return True
+        return True
+
     def acquire(self) -> bool:
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        try:
-            self._fd = os.open(
-                self.path,
-                os.O_CREAT | os.O_EXCL | os.O_WRONLY,
-                0o644,
-            )
-        except FileExistsError:
-            return False
 
-        os.write(self._fd, f"{os.getpid()}\n".encode("utf-8"))
-        return True
+        for _ in range(2):
+            try:
+                self._fd = os.open(
+                    self.path,
+                    os.O_CREAT | os.O_EXCL | os.O_WRONLY,
+                    0o644,
+                )
+            except FileExistsError:
+                owner_pid = self._owner_pid()
+                if self._pid_is_running(owner_pid):
+                    return False
+                logger.warning(
+                    "Removing stale scheduled-ingestion lock %s owned by pid=%s",
+                    self.path,
+                    owner_pid,
+                )
+                try:
+                    self.path.unlink()
+                except FileNotFoundError:
+                    pass
+                continue
+
+            os.write(self._fd, f"{os.getpid()}\n".encode("utf-8"))
+            return True
+
+        return False
 
     def release(self) -> None:
         if self._fd is not None:
