@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from gridiron_cortex.facade import CortexFacade
@@ -43,17 +44,25 @@ def test_runtime_ingestion_persists_full_cortex_decision_for_replay(tmp_path: Pa
     assert len(events) == 1
     correlation_id = events[0].fingerprint()
 
-    # Live runtime exposes the published pipeline trail and persisted score state.
+    # Live runtime exposes the published pipeline trail.
     live_history = cortex.get_event_history(correlation_id=correlation_id)
     assert live_history
-    assert cortex.get_player_scorecard("Tank Dell") is not None
+
+    # Scorecard persistence is keyed by the engine's player_id rather than display name.
+    scorecard_path = cortex_dir / "player_scorecards.jsonl"
+    assert scorecard_path.exists()
+    persisted_scorecards = [json.loads(line) for line in scorecard_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    tank_scorecard = next(record for record in persisted_scorecards if record.get("player_name") == "Tank Dell")
+    player_id = tank_scorecard["player_id"]
+    assert cortex.get_player_scorecard(player_id) is not None
 
     # Simulate an application restart. The new facade must reload persisted event
-    # bus history and Replay must reconstruct the same decision without reprocessing.
+    # bus history, score state, and Replay without reprocessing the article.
     restarted = CortexFacade(data_directory=cortex_dir)
     persisted_history = restarted.get_event_history(correlation_id=correlation_id)
     assert persisted_history
     assert len(persisted_history) == len(live_history)
+    assert restarted.get_player_scorecard(player_id) is not None
 
     replay = ReplayEngine(restarted.event_bus).by_correlation(correlation_id)
     assert replay is not None
