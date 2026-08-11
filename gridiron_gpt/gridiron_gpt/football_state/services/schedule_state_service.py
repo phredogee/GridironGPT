@@ -61,6 +61,38 @@ class ScheduleStateService:
     def get(self, game_id: str) -> CanonicalGameState | None:
         return self.repository.get(game_id)
 
+    def games_for_team(self, team: str) -> list[CanonicalGameState]:
+        return [game for game in self.repository.games_for_team(team) if game.season == self.season]
+
+    def next_game_for_team(
+        self,
+        team: str,
+        *,
+        as_of: datetime | None = None,
+    ) -> CanonicalGameState | None:
+        reference = as_of or self.clock()
+        candidates = [
+            game
+            for game in self.games_for_team(team)
+            if game.game_status != "final"
+            and game.kickoff_at is not None
+            and game.kickoff_at >= reference
+        ]
+        return candidates[0] if candidates else None
+
+    def game_for_team_week(self, team: str, week: int) -> CanonicalGameState | None:
+        matches = [
+            game
+            for game in self.games_for_team(team)
+            if game.season_type == "REG" and game.week == week
+        ]
+        return matches[0] if matches else None
+
+    def is_bye_week(self, team: str, week: int) -> bool:
+        if not 1 <= week <= 18:
+            raise ValueError("regular-season week must be between 1 and 18")
+        return self.game_for_team_week(team, week) is None
+
     @classmethod
     def has_meaningful_change(
         cls,
