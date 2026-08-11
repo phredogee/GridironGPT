@@ -21,3 +21,8 @@ class GameStateRepository(ABC):
     @abstractmethod
     def all_latest(self) -> list[CanonicalGameState]:
         raise NotImplementedError
+
+    @abstractmethod
+    def games_for_team(self, team: str) -> list[CanonicalGameState]:
+        """Return latest game states involving team in schedule order."""
+        raise NotImplementedError
