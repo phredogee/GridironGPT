@@ -1,5 +1,7 @@
 from datetime import datetime, timezone
 
+import pytest
+
 from gridiron_gpt.football_state.repositories.jsonl_game_state_repository import (
     JsonlGameStateRepository,
 )
@@ -130,3 +132,31 @@ def test_schedule_service_skips_rows_without_stable_game_identity(tmp_path):
 
     assert service.refresh() == []
     assert repository.all_latest() == []
+
+
+def test_team_queries_return_next_game_and_week_context(tmp_path):
+    repository = JsonlGameStateRepository(tmp_path / "game_states.jsonl")
+    rows = [
+        _row(game_id="2026_01_BUF_HOU", away_team="BUF", home_team="HOU", gameday="2026-09-13", gametime="13:00"),
+        _row(game_id="2026_02_HOU_KC", week=2, away_team="HOU", home_team="KC", gameday="2026-09-20", gametime="16:25"),
+    ]
+    service = ScheduleStateService(repository, schedule_loader=lambda: rows, clock=lambda: NOW)
+    service.refresh()
+
+    next_game = service.next_game_for_team("hou")
+    week_two = service.game_for_team_week("HOU", 2)
+
+    assert next_game is not None
+    assert next_game.game_id == "2026_01_BUF_HOU"
+    assert week_two is not None
+    assert week_two.game_id == "2026_02_HOU_KC"
+    assert service.is_bye_week("HOU", 3) is True
+    assert service.is_bye_week("HOU", 2) is False
+
+
+def test_bye_week_rejects_non_regular_season_week(tmp_path):
+    repository = JsonlGameStateRepository(tmp_path / "game_states.jsonl")
+    service = ScheduleStateService(repository, schedule_loader=lambda: [], clock=lambda: NOW)
+
+    with pytest.raises(ValueError):
+        service.is_bye_week("HOU", 0)
