@@ -1,9 +1,5 @@
-from gridiron_gpt.data_ingest.player_matcher import (
-    build_default_aliases,
-    find_player_matches,
-    get_alias_index,
-    get_cached_catalog,
-)
+import gridiron_gpt.data_ingest.player_matcher as player_matcher
+from gridiron_gpt.data_ingest.player_matcher import build_default_aliases, find_player_matches
 
 
 def test_suffixless_alias_is_generated():
@@ -39,13 +35,30 @@ def test_football_name_alias_is_generated():
     assert "Deebo Samuel" in aliases
 
 
-def test_live_catalog_suffixless_names_resolve():
-    # Force the current catalog through alias-index construction.
-    # The upstream roster may change whether suffixes are included in the
-    # canonical display name, so this test verifies identity resolution rather
-    # than pinning the exact display formatting of the live dataset.
-    get_cached_catalog.cache_clear()
-    get_alias_index.cache_clear()
+def test_suffixless_names_resolve_from_catalog(monkeypatch):
+    catalog = [
+        {
+            "player": "Chris Rodriguez Jr.",
+            "football_name": "Chris",
+            "first_name": "Chris",
+            "last_name": "Rodriguez",
+            "team": "WAS",
+            "position": "RB",
+            "aliases": [],
+        },
+        {
+            "player": "Deebo Samuel Sr.",
+            "football_name": "Deebo",
+            "first_name": "Tyshun",
+            "last_name": "Samuel",
+            "team": "WAS",
+            "position": "WR",
+            "aliases": [],
+        },
+    ]
+
+    monkeypatch.setattr(player_matcher, "load_player_catalog", lambda: catalog)
+    player_matcher.clear_catalog_cache()
 
     chris_matches = find_player_matches(
         "Chris Rodriguez: Progressing in recovery"
@@ -55,10 +68,12 @@ def test_live_catalog_suffixless_names_resolve():
     )
 
     assert any(
-        match["player"].startswith("Chris Rodriguez")
+        match["player"] == "Chris Rodriguez Jr."
         for match in chris_matches
     )
     assert any(
-        match["player"].startswith("Deebo Samuel")
+        match["player"] == "Deebo Samuel Sr."
         for match in deebo_matches
     )
+
+    player_matcher.clear_catalog_cache()
