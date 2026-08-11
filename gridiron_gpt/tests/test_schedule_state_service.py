@@ -52,6 +52,29 @@ def test_schedule_service_promotes_rows_to_canonical_game_state(tmp_path):
     assert repository.get(state.game_id) == state
 
 
+def test_schedule_service_defaults_to_calendar_year_for_preseason_context(tmp_path):
+    repository = JsonlGameStateRepository(tmp_path / "game_states.jsonl")
+    service = ScheduleStateService(
+        repository,
+        schedule_loader=lambda: [],
+        clock=lambda: NOW,
+    )
+
+    assert service.season == 2026
+
+
+def test_schedule_service_accepts_explicit_season(tmp_path):
+    repository = JsonlGameStateRepository(tmp_path / "game_states.jsonl")
+    service = ScheduleStateService(
+        repository,
+        season=2025,
+        schedule_loader=lambda: [],
+        clock=lambda: NOW,
+    )
+
+    assert service.season == 2025
+
+
 def test_schedule_service_does_not_persist_unchanged_snapshot(tmp_path):
     repository = JsonlGameStateRepository(tmp_path / "game_states.jsonl")
     service = ScheduleStateService(
