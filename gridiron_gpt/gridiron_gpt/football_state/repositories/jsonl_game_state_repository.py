@@ -42,3 +42,20 @@ class JsonlGameStateRepository(GameStateRepository):
         for state in self._load_all():
             latest[state.game_id] = state
         return list(latest.values())
+
+    def games_for_team(self, team: str) -> list[CanonicalGameState]:
+        normalized = team.strip().upper()
+        games = [
+            state
+            for state in self.all_latest()
+            if state.home_team.upper() == normalized or state.away_team.upper() == normalized
+        ]
+        return sorted(
+            games,
+            key=lambda state: (
+                state.kickoff_at is None,
+                state.kickoff_at,
+                state.week,
+                state.game_id,
+            ),
+        )
