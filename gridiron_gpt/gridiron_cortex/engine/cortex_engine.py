@@ -26,6 +26,7 @@ class CortexEngine:
         intelligence_engine=None,
         prediction_engine=None,
         trend_analyzer=None,
+        football_context_service=None,
     ):
         self.entity_resolver = entity_resolver
         self.player_enrichment = player_enrichment
@@ -43,6 +44,7 @@ class CortexEngine:
         self.player_intelligence_builder = player_intelligence_builder
         self.player_snapshot_factory = player_snapshot_factory
         self.trend_analyzer = trend_analyzer
+        self.football_context_service = football_context_service
 
     def process_event(self, event):
         if self.event_repository is not None:
@@ -75,6 +77,16 @@ class CortexEngine:
         context.entities = self.entity_resolver.resolve(
             context.raw_event
         )
+
+        if self.football_context_service is not None:
+            for entity in context.entities:
+                if entity.entity_type != "player" or not entity.player_id:
+                    continue
+                football_context = self.football_context_service.for_player(
+                    entity.player_id
+                )
+                if football_context is not None:
+                    context.football_context[entity.player_id] = football_context
 
         signal = self.signal_processor.process(
             context.raw_event,
