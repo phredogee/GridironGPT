@@ -17,6 +17,7 @@ class PlayerStateService:
         "team",
         "position",
         "roster_status",
+        "status_description_abbr",
         "depth_chart_position",
     )
 
@@ -105,6 +106,9 @@ class PlayerStateService:
             team=self._optional_text(player.get("team")),
             position=self._optional_text(player.get("position")),
             roster_status=self._optional_text(player.get("status")),
+            status_description_abbr=self._optional_text(player.get("status_description_abbr")),
+            roster_week=self._integer(player.get("week")),
+            roster_game_type=self._optional_text(player.get("game_type")),
             depth_chart_position=self._optional_text(player.get("depth_chart_position")),
             jersey_number=player.get("jersey_number"),
             years_experience=player.get("years_exp"),
@@ -142,3 +146,12 @@ class PlayerStateService:
     def _optional_text(cls, value) -> str | None:
         text = cls._text(value)
         return text or None
+
+    @staticmethod
+    def _integer(value) -> int | None:
+        if value is None:
+            return None
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
