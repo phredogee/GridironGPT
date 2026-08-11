@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from gridiron_cortex.facade.cortex_facade import CortexFacade
 from gridiron_cortex.models.raw_event import RawEvent
@@ -32,8 +32,11 @@ def test_facade_explanation_includes_real_football_context(tmp_path):
         )
     )
 
-    kickoff = datetime(2026, 9, 13, 17, 0, tzinfo=timezone.utc)
+    week_one_kickoff = datetime(2026, 9, 13, 17, 0, tzinfo=timezone.utc)
 
+    # Build a chronological synthetic schedule with Week 8 intentionally absent
+    # so the fixture represents Houston's bye without allowing later weeks to
+    # sort ahead of Week 1 by kickoff timestamp.
     for week in list(range(1, 8)) + list(range(9, 19)):
         if week == 1:
             game_repo.save(
@@ -44,7 +47,7 @@ def test_facade_explanation_includes_real_football_context(tmp_path):
                     season_type="REG",
                     home_team="HOU",
                     away_team="BUF",
-                    kickoff_at=kickoff,
+                    kickoff_at=week_one_kickoff,
                     game_status="scheduled",
                 )
             )
@@ -57,7 +60,7 @@ def test_facade_explanation_includes_real_football_context(tmp_path):
                     season_type="REG",
                     home_team="HOU",
                     away_team="OPP",
-                    kickoff_at=datetime(2026, 9, min(week + 1, 28), 17, 0, tzinfo=timezone.utc),
+                    kickoff_at=week_one_kickoff + timedelta(weeks=week - 1),
                     game_status="scheduled",
                 )
             )
