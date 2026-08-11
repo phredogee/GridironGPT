@@ -29,17 +29,17 @@ class ScheduleStateService:
         self,
         repository: GameStateRepository,
         *,
+        season: int | None = None,
         schedule_loader: Callable[[], Any] | None = None,
         clock: Callable[[], datetime] | None = None,
     ) -> None:
         self.repository = repository
-        self.schedule_loader = schedule_loader or self._load_current_schedule
         self.clock = clock or (lambda: datetime.now(timezone.utc))
+        self.season = season if season is not None else self.clock().year
+        self.schedule_loader = schedule_loader or self._load_schedule
 
-    @staticmethod
-    def _load_current_schedule():
-        season = nfl.get_current_season()
-        return nfl.load_schedules(season)
+    def _load_schedule(self):
+        return nfl.load_schedules(self.season)
 
     def refresh(self) -> list[CanonicalGameState]:
         effective_at = self.clock()
