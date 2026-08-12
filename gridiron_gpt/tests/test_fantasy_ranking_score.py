@@ -107,3 +107,49 @@ def test_custom_weights_can_disable_cortex_adjustment():
     high_cortex = scorer.score(_inputs(cortex_score=100))
 
     assert low_cortex.ranking_score == high_cortex.ranking_score
+
+
+def test_missing_component_renormalizes_remaining_weights():
+    result = FantasyRankingScorer().score(
+        _inputs(
+            market_score=None,
+        )
+    )
+
+    # Active configured weight is .80. The missing market component contributes
+    # neither zero points nor a penalty; remaining weights are normalized to 1.
+    expected = (
+        80 * (0.55 / 0.80)
+        + 90 * (0.10 / 0.80)
+        + 60 * (0.10 / 0.80)
+        + 100 * (0.05 / 0.80)
+    )
+    assert result.ranking_score == round(expected, 3)
+    assert "market" not in result.components
+    assert "market" not in result.weighted_components
+    assert "market" not in result.provenance
+
+
+def test_zero_is_real_evidence_not_missing_evidence():
+    zero_market = FantasyRankingScorer().score(_inputs(market_score=0.0))
+    missing_market = FantasyRankingScorer().score(_inputs(market_score=None))
+
+    assert "market" in zero_market.components
+    assert zero_market.components["market"] == 0.0
+    assert zero_market.ranking_score < missing_market.ranking_score
+
+
+def test_all_weighted_components_missing_is_rejected():
+    with pytest.raises(
+        ValueError,
+        match="at least one weighted ranking component must be available",
+    ):
+        FantasyRankingScorer().score(
+            _inputs(
+                baseline_score=None,
+                market_score=None,
+                role_score=None,
+                cortex_score=None,
+                availability_score=None,
+            )
+        )
