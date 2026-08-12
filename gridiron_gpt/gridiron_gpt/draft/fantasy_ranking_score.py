@@ -29,18 +29,23 @@ class FantasyRankingWeights:
 
 @dataclass(frozen=True)
 class FantasyRankingInputs:
-    """Normalized 0-100 inputs used to calculate one fantasy ranking score."""
+    """Normalized 0-100 inputs used to calculate one fantasy ranking score.
+
+    A component may be None when its source is genuinely unavailable. Missing
+    evidence is not treated as poor evidence; the scorer redistributes weight
+    across the components that are present.
+    """
 
     player_id: str
     player_name: str
     team: str | None
     position: str | None
 
-    baseline_score: float
-    market_score: float
-    role_score: float
-    cortex_score: float
-    availability_score: float
+    baseline_score: float | None
+    market_score: float | None
+    role_score: float | None
+    cortex_score: float | None
+    availability_score: float | None
 
     provenance: dict[str, str] = field(default_factory=dict)
 
@@ -68,20 +73,39 @@ class FantasyRankingScorer:
         self.weights.validate()
 
     def score(self, inputs: FantasyRankingInputs) -> FantasyRankingScore:
-        components = {
-            "baseline": self._normalize(inputs.baseline_score),
-            "market": self._normalize(inputs.market_score),
-            "role": self._normalize(inputs.role_score),
-            "cortex": self._normalize(inputs.cortex_score),
-            "availability": self._normalize(inputs.availability_score),
+        raw_components = {
+            "baseline": inputs.baseline_score,
+            "market": inputs.market_score,
+            "role": inputs.role_score,
+            "cortex": inputs.cortex_score,
+            "availability": inputs.availability_score,
+        }
+        configured_weights = {
+            "baseline": self.weights.baseline,
+            "market": self.weights.market,
+            "role": self.weights.role,
+            "cortex": self.weights.cortex,
+            "availability": self.weights.availability,
         }
 
+        components = {
+            name: self._normalize(value)
+            for name, value in raw_components.items()
+            if value is not None
+        }
+
+        active_weight = sum(
+            configured_weights[name]
+            for name in components
+            if configured_weights[name] > 0
+        )
+        if active_weight <= 0:
+            raise ValueError("at least one weighted ranking component must be available")
+
         weighted = {
-            "baseline": components["baseline"] * self.weights.baseline,
-            "market": components["market"] * self.weights.market,
-            "role": components["role"] * self.weights.role,
-            "cortex": components["cortex"] * self.weights.cortex,
-            "availability": components["availability"] * self.weights.availability,
+            name: value * (configured_weights[name] / active_weight)
+            for name, value in components.items()
+            if configured_weights[name] > 0
         }
 
         ranking_score = round(sum(weighted.values()), 3)
@@ -97,7 +121,11 @@ class FantasyRankingScorer:
                 key: round(value, 3)
                 for key, value in weighted.items()
             },
-            provenance=dict(inputs.provenance),
+            provenance={
+                key: value
+                for key, value in inputs.provenance.items()
+                if key in components
+            },
         )
 
     @staticmethod
