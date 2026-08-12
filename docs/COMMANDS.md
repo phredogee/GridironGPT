@@ -6,7 +6,13 @@
 pytest -q
 ```
 
-Current expected baseline on develop/v1.1: 709 passing tests.
+Current expected baseline on `develop/v1.1`: **744 passing tests** as of 2026-08-12.
+
+Run the football-context facade integration test directly:
+
+```bash
+pytest -q tests/test_cortex_facade_football_context.py
+```
 
 ## Run Scheduled Ingestion Manually
 
@@ -14,10 +20,39 @@ Current expected baseline on develop/v1.1: 709 passing tests.
 PYTHONPATH=. python scripts/run_scheduled_ingestion.py
 ```
 
+A healthy run should report provider counts, records received, normalized events, new Cortex events, duplicates ignored, and processor failures.
+
+## Inspect Structured Football State
+
+Canonical football state is stored under:
+
+```text
+data/football_state/player_states.jsonl
+data/football_state/game_states.jsonl
+```
+
+These stores are separate from Cortex news/evidence persistence.
+
 ## Start Streamlit
 
 ```bash
 streamlit run gridiron_gpt/apps/streamlit/app.py
+```
+
+## Ranking Infrastructure Smoke Check
+
+`RankingService` can currently sort latest Cortex scorecards overall and by position. Treat this output as an infrastructure test, not an authoritative fantasy ranking, until the Fantasy Ranking Score layer is implemented.
+
+Run ranking-specific tests with:
+
+```bash
+pytest -q tests/test_ranking_service.py
+```
+
+If the ranking test filename changes, locate it with:
+
+```bash
+find tests -iname '*ranking*'
 ```
 
 ## Hourly WSL Cron
