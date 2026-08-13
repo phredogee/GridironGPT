@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+import unicodedata
 from dataclasses import dataclass
 
 from gridiron_gpt.draft.fantasy_ranking_input_adapter import (
@@ -59,6 +61,9 @@ class FantasyRankingPopulationService:
         role_scores_by_player_id = role_scores_by_player_id or {}
         role_provenance_by_player_id = role_provenance_by_player_id or {}
 
+        historical_by_key = self._normalized_source_map(historical_points_by_name)
+        adp_by_key = self._normalized_source_map(adp_by_name)
+
         players = [
             player
             for player in self.player_repository.all_latest()
@@ -67,19 +72,20 @@ class FantasyRankingPopulationService:
 
         historical_max = max(
             (
-                historical_points_by_name[player.player_name]
+                historical_by_key[self._name_key(player.player_name)]
                 for player in players
-                if player.player_name in historical_points_by_name
+                if self._name_key(player.player_name) in historical_by_key
             ),
             default=None,
         )
 
         scores: list[FantasyRankingScore] = []
         for player in players:
+            player_key = self._name_key(player.player_name)
             source_values = FantasyRankingSourceValues(
-                historical_points=historical_points_by_name.get(player.player_name),
+                historical_points=historical_by_key.get(player_key),
                 historical_max_points=historical_max,
-                adp=adp_by_name.get(player.player_name),
+                adp=adp_by_key.get(player_key),
                 draft_pool_size=draft_pool_size,
                 role_score=role_scores_by_player_id.get(player.player_id),
                 role_provenance=role_provenance_by_player_id.get(player.player_id),
@@ -94,7 +100,7 @@ class FantasyRankingPopulationService:
             try:
                 scores.append(self.scorer.score(inputs))
             except ValueError:
-                # A player with no weighted inputs should not appear in a ranking
+                # A player with no primary ranking evidence should not appear
                 # merely because they exist in the roster dataset.
                 continue
 
@@ -117,6 +123,22 @@ class FantasyRankingPopulationService:
             overall=scores,
             by_position=by_position,
         )
+
+    @staticmethod
+    def _name_key(name: str) -> str:
+        """Return a conservative cross-source key for a player's display name."""
+        value = unicodedata.normalize("NFKD", str(name))
+        value = "".join(char for char in value if not unicodedata.combining(char))
+        return re.sub(r"[^a-z0-9]", "", value.casefold())
+
+    @classmethod
+    def _normalized_source_map(cls, values: dict[str, float]) -> dict[str, float]:
+        normalized: dict[str, float] = {}
+        for name, value in values.items():
+            key = cls._name_key(name)
+            if key and key not in normalized:
+                normalized[key] = value
+        return normalized
 
     def _is_draftable(self, player) -> bool:
         position = (player.position or "").upper()
