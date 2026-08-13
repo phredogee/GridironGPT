@@ -139,6 +139,22 @@ def test_zero_is_real_evidence_not_missing_evidence():
     assert zero_market.ranking_score < missing_market.ranking_score
 
 
+def test_availability_only_is_rejected_as_insufficient_ranking_evidence():
+    with pytest.raises(
+        ValueError,
+        match="at least one primary ranking evidence component must be available",
+    ):
+        FantasyRankingScorer().score(
+            _inputs(
+                baseline_score=None,
+                market_score=None,
+                role_score=None,
+                cortex_score=None,
+                availability_score=100.0,
+            )
+        )
+
+
 def test_all_weighted_components_missing_is_rejected():
     with pytest.raises(
         ValueError,
