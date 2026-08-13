@@ -68,6 +68,13 @@ class FantasyRankingScore:
 class FantasyRankingScorer:
     """Combine normalized fantasy inputs without redefining Cortex score semantics."""
 
+    PRIMARY_EVIDENCE_COMPONENTS = {
+        "baseline",
+        "market",
+        "role",
+        "cortex",
+    }
+
     def __init__(self, weights: FantasyRankingWeights | None = None) -> None:
         self.weights = weights or FantasyRankingWeights()
         self.weights.validate()
@@ -101,6 +108,15 @@ class FantasyRankingScorer:
         )
         if active_weight <= 0:
             raise ValueError("at least one weighted ranking component must be available")
+
+        has_primary_evidence = any(
+            name in components and configured_weights[name] > 0
+            for name in self.PRIMARY_EVIDENCE_COMPONENTS
+        )
+        if not has_primary_evidence:
+            raise ValueError(
+                "at least one primary ranking evidence component must be available"
+            )
 
         weighted = {
             name: value * (configured_weights[name] / active_weight)
