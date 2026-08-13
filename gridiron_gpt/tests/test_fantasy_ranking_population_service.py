@@ -140,7 +140,7 @@ def test_cortex_and_adp_can_adjust_order_without_replacing_baseline():
     assert result.overall[0].components["market"] > result.overall[1].components["market"]
 
 
-def test_missing_external_sources_do_not_remove_player_with_availability():
+def test_availability_only_player_is_excluded_without_primary_evidence():
     players = [player("p1", "Unknown Market RB", "RB")]
     service = FantasyRankingPopulationService(
         StubPlayerRepository(players),
@@ -149,8 +149,8 @@ def test_missing_external_sources_do_not_remove_player_with_availability():
 
     result = service.build()
 
-    assert len(result.overall) == 1
-    assert result.overall[0].components == {"availability": 100.0}
+    assert result.overall == []
+    assert result.by_position["RB"] == []
 
 
 def test_limit_applies_to_overall_population_and_position_views():
