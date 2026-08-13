@@ -63,6 +63,7 @@ class FantasyRankingPopulationService:
 
         historical_by_key = self._normalized_source_map(historical_points_by_name)
         adp_by_key = self._normalized_source_map(adp_by_name)
+        legacy_scorecards = self._legacy_scorecard_index()
 
         players = [
             player
@@ -90,7 +91,7 @@ class FantasyRankingPopulationService:
                 role_score=role_scores_by_player_id.get(player.player_id),
                 role_provenance=role_provenance_by_player_id.get(player.player_id),
             )
-            scorecard = self.scorecard_repository.get_latest(player.player_id)
+            scorecard = self._get_scorecard(player, legacy_scorecards)
             inputs = self.adapter.build(
                 player,
                 source_values=source_values,
@@ -123,6 +124,32 @@ class FantasyRankingPopulationService:
             overall=scores,
             by_position=by_position,
         )
+
+    def _get_scorecard(self, player, legacy_scorecards: dict[tuple[str, str], list]):
+        scorecard = self.scorecard_repository.get_latest(player.player_id)
+        if scorecard is not None:
+            return scorecard
+
+        key = (
+            self._name_key(player.player_name),
+            (player.team or "").upper(),
+        )
+        matches = legacy_scorecards.get(key, [])
+        return matches[0] if len(matches) == 1 else None
+
+    def _legacy_scorecard_index(self) -> dict[tuple[str, str], list]:
+        get_all_latest = getattr(self.scorecard_repository, "get_all_latest", None)
+        if not callable(get_all_latest):
+            return {}
+
+        index: dict[tuple[str, str], list] = {}
+        for scorecard in get_all_latest():
+            key = (
+                self._name_key(scorecard.player_name),
+                (getattr(scorecard, "team", None) or "").upper(),
+            )
+            index.setdefault(key, []).append(scorecard)
+        return index
 
     @staticmethod
     def _name_key(name: str) -> str:
