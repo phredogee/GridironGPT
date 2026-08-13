@@ -27,13 +27,15 @@ def _fetch_adp_for_year(scoring: str, teams: int, year: int) -> list:
     return resp.json().get("players", [])
 
 
-def fetch_adp(scoring: str = "ppr", teams: int = 12) -> Dict[str, dict]:
+def fetch_adp(scoring: str = "ppr", teams: int = 12):
+    """Fetch ADP and report the season that supplied the records.
+
+    The import is local to avoid coupling the legacy fetcher to the ranking data
+    service at module-import time. Returning ``AdpSnapshot`` lets downstream
+    ranking code distinguish current market evidence from stale fallback data.
     """
-    Fetch ADP from Fantasy Football Calculator.
-    Tries the current pre-season year first; falls back to the previous year
-    if the current year has no data yet (published ~July/August each year).
-    Returns {player_name: {...}}.
-    """
+    from gridiron_gpt.draft.fantasy_ranking_data_service import AdpSnapshot
+
     players = []
     year_used = None
 
@@ -48,12 +50,12 @@ def fetch_adp(scoring: str = "ppr", teams: int = 12) -> Dict[str, dict]:
 
     if not players:
         print("⚠️ No ADP data available — rankings will use historical stats only.")
-        return {}
+        return AdpSnapshot(records={}, year=None)
 
     if year_used != _CURRENT_YEAR:
         print(f"ℹ️  Using {year_used} ADP (current year not yet published).")
 
-    return {
+    records = {
         p["name"]: {
             "adp": float(p.get("adp", 9999)),
             "position": p.get("position", "UNK"),
@@ -65,6 +67,8 @@ def fetch_adp(scoring: str = "ppr", teams: int = 12) -> Dict[str, dict]:
         for p in players
         if p.get("name")
     }
+
+    return AdpSnapshot(records=records, year=year_used)
 
 
 def fetch_injuries() -> Dict[str, str]:
