@@ -22,6 +22,7 @@ from gridiron_gpt.draft.fantasy_ranking_population_service import (
 from gridiron_gpt.draft.football_ranking_explanation_service import (
     FootballRankingExplanationService,
 )
+from gridiron_gpt.draft.nfl_fantasy_adp_loader import NflFantasyAdpLoader
 from gridiron_gpt.football_state.repositories.jsonl_player_state_repository import (
     JsonlPlayerStateRepository,
 )
@@ -41,11 +42,13 @@ def build_fantasy_ranking_snapshot(
     scorecard_repository = JsonPlayerScorecardRepository(
         "data/cortex/player_scorecards.jsonl"
     )
+    nfl_adp_loader = NflFantasyAdpLoader()
     service = FantasyRankingDataService(
         FantasyRankingPopulationService(
             player_repository,
             scorecard_repository,
-        )
+        ),
+        adp_source_loaders={"NFL Fantasy": nfl_adp_loader.load},
     )
     return service.build(
         scoring=scoring,
@@ -87,7 +90,6 @@ def _football_notes(population) -> tuple[dict[str, str], dict[str, str]]:
 
 
 def _expansion_controls(scope: str) -> str:
-    """Render expansion controls and return the requested expander mode."""
     state_key = f"fantasy_rankings_expansion_{scope.lower()}"
     if state_key not in st.session_state:
         st.session_state[state_key] = "default"
@@ -117,36 +119,75 @@ def _is_expanded(rank: int, mode: str, *, default_count: int = 5) -> bool:
     return rank <= default_count
 
 
+def _market_badge(score, market_views: dict) -> str:
+    view = market_views.get(score.player_id)
+    if view is None:
+        return ""
+    parts = [f"{score.position or '-'}{view.position_rank}", f"Tier {view.tier}"]
+    if view.consensus_adp is not None:
+        parts.append(f"ADP {view.consensus_adp:.1f}")
+    if view.draft_value is not None:
+        sign = "+" if view.draft_value > 0 else ""
+        parts.append(f"Value {sign}{view.draft_value:.1f}")
+    return " · ".join(parts)
+
+
+def _render_market_context(score, market_views: dict) -> None:
+    view = market_views.get(score.player_id)
+    if view is None:
+        return
+
+    columns = st.columns(5)
+    columns[0].metric("Position Rank", f"{score.position or '-'}{view.position_rank}")
+    columns[1].metric("Tier", view.tier)
+    columns[2].metric(
+        "Consensus ADP",
+        f"{view.consensus_adp:.1f}" if view.consensus_adp is not None else "—",
+    )
+    columns[3].metric(
+        "ADP Spread",
+        f"{view.adp_spread:.1f}" if view.adp_spread is not None else "—",
+    )
+    columns[4].metric(
+        "Draft Value",
+        f"{view.draft_value:+.1f}" if view.draft_value is not None else "—",
+    )
+
+    if view.source_adps:
+        source_text = " · ".join(
+            f"{source}: {value:.1f}"
+            for source, value in sorted(view.source_adps.items())
+        )
+        st.caption(f"ADP sources: {source_text}")
+
+
 def _render_score_rows(
     scores,
     *,
     football_summaries: dict[str, str],
+    market_views: dict,
     expansion_mode: str = "default",
     expanded_count: int = 5,
 ) -> None:
     for rank, score in enumerate(scores, start=1):
+        market_badge = _market_badge(score, market_views)
         header = (
-            f"#{rank}  {score.player_name}  ·  {score.position or '-'}  ·  "
+            f"#{rank}  {score.player_name}  ·  {market_badge or (score.position or '-')}  ·  "
             f"{score.team or '-'}  ·  {score.ranking_score:.2f}"
         )
         with st.expander(
             header,
-            expanded=_is_expanded(
-                rank,
-                expansion_mode,
-                default_count=expanded_count,
-            ),
+            expanded=_is_expanded(rank, expansion_mode, default_count=expanded_count),
         ):
+            _render_market_context(score, market_views)
+
             football_summary = football_summaries.get(score.player_id)
             if football_summary:
                 st.markdown("**Football read**")
                 st.write(football_summary)
 
             component_columns = st.columns(len(score.components))
-            for column, (name, value) in zip(
-                component_columns,
-                score.components.items(),
-            ):
+            for column, (name, value) in zip(component_columns, score.components.items()):
                 column.metric(name.title(), f"{value:.1f}")
 
             if score.provenance:
@@ -159,20 +200,21 @@ def _render_overall_rows(
     explained_overall,
     *,
     football_summaries: dict[str, str],
+    market_views: dict,
     limit: int,
     expansion_mode: str = "default",
 ) -> None:
     for item in explained_overall[:limit]:
         score = item.score
         explanation = item.explanation
+        market_badge = _market_badge(score, market_views)
         header = (
-            f"#{item.rank}  {score.player_name}  ·  {score.position or '-'}  ·  "
+            f"#{item.rank}  {score.player_name}  ·  {market_badge or (score.position or '-')}  ·  "
             f"{score.team or '-'}  ·  {score.ranking_score:.2f}"
         )
-        with st.expander(
-            header,
-            expanded=_is_expanded(item.rank, expansion_mode),
-        ):
+        with st.expander(header, expanded=_is_expanded(item.rank, expansion_mode)):
+            _render_market_context(score, market_views)
+
             football_summary = football_summaries.get(score.player_id)
             if football_summary:
                 st.markdown("**Football read**")
@@ -182,10 +224,7 @@ def _render_overall_rows(
             st.write(explanation.summary)
 
             component_columns = st.columns(len(score.components))
-            for column, (name, value) in zip(
-                component_columns,
-                score.components.items(),
-            ):
+            for column, (name, value) in zip(component_columns, score.components.items()):
                 column.metric(name.title(), f"{value:.1f}")
 
             if explanation.strengths:
@@ -231,7 +270,7 @@ def _selected_export_fields() -> tuple[str, ...]:
 def render_fantasy_rankings() -> None:
     st.markdown("### Integrated Fantasy Rankings")
     st.caption(
-        "Rankings combine historical production, current market/ADP, recent role, "
+        "GridironGPT combines historical production, consensus market ADP, recent role, "
         "Cortex intelligence, and canonical availability."
     )
 
@@ -266,11 +305,7 @@ def render_fantasy_rankings() -> None:
         )
 
     try:
-        snapshot = build_fantasy_ranking_snapshot(
-            scoring=scoring,
-            teams=teams,
-            limit=None,
-        )
+        snapshot = build_fantasy_ranking_snapshot(scoring=scoring, teams=teams, limit=None)
     except Exception as exc:
         st.error("Fantasy rankings could not be built from the current local data.")
         with st.expander("Technical details", expanded=False):
@@ -279,19 +314,16 @@ def render_fantasy_rankings() -> None:
 
     meta = st.columns(4)
     meta[0].metric("Historical", snapshot.historical_player_count)
+    source_label = ", ".join(snapshot.adp_sources) if snapshot.adp_sources else "Unavailable"
     meta[1].metric(
-        "Market / ADP",
+        "Consensus ADP",
         snapshot.adp_player_count,
-        delta=(f"{snapshot.adp_year}" if snapshot.adp_year else "Unavailable"),
+        delta=source_label,
     )
     meta[2].metric(
         "Role evidence",
         snapshot.role_player_count,
-        delta=(
-            f"{snapshot.role_season}"
-            if snapshot.role_season
-            else "Unavailable"
-        ),
+        delta=(f"{snapshot.role_season}" if snapshot.role_season else "Unavailable"),
     )
     meta[3].metric("Ranked players", len(snapshot.population.overall))
 
@@ -318,6 +350,7 @@ def render_fantasy_rankings() -> None:
                 selected_fields=selected_fields,
                 bye_week_by_team=bye_weeks,
                 football_notes_by_player_id=football_notes,
+                market_views_by_player_id=snapshot.market_views_by_player_id,
             )
             export_columns[0].download_button(
                 "Download Excel",
@@ -337,6 +370,7 @@ def render_fantasy_rankings() -> None:
                 selected_fields=selected_fields,
                 bye_week_by_team=bye_weeks,
                 football_notes_by_player_id=football_notes,
+                market_views_by_player_id=snapshot.market_views_by_player_id,
             )
             export_columns[1].download_button(
                 "Download PDF",
@@ -349,8 +383,8 @@ def render_fantasy_rankings() -> None:
             export_columns[1].warning(f"PDF export unavailable: {exc}")
 
     st.caption(
-        "Draft Day defaults to rank, player, position, team, bye, score, and "
-        "football notes. Full Analysis adds all model components and provenance."
+        "Draft Day includes position rank, tier, consensus ADP, Draft Value, bye, "
+        "GridironGPT score, and football notes. Individual ADP sources remain selectable."
     )
 
     st.divider()
@@ -361,6 +395,7 @@ def render_fantasy_rankings() -> None:
         _render_overall_rows(
             snapshot.population.explained_overall,
             football_summaries=football_summaries,
+            market_views=snapshot.market_views_by_player_id,
             limit=overall_limit,
             expansion_mode=overall_expansion,
         )
@@ -376,5 +411,6 @@ def render_fantasy_rankings() -> None:
             _render_score_rows(
                 scores[:position_limit],
                 football_summaries=football_summaries,
+                market_views=snapshot.market_views_by_player_id,
                 expansion_mode=expansion_mode,
             )
