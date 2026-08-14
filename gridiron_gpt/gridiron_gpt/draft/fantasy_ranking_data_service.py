@@ -68,10 +68,25 @@ class FantasyRankingDataService:
         self.historical_loader = historical_loader
         self.adp_loader = adp_loader
         self.role_loader = role_loader or self._load_observed_role_snapshot
-        self.adp_source_loaders = adp_source_loaders or {}
+        self.adp_source_loaders = self._default_adp_source_loaders(
+            season=ranking_season
+        )
+        self.adp_source_loaders.update(adp_source_loaders or {})
         self.consensus_adp_service = consensus_adp_service or ConsensusAdpService()
         self.tier_service = tier_service or FantasyRankingTierService()
         self.ranking_season = ranking_season
+
+    @staticmethod
+    def _default_adp_source_loaders(*, season: int) -> dict[str, Callable]:
+        """Return built-in independent ADP feeds.
+
+        ESPN is the current built-in second source. Additional source adapters
+        supplied by runtime composition are merged rather than replacing it.
+        """
+        from gridiron_gpt.draft.espn_adp_loader import EspnAdpLoader
+
+        espn = EspnAdpLoader(season=season)
+        return {"ESPN": espn.load}
 
     def build(
         self,
