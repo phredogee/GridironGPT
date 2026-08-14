@@ -4,6 +4,10 @@ import re
 import unicodedata
 from dataclasses import dataclass
 
+from gridiron_gpt.draft.fantasy_ranking_explanation_service import (
+    FantasyRankingExplanation,
+    FantasyRankingExplanationService,
+)
 from gridiron_gpt.draft.fantasy_ranking_input_adapter import (
     FantasyRankingInputAdapter,
     FantasyRankingSourceValues,
@@ -19,9 +23,17 @@ from gridiron_gpt.football_state.services.player_availability_classifier import 
 
 
 @dataclass(frozen=True)
+class ExplainedFantasyRanking:
+    rank: int
+    score: FantasyRankingScore
+    explanation: FantasyRankingExplanation
+
+
+@dataclass(frozen=True)
 class FantasyRankingPopulation:
     overall: list[FantasyRankingScore]
     by_position: dict[str, list[FantasyRankingScore]]
+    explained_overall: list[ExplainedFantasyRanking]
 
 
 class FantasyRankingPopulationService:
@@ -40,11 +52,13 @@ class FantasyRankingPopulationService:
         *,
         adapter: FantasyRankingInputAdapter | None = None,
         scorer: FantasyRankingScorer | None = None,
+        explanation_service: FantasyRankingExplanationService | None = None,
     ) -> None:
         self.player_repository = player_repository
         self.scorecard_repository = scorecard_repository
         self.adapter = adapter or FantasyRankingInputAdapter()
         self.scorer = scorer or FantasyRankingScorer()
+        self.explanation_service = explanation_service or FantasyRankingExplanationService()
 
     def build(
         self,
@@ -101,8 +115,6 @@ class FantasyRankingPopulationService:
             try:
                 scores.append(self.scorer.score(inputs))
             except ValueError:
-                # A player with no primary ranking evidence should not appear
-                # merely because they exist in the roster dataset.
                 continue
 
         scores.sort(
@@ -119,10 +131,22 @@ class FantasyRankingPopulationService:
             position: [row for row in scores if row.position == position]
             for position in sorted(self.DRAFTABLE_POSITIONS)
         }
+        explained_overall = [
+            ExplainedFantasyRanking(
+                rank=rank,
+                score=score,
+                explanation=self.explanation_service.explain(
+                    score,
+                    overall_rank=rank,
+                ),
+            )
+            for rank, score in enumerate(scores, start=1)
+        ]
 
         return FantasyRankingPopulation(
             overall=scores,
             by_position=by_position,
+            explained_overall=explained_overall,
         )
 
     def _get_scorecard(self, player, legacy_scorecards: dict[tuple[str, str], list]):
