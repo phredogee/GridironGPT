@@ -1,13 +1,21 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import math
 from typing import Callable
 
+from gridiron_gpt.draft.consensus_adp_service import (
+    ConsensusAdpRecord,
+    ConsensusAdpService,
+)
 from gridiron_gpt.draft.fetcher import fetch_adp
 from gridiron_gpt.draft.fantasy_ranking_population_service import (
     FantasyRankingPopulation,
     FantasyRankingPopulationService,
+)
+from gridiron_gpt.draft.fantasy_ranking_tier_service import (
+    FantasyRankingMarketView,
+    FantasyRankingTierService,
 )
 from gridiron_gpt.draft.scorer import get_historical_scores
 
@@ -27,6 +35,9 @@ class FantasyRankingDataSnapshot:
     adp_used: bool
     role_player_count: int = 0
     role_season: int | None = None
+    consensus_adp_by_key: dict[str, ConsensusAdpRecord] = field(default_factory=dict)
+    market_views_by_player_id: dict[str, FantasyRankingMarketView] = field(default_factory=dict)
+    adp_sources: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -39,6 +50,8 @@ class RoleSnapshot:
 class FantasyRankingDataService:
     """Load real project data and feed the fantasy-ranking pipeline."""
 
+    PRIMARY_ADP_SOURCE = "Fantasy Football Calculator"
+
     def __init__(
         self,
         population_service: FantasyRankingPopulationService,
@@ -46,12 +59,18 @@ class FantasyRankingDataService:
         historical_loader: Callable = get_historical_scores,
         adp_loader: Callable = fetch_adp,
         role_loader: Callable | None = None,
+        adp_source_loaders: dict[str, Callable] | None = None,
+        consensus_adp_service: ConsensusAdpService | None = None,
+        tier_service: FantasyRankingTierService | None = None,
         ranking_season: int = 2026,
     ) -> None:
         self.population_service = population_service
         self.historical_loader = historical_loader
         self.adp_loader = adp_loader
         self.role_loader = role_loader or self._load_observed_role_snapshot
+        self.adp_source_loaders = adp_source_loaders or {}
+        self.consensus_adp_service = consensus_adp_service or ConsensusAdpService()
+        self.tier_service = tier_service or FantasyRankingTierService()
         self.ranking_season = ranking_season
 
     def build(
@@ -66,22 +85,14 @@ class FantasyRankingDataService:
         historical = self.historical_loader(scoring=scoring)
         historical_points = self._historical_points_by_name(historical)
 
-        adp_snapshot = self._load_adp(scoring=scoring, teams=teams)
+        primary_snapshot = self._load_adp(scoring=scoring, teams=teams)
+        sources = self._adp_sources(primary_snapshot)
+        consensus_adp_by_key = self.consensus_adp_service.build(sources)
 
-        # Stale market data is unavailable evidence, not negative evidence.
-        # The scorer will redistribute the missing market weight.
-        adp_is_current = adp_snapshot.year == self.ranking_season
-
-        if adp_is_current:
-            adp_by_name = {
-                name: float(record["adp"])
-                for name, record in adp_snapshot.records.items()
-                if record.get("adp") is not None
-                and math.isfinite(float(record["adp"]))
-            }
-        else:
-            adp_by_name = {}
-
+        adp_by_name = {
+            record.player_name: record.consensus_adp
+            for record in consensus_adp_by_key.values()
+        }
         draft_pool_size = len(adp_by_name) or None
 
         role_snapshot = RoleSnapshot({}, {}, None)
@@ -99,16 +110,68 @@ class FantasyRankingDataService:
             draft_pool_size=draft_pool_size,
             limit=limit,
         )
+        market_views = self.tier_service.build(
+            population.overall,
+            consensus_adp_by_key=consensus_adp_by_key,
+        )
+
+        source_names = tuple(sorted(sources))
+        adp_year = self.ranking_season if adp_by_name else primary_snapshot.year
 
         return FantasyRankingDataSnapshot(
             population=population,
             historical_player_count=len(historical_points),
             adp_player_count=len(adp_by_name),
-            adp_year=adp_snapshot.year,
-            adp_used=adp_is_current and bool(adp_by_name),
+            adp_year=adp_year,
+            adp_used=bool(adp_by_name),
             role_player_count=len(role_scores_by_player_id or {}),
             role_season=role_snapshot.season,
+            consensus_adp_by_key=consensus_adp_by_key,
+            market_views_by_player_id=market_views,
+            adp_sources=source_names,
         )
+
+    def _adp_sources(self, primary_snapshot: AdpSnapshot) -> dict[str, dict[str, float]]:
+        sources: dict[str, dict[str, float]] = {}
+
+        if primary_snapshot.year == self.ranking_season:
+            primary_values = {
+                name: float(record["adp"])
+                for name, record in primary_snapshot.records.items()
+                if record.get("adp") is not None
+                and self._finite_positive(record.get("adp")) is not None
+            }
+            if primary_values:
+                sources[self.PRIMARY_ADP_SOURCE] = primary_values
+
+        for source_name, loader in self.adp_source_loaders.items():
+            try:
+                result = loader()
+            except Exception:
+                continue
+
+            records = getattr(result, "records", result) or {}
+            values: dict[str, float] = {}
+            for name, raw_value in records.items():
+                if isinstance(raw_value, dict):
+                    raw_value = raw_value.get("adp")
+                value = self._finite_positive(raw_value)
+                if value is not None:
+                    values[str(name)] = value
+            if values:
+                sources[str(source_name)] = values
+
+        return sources
+
+    @staticmethod
+    def _finite_positive(value) -> float | None:
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError):
+            return None
+        if not math.isfinite(numeric) or numeric <= 0:
+            return None
+        return numeric
 
     def _load_adp(self, *, scoring: str, teams: int) -> AdpSnapshot:
         """Support both legacy and future year-aware ADP loaders."""
@@ -119,14 +182,7 @@ class FantasyRankingDataService:
 
     @staticmethod
     def _load_observed_role_snapshot(*, season: int) -> RoleSnapshot:
-        """Derive 0-100 role percentiles from recent observed NFL usage.
-
-        This deliberately uses the latest completed season rather than pretending
-        preseason roster labels are depth order. QB opportunity is based on team
-        pass-attempt share, RB opportunity on carry/target share, and WR/TE
-        opportunity on target share. The raw opportunity metric is converted to a
-        within-position percentile so role evidence is comparable on a 0-100 scale.
-        """
+        """Derive 0-100 role percentiles from recent observed NFL usage."""
         try:
             import nflreadpy as nfl
 
