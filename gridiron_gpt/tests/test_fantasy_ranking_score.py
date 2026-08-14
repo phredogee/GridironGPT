@@ -142,7 +142,7 @@ def test_zero_is_real_evidence_not_missing_evidence():
 def test_availability_only_is_rejected_as_insufficient_ranking_evidence():
     with pytest.raises(
         ValueError,
-        match="at least one primary ranking evidence component must be available",
+        match="at least one anchor ranking evidence component must be available",
     ):
         FantasyRankingScorer().score(
             _inputs(
@@ -153,6 +153,58 @@ def test_availability_only_is_rejected_as_insufficient_ranking_evidence():
                 availability_score=100.0,
             )
         )
+
+
+def test_role_and_availability_without_anchor_evidence_are_rejected():
+    with pytest.raises(
+        ValueError,
+        match="at least one anchor ranking evidence component must be available",
+    ):
+        FantasyRankingScorer().score(
+            _inputs(
+                baseline_score=None,
+                market_score=None,
+                role_score=70.0,
+                cortex_score=None,
+                availability_score=100.0,
+            )
+        )
+
+
+def test_market_can_anchor_ranking_without_historical_baseline():
+    result = FantasyRankingScorer().score(
+        _inputs(
+            baseline_score=None,
+            market_score=90.0,
+            role_score=None,
+            cortex_score=50.0,
+            availability_score=100.0,
+        )
+    )
+
+    assert result.components == {
+        "market": 90.0,
+        "cortex": 50.0,
+        "availability": 100.0,
+    }
+
+
+def test_baseline_can_anchor_ranking_without_market():
+    result = FantasyRankingScorer().score(
+        _inputs(
+            baseline_score=75.0,
+            market_score=None,
+            role_score=80.0,
+            cortex_score=None,
+            availability_score=100.0,
+        )
+    )
+
+    assert result.components == {
+        "baseline": 75.0,
+        "role": 80.0,
+        "availability": 100.0,
+    }
 
 
 def test_all_weighted_components_missing_is_rejected():
