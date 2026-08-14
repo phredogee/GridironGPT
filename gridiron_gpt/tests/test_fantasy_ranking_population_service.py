@@ -151,6 +151,7 @@ def test_availability_only_player_is_excluded_without_primary_evidence():
 
     assert result.overall == []
     assert result.by_position["RB"] == []
+    assert result.explained_overall == []
 
 
 def test_limit_applies_to_overall_population_and_position_views():
@@ -172,3 +173,25 @@ def test_limit_applies_to_overall_population_and_position_views():
     assert len(result.overall) == 2
     assert [row.player_name for row in result.by_position["RB"]] == ["A RB", "B RB"]
     assert result.by_position["WR"] == []
+    assert len(result.explained_overall) == 2
+
+
+def test_explained_overall_tracks_sorted_rank_and_score():
+    players = [
+        player("p1", "Alpha RB", "RB"),
+        player("p2", "Bravo WR", "WR"),
+    ]
+    service = FantasyRankingPopulationService(
+        StubPlayerRepository(players),
+        StubScorecardRepository(),
+    )
+
+    result = service.build(
+        historical_points_by_name={"Alpha RB": 300.0, "Bravo WR": 200.0},
+    )
+
+    assert [row.rank for row in result.explained_overall] == [1, 2]
+    assert [row.score for row in result.explained_overall] == result.overall
+    assert result.explained_overall[0].explanation.summary.startswith(
+        "#1 Alpha RB"
+    )
