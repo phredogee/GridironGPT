@@ -97,3 +97,69 @@ def test_explicit_role_scores_bypass_role_loader():
     }
     assert snapshot.role_player_count == 1
     assert snapshot.role_season is None
+
+
+def test_multiple_current_adp_sources_feed_consensus_market_value():
+    population_service = StubPopulationService()
+
+    def historical_loader(*, scoring):
+        return pd.DataFrame()
+
+    def adp_loader(*, scoring, teams):
+        return AdpSnapshot(
+            records={"Player One": {"adp": 10.0}},
+            year=2026,
+        )
+
+    service = FantasyRankingDataService(
+        population_service,
+        historical_loader=historical_loader,
+        adp_loader=adp_loader,
+        adp_source_loaders={
+            "NFL Fantasy": lambda: {"Player One": 6.0},
+        },
+        ranking_season=2026,
+    )
+
+    snapshot = service.build(role_scores_by_player_id={})
+
+    assert population_service.kwargs["adp_by_name"] == {"Player One": 8.0}
+    assert snapshot.adp_player_count == 1
+    assert snapshot.adp_sources == (
+        "Fantasy Football Calculator",
+        "NFL Fantasy",
+    )
+    market = next(iter(snapshot.consensus_adp_by_key.values()))
+    assert market.consensus_adp == 8.0
+    assert market.adp_spread == 4.0
+    assert market.source_count == 2
+
+
+def test_current_secondary_adp_can_replace_stale_primary_market_data():
+    population_service = StubPopulationService()
+
+    def historical_loader(*, scoring):
+        return pd.DataFrame()
+
+    def adp_loader(*, scoring, teams):
+        return AdpSnapshot(
+            records={"Player One": {"adp": 30.0}},
+            year=2024,
+        )
+
+    service = FantasyRankingDataService(
+        population_service,
+        historical_loader=historical_loader,
+        adp_loader=adp_loader,
+        adp_source_loaders={
+            "NFL Fantasy": lambda: {"Player One": 7.0},
+        },
+        ranking_season=2026,
+    )
+
+    snapshot = service.build(role_scores_by_player_id={})
+
+    assert population_service.kwargs["adp_by_name"] == {"Player One": 7.0}
+    assert snapshot.adp_year == 2026
+    assert snapshot.adp_used is True
+    assert snapshot.adp_sources == ("NFL Fantasy",)
