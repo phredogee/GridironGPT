@@ -64,14 +64,19 @@ class FantasyRankingTierService:
                     if consensus_adp is not None
                     else None
                 )
+                source_count = market.source_count if market else 0
                 views[score.player_id] = FantasyRankingMarketView(
                     player_id=score.player_id,
                     overall_rank=rank,
                     position_rank=position_rank,
                     tier=tier,
                     consensus_adp=consensus_adp,
-                    adp_source_count=market.source_count if market else 0,
-                    adp_spread=market.adp_spread if market else None,
+                    adp_source_count=source_count,
+                    adp_spread=(
+                        market.adp_spread
+                        if market is not None and source_count >= 2
+                        else None
+                    ),
                     draft_value=draft_value,
                     source_adps=dict(market.source_values) if market else {},
                 )
