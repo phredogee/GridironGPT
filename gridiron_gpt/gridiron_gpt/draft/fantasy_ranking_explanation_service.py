@@ -42,14 +42,15 @@ class FantasyRankingExplanationService:
                 detail += f" ({provenance})"
             evidence.append(detail)
 
-            if value >= 85.0:
-                strengths.append(f"elite {label} ({value:.1f})")
-            elif value >= 70.0:
-                strengths.append(f"strong {label} ({value:.1f})")
-            elif value < 45.0:
-                concerns.append(f"weak {label} ({value:.1f})")
-            elif value < 60.0 and component != "availability":
-                concerns.append(f"below-average {label} ({value:.1f})")
+            strength, concern = self._interpret_component(
+                component,
+                label,
+                value,
+            )
+            if strength:
+                strengths.append(strength)
+            if concern:
+                concerns.append(concern)
 
         rank_text = f"#{overall_rank} " if overall_rank is not None else ""
         summary = (
@@ -76,3 +77,39 @@ class FantasyRankingExplanationService:
             concerns=tuple(concerns),
             evidence=tuple(evidence),
         )
+
+    @staticmethod
+    def _interpret_component(
+        component: str,
+        label: str,
+        value: float,
+    ) -> tuple[str | None, str | None]:
+        """Translate component values without overstating neutral context.
+
+        Availability is eligibility/risk context, not a talent strength. Cortex is
+        centered near 50, so values in the neutral band should not be described as
+        below average merely because they are below the generic 60-point threshold.
+        """
+        if component == "availability":
+            return None, None
+
+        if component == "cortex":
+            if value >= 70.0:
+                return f"elite {label} ({value:.1f})", None
+            if value >= 60.0:
+                return f"strong {label} ({value:.1f})", None
+            if value < 35.0:
+                return None, f"weak {label} ({value:.1f})"
+            if value < 45.0:
+                return None, f"below-average {label} ({value:.1f})"
+            return None, None
+
+        if value >= 85.0:
+            return f"elite {label} ({value:.1f})", None
+        if value >= 70.0:
+            return f"strong {label} ({value:.1f})", None
+        if value < 45.0:
+            return None, f"weak {label} ({value:.1f})"
+        if value < 60.0:
+            return None, f"below-average {label} ({value:.1f})"
+        return None, None
