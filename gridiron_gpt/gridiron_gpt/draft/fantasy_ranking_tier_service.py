@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from statistics import median
 
 from gridiron_gpt.draft.consensus_adp_service import ConsensusAdpRecord, ConsensusAdpService
@@ -17,6 +17,7 @@ class FantasyRankingMarketView:
     adp_source_count: int
     adp_spread: float | None
     draft_value: float | None
+    source_adps: dict[str, float] = field(default_factory=dict)
 
 
 class FantasyRankingTierService:
@@ -72,6 +73,7 @@ class FantasyRankingTierService:
                     adp_source_count=market.source_count if market else 0,
                     adp_spread=market.adp_spread if market else None,
                     draft_value=draft_value,
+                    source_adps=dict(market.source_values) if market else {},
                 )
 
         return views
