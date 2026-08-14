@@ -18,7 +18,9 @@ Build GridironGPT into a complete fantasy-football intelligence and commissioner
 | Fail-open Downstream Processing | Complete |
 | Persistence / Restart Verification | Complete |
 | Football Context | Operational and expanding |
-| Fantasy Decision Engine | Operational |
+| Integrated Fantasy Rankings | Operational |
+| Ranking Evidence Sufficiency | Complete |
+| Ranking Explanations | Operational first pass |
 | Commissioner Suite | Operational |
 | Advisor | Operational |
 | Dashboard | Operational |
@@ -27,11 +29,23 @@ Build GridironGPT into a complete fantasy-football intelligence and commissioner
 | v1.0 Stabilization | In progress |
 | Production / Cloud | Post-v1 |
 
-Current verified regression checkpoint: **702 passed**.
+Current verified regression checkpoint: **780 passed**.
 
 ## v1.0 — Current Phase
 
-The core engine architecture is no longer in subsystem-expansion mode. The current goal is to produce a stable release candidate from the architecture already built.
+The core engine architecture is no longer in subsystem-expansion mode. The current goal is to produce a stable release candidate from the architecture already built while validating the new integrated fantasy-ranking path against real football evidence.
+
+### Completed ranking milestone
+- [x] Load historical fantasy production through the ranking data service.
+- [x] Integrate current-season ADP/market evidence with season provenance.
+- [x] Integrate recent role/usage evidence.
+- [x] Integrate canonical availability.
+- [x] Integrate Cortex player intelligence with legacy identity fallback.
+- [x] Normalize conservative cross-source player-name matches.
+- [x] Reject rankings built only from secondary/context evidence.
+- [x] Preserve missing evidence as missing rather than negative.
+- [x] Add rank-aware evidence explanations.
+- [x] Validate explanation semantics for availability and neutral Cortex state.
 
 ### Remaining v1.0 work
 - [x] Verify automatic provider ingestion reaches Cortex.
@@ -42,8 +56,10 @@ The core engine architecture is no longer in subsystem-expansion mode. The curre
 - [x] Audit Streamlit for duplicate Cortex facade construction.
 - [x] Audit the manual Inspector path and retain it as a diagnostic tool.
 - [x] Update stale Dashboard regression metadata.
-- [ ] Finish contributor-documentation refresh.
+- [x] Document the integrated fantasy-ranking architecture.
+- [ ] Finish remaining contributor-documentation refresh.
 - [ ] Populate/refresh deployment documentation.
+- [ ] Expose integrated ranking explanations in the appropriate product surface.
 - [ ] Run final full regression suite.
 - [ ] Perform Streamlit smoke test across primary pages.
 - [ ] Reconcile `main` documentation-only divergence.
@@ -59,13 +75,17 @@ A v1.0 release candidate should satisfy all of the following:
 4. Scorecards and event history survive restart.
 5. Replay reconstructs prior decisions from persisted history.
 6. Streamlit uses a shared Cortex facade rather than independent page engines.
-7. Primary product pages load without runtime errors.
-8. Contributor documentation matches implemented architecture.
-9. Full regression suite passes at or above the current 702-test boundary.
+7. Fantasy rankings preserve evidence provenance and do not manufacture rankings from secondary evidence alone.
+8. Ranking explanations describe existing scoring evidence without becoming a second scoring engine.
+9. Primary product pages load without runtime errors.
+10. Contributor documentation matches implemented architecture.
+11. Full regression suite passes at or above the current 780-test boundary.
 
 ## Post-v1 — Intelligence Improvements
 
 Once v1.0 is stable, improve quality rather than adding unbounded architecture:
+- Measure ranking quality against season outcomes before changing weights.
+- Calibrate ranking weights only when a larger evidence sample shows systematic bias.
 - Expand player alias and identity coverage.
 - Improve unknown/ambiguous impact classification.
 - Deepen injury and availability interpretation.
@@ -95,6 +115,7 @@ Once v1.0 is stable, improve quality rather than adding unbounded architecture:
 ### Draft Center
 - Live draft state.
 - Remaining player tiers.
+- Integrated fantasy ranking and explanations.
 - Cortex draft value.
 - Position scarcity.
 - Reach/value indicators.
