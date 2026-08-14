@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
 from typing import Callable
 
 from gridiron_gpt.draft.fetcher import fetch_adp
@@ -76,6 +77,7 @@ class FantasyRankingDataService:
                 name: float(record["adp"])
                 for name, record in adp_snapshot.records.items()
                 if record.get("adp") is not None
+                and math.isfinite(float(record["adp"]))
             }
         else:
             adp_by_name = {}
@@ -151,8 +153,6 @@ class FantasyRankingDataService:
         if work.empty:
             return RoleSnapshot({}, {}, None)
 
-        # Keep a recent sample so the role signal reflects late-season usage more
-        # strongly than a player's role from early in the year.
         max_week = work["week"].max()
         work = work[work["week"] >= max(1, int(max_week) - 5)].copy()
 
@@ -199,7 +199,10 @@ class FantasyRankingDataService:
             player_id = str(row.player_id).strip()
             if not player_id:
                 continue
-            scores[player_id] = float(row.role_score)
+            score = float(row.role_score)
+            if not math.isfinite(score):
+                continue
+            scores[player_id] = score
             provenance[player_id] = (
                 f"{season} recent observed usage percentile for {row.position} "
                 "(last six available weeks)"
@@ -221,6 +224,17 @@ class FantasyRankingDataService:
             name = str(row.player_display_name).strip()
             if not name:
                 continue
-            score = float(row.hist_score)
-            values[name] = max(score, values.get(name, score))
+
+            try:
+                score = float(row.hist_score)
+            except (TypeError, ValueError):
+                continue
+
+            if not math.isfinite(score):
+                continue
+
+            previous = values.get(name)
+            if previous is None or score > previous:
+                values[name] = score
+
         return values
