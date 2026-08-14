@@ -64,6 +64,57 @@ Dashboard / Advisor / Players / Explorer
 Inspector / Activity / Replay / Mission Control
 ```
 
+## Fantasy Ranking Architecture
+
+The fantasy ranking pipeline combines independent evidence sources instead of allowing a single provider or presentation layer to dictate rankings.
+
+```text
+Historical fantasy production ─┐
+2026 ADP / market evidence ────┤
+Recent role / usage ───────────┤
+Cortex player intelligence ────┼→ input adapter → weighted scorer
+Canonical availability ────────┘                    ↓
+                                      anchor-evidence validation
+                                                   ↓
+                                      sorted ranking population
+                                                   ↓
+                                      rank-aware explanation
+```
+
+### Ranking evidence
+
+- **Baseline** — normalized historical fantasy production.
+- **Market** — current-season ADP normalized across the configured draft pool.
+- **Role** — recent observed usage, normalized within position with source provenance.
+- **Cortex** — latest available Cortex player scorecard intelligence.
+- **Availability** — canonical football-state availability evidence.
+
+Missing evidence is treated as unavailable evidence rather than negative evidence. The scorer renormalizes around available weighted inputs.
+
+### Anchor-evidence rule
+
+Availability, role, or neutral Cortex state cannot manufacture a meaningful fantasy ranking by themselves. A player must have primary ranking evidence such as historical production or current market/ADP evidence before secondary context can influence the result.
+
+This keeps prospects with legitimate current market evidence rankable while excluding roster-only players whose only positive signal is that they exist and are available.
+
+### Cross-source identity
+
+Historical and ADP display names are conservatively normalized before matching canonical players. Cortex scorecards prefer canonical player IDs and can fall back to a conservative name/team match for legacy scorecards whose identifiers predate canonical football-state IDs.
+
+### Ranking explanations
+
+`FantasyRankingExplanationService` explains the score that already exists; it does not rescore the player. `FantasyRankingPopulationService` exposes `explained_overall` alongside the existing `overall` and `by_position` views.
+
+Explanations can identify:
+- strong or elite primary evidence,
+- materially weak evidence,
+- neutral Cortex evidence,
+- source provenance,
+- explicitly missing evidence,
+- the player's final rank and ranking score.
+
+Availability remains visible as evidence but is not described as an elite fantasy strength. Neutral Cortex scores are not presented as negative evidence.
+
 ## Ingestion Boundary
 
 `IngestionService` is the shared provider boundary. It owns provider execution, retry behavior, normalization, ingestion health, and optional downstream event processing.
@@ -223,6 +274,9 @@ Other services cover playoff brackets, draft workflows, league history, and comm
 ### New provider
 Implement the provider adapter/source-record contract. Do not add Cortex-specific logic to the adapter.
 
+### New ranking evidence
+Normalize the source into the ranking input contract, preserve provenance, and add it through the scorer rather than directly modifying final rank order.
+
 ### New intelligence stage
 Add it behind the Cortex facade/pipeline contracts and publish observable events where the stage contributes to the decision trail.
 
@@ -237,10 +291,10 @@ Consume facade/domain services or presentation models. Avoid reading engine impl
 Current verified full regression checkpoint:
 
 ```text
-702 passed
+780 passed
 ```
 
-The regression suite includes automatic ingestion into Cortex, downstream fail-open behavior, runtime composition, persistent scorecards/event history, restart behavior, and Replay reconstruction.
+The regression suite includes automatic ingestion into Cortex, downstream fail-open behavior, runtime composition, persistent scorecards/event history, restart behavior, Replay reconstruction, fantasy ranking evidence integration, anchor-evidence validation, and ranking explanation semantics.
 
 ## v1.0 Architectural Status
 
