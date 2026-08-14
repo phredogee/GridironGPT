@@ -65,6 +65,23 @@ def test_calculates_consensus_rank_value_without_affecting_score():
     assert views["p2"].draft_value == 19.0
 
 
+def test_single_source_adp_has_no_spread():
+    scores = [score("p1", "Player One", "RB", 88.0)]
+    consensus = ConsensusAdpService().build(
+        {"ESPN": {"Player One": 4.5}}
+    )
+
+    view = FantasyRankingTierService().build(
+        scores,
+        consensus_adp_by_key=consensus,
+    )["p1"]
+
+    assert view.consensus_adp == 4.5
+    assert view.adp_source_count == 1
+    assert view.adp_spread is None
+    assert view.source_adps == {"ESPN": 4.5}
+
+
 def test_missing_consensus_adp_remains_missing_market_metadata():
     scores = [score("p1", "Player One", "QB", 75.0)]
 
