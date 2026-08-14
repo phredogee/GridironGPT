@@ -89,200 +89,329 @@ def _football_notes(population) -> tuple[dict[str, str], dict[str, str]]:
     return compact, summaries
 
 
-def _format_component(value: float | None) -> str:
-    return "—" if value is None else f"{value:.1f}"
+def _expansion_controls(scope: str) -> str:
+    state_key = f"fantasy_rankings_expansion_{scope.lower()}"
+    if state_key not in st.session_state:
+        st.session_state[state_key] = "default"
+
+    controls = st.columns([1, 1, 5])
+    if controls[0].button(
+        "Expand All",
+        key=f"fantasy_rankings_expand_all_{scope.lower()}",
+        use_container_width=True,
+    ):
+        st.session_state[state_key] = "all"
+    if controls[1].button(
+        "Collapse All",
+        key=f"fantasy_rankings_collapse_all_{scope.lower()}",
+        use_container_width=True,
+    ):
+        st.session_state[state_key] = "none"
+
+    return st.session_state[state_key]
 
 
-def _format_market_value(value: float | None, *, signed: bool = False) -> str:
-    if value is None:
-        return "—"
-    return f"{value:+.1f}" if signed else f"{value:.1f}"
+def _is_expanded(rank: int, mode: str, *, default_count: int = 5) -> bool:
+    if mode == "all":
+        return True
+    if mode == "none":
+        return False
+    return rank <= default_count
 
 
-def _render_rankings(
-    rankings,
+def _market_badge(score, market_views: dict) -> str:
+    view = market_views.get(score.player_id)
+    if view is None:
+        return ""
+    parts = [f"{score.position or '-'}{view.position_rank}", f"Tier {view.tier}"]
+    if view.consensus_adp is not None:
+        parts.append(f"ADP {view.consensus_adp:.1f}")
+    if view.draft_value is not None:
+        sign = "+" if view.draft_value > 0 else ""
+        parts.append(f"Value {sign}{view.draft_value:.1f}")
+    return " · ".join(parts)
+
+
+def _render_market_context(score, market_views: dict) -> None:
+    view = market_views.get(score.player_id)
+    if view is None:
+        return
+
+    columns = st.columns(5)
+    columns[0].metric("Position Rank", f"{score.position or '-'}{view.position_rank}")
+    columns[1].metric("Tier", view.tier)
+    adp_label = "Consensus ADP" if view.adp_source_count >= 2 else "ADP"
+    columns[2].metric(
+        adp_label,
+        f"{view.consensus_adp:.1f}" if view.consensus_adp is not None else "—",
+    )
+    columns[3].metric(
+        "ADP Spread",
+        f"{view.adp_spread:.1f}" if view.adp_spread is not None else "—",
+    )
+    columns[4].metric(
+        "Draft Value",
+        f"{view.draft_value:+.1f}" if view.draft_value is not None else "—",
+    )
+
+    if view.source_adps:
+        source_text = " · ".join(
+            f"{source}: {value:.1f}"
+            for source, value in sorted(view.source_adps.items())
+        )
+        st.caption(f"ADP sources: {source_text}")
+
+
+def _render_score_rows(
+    scores,
     *,
-    market_views_by_player_id,
-    football_notes_by_player_id: dict[str, str],
-    football_summaries_by_player_id: dict[str, str],
-    expanded: bool,
-):
-    for rank, score in enumerate(rankings, start=1):
-        market_view = market_views_by_player_id.get(score.player_id)
-        position_rank = market_view.position_rank if market_view else None
-        tier = market_view.tier if market_view else None
-        title_bits = [f"#{rank} {score.player_name}", f"{score.position} · {score.team}"]
-        if position_rank is not None:
-            title_bits.append(f"{score.position}{position_rank}")
-        if tier is not None:
-            title_bits.append(f"Tier {tier}")
-        title_bits.append(f"{score.overall_score:.2f}")
+    football_summaries: dict[str, str],
+    market_views: dict,
+    expansion_mode: str = "default",
+    expanded_count: int = 5,
+) -> None:
+    for rank, score in enumerate(scores, start=1):
+        market_badge = _market_badge(score, market_views)
+        header = (
+            f"#{rank}  {score.player_name}  ·  {market_badge or (score.position or '-')}  ·  "
+            f"{score.team or '-'}  ·  {score.ranking_score:.2f}"
+        )
+        with st.expander(
+            header,
+            expanded=_is_expanded(rank, expansion_mode, default_count=expanded_count),
+        ):
+            _render_market_context(score, market_views)
 
-        with st.expander("  |  ".join(title_bits), expanded=expanded):
-            st.markdown(
-                " | ".join(
-                    [
-                        f"**Baseline:** {_format_component(score.baseline_score)}",
-                        f"**Market:** {_format_component(score.market_score)}",
-                        f"**Role:** {_format_component(score.role_score)}",
-                        f"**Cortex:** {_format_component(score.cortex_score)}",
-                        f"**Availability:** {_format_component(score.availability_score)}",
-                    ]
-                )
-            )
-            if market_view is not None:
-                adp_label = (
-                    "Consensus ADP"
-                    if market_view.adp_source_count >= 2
-                    else "ADP"
-                )
-                st.markdown(
-                    " | ".join(
-                        [
-                            f"**{adp_label}:** {_format_market_value(market_view.consensus_adp)}",
-                            f"**ADP Spread:** {_format_market_value(market_view.adp_spread)}",
-                            f"**Sources:** {market_view.adp_source_count}",
-                            f"**Draft Value:** {_format_market_value(market_view.draft_value, signed=True)}",
-                        ]
-                    )
-                )
-                if market_view.source_adps:
-                    source_text = ", ".join(
-                        f"{source}: {value:.1f}"
-                        for source, value in sorted(market_view.source_adps.items())
-                    )
-                    st.caption(f"ADP sources: {source_text}")
-            st.caption(score.explanation)
-            st.markdown(
-                f"**Football:** {football_summaries_by_player_id.get(score.player_id, football_notes_by_player_id.get(score.player_id, 'No recent football context'))}"
-            )
+            football_summary = football_summaries.get(score.player_id)
+            if football_summary:
+                st.markdown("**Football read**")
+                st.write(football_summary)
+
+            component_columns = st.columns(len(score.components))
+            for column, (name, value) in zip(component_columns, score.components.items()):
+                column.metric(name.title(), f"{value:.1f}")
+
+            if score.provenance:
+                with st.expander("Evidence & provenance", expanded=False):
+                    for name, source in score.provenance.items():
+                        st.write(f"• **{name.title()}** — {source}")
 
 
-def _render_export_controls(
-    population,
+def _render_overall_rows(
+    explained_overall,
     *,
-    market_views_by_player_id,
-    bye_week_by_team: dict[str, int],
-    football_notes_by_player_id: dict[str, str],
-):
-    st.subheader("Export Rankings")
+    football_summaries: dict[str, str],
+    market_views: dict,
+    limit: int,
+    expansion_mode: str = "default",
+) -> None:
+    for item in explained_overall[:limit]:
+        score = item.score
+        explanation = item.explanation
+        market_badge = _market_badge(score, market_views)
+        header = (
+            f"#{item.rank}  {score.player_name}  ·  {market_badge or (score.position or '-')}  ·  "
+            f"{score.team or '-'}  ·  {score.ranking_score:.2f}"
+        )
+        with st.expander(header, expanded=_is_expanded(item.rank, expansion_mode)):
+            _render_market_context(score, market_views)
+
+            football_summary = football_summaries.get(score.player_id)
+            if football_summary:
+                st.markdown("**Football read**")
+                st.write(football_summary)
+
+            st.markdown("**Model explanation**")
+            st.write(explanation.summary)
+
+            component_columns = st.columns(len(score.components))
+            for column, (name, value) in zip(component_columns, score.components.items()):
+                column.metric(name.title(), f"{value:.1f}")
+
+            if explanation.strengths:
+                st.markdown("**Strengths**")
+                for strength in explanation.strengths:
+                    st.write(f"• {strength}")
+
+            if explanation.concerns:
+                st.markdown("**Concerns**")
+                for concern in explanation.concerns:
+                    st.write(f"• {concern}")
+
+            with st.expander("Evidence & provenance", expanded=False):
+                for evidence in explanation.evidence:
+                    st.write(f"• {evidence}")
+
+
+def _selected_export_fields() -> tuple[str, ...]:
     preset = st.radio(
         "Export preset",
         ("Draft Day", "Full Analysis", "Custom"),
         horizontal=True,
+        key="fantasy_rankings_export_preset",
     )
 
     if preset == "Draft Day":
-        default_fields = list(DRAFT_DAY_FIELDS)
+        defaults = list(DRAFT_DAY_FIELDS)
     elif preset == "Full Analysis":
-        default_fields = list(FULL_ANALYSIS_FIELDS)
+        defaults = list(FULL_ANALYSIS_FIELDS)
     else:
-        default_fields = list(DRAFT_DAY_FIELDS)
+        defaults = list(DRAFT_DAY_FIELDS)
 
-    selected_fields = st.multiselect(
-        "Columns to include",
+    selected = st.multiselect(
+        "Export fields",
         options=list(FIELD_LABELS),
-        default=default_fields,
+        default=defaults,
         format_func=lambda field: FIELD_LABELS[field],
+        key=f"fantasy_rankings_export_fields_{preset}",
     )
-    if not selected_fields:
-        st.warning("Select at least one export column.")
-        return
-
-    xlsx_data = build_rankings_xlsx(
-        population,
-        selected_fields=selected_fields,
-        bye_week_by_team=bye_week_by_team,
-        football_notes_by_player_id=football_notes_by_player_id,
-        market_views_by_player_id=market_views_by_player_id,
-    )
-    pdf_data = build_rankings_pdf(
-        population,
-        selected_fields=selected_fields,
-        bye_week_by_team=bye_week_by_team,
-        football_notes_by_player_id=football_notes_by_player_id,
-        market_views_by_player_id=market_views_by_player_id,
-    )
-
-    left, right = st.columns(2)
-    left.download_button(
-        "Download XLSX",
-        data=xlsx_data,
-        file_name="gridirongpt_rankings.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        use_container_width=True,
-    )
-    right.download_button(
-        "Download PDF",
-        data=pdf_data,
-        file_name="gridirongpt_rankings.pdf",
-        mime="application/pdf",
-        use_container_width=True,
-    )
+    return tuple(selected)
 
 
-def render():
-    st.title("Fantasy Rankings")
+def render_fantasy_rankings() -> None:
+    st.markdown("### Integrated Fantasy Rankings")
     st.caption(
-        "Integrated GridironGPT rankings from historical production, current market value, "
-        "recent role, Cortex intelligence, and canonical availability."
+        "GridironGPT combines historical production, consensus market ADP, recent role, "
+        "Cortex intelligence, and canonical availability."
     )
 
-    control_col1, control_col2, control_col3 = st.columns(3)
-    scoring = control_col1.selectbox("Scoring", ("ppr", "half_ppr", "standard"))
-    teams = control_col2.selectbox("League size", (8, 10, 12, 14, 16), index=2)
-    limit = control_col3.selectbox("Overall players", (25, 50, 100, 200), index=1)
-
-    with st.spinner("Building integrated fantasy rankings..."):
-        snapshot = build_fantasy_ranking_snapshot(
-            scoring=scoring,
-            teams=teams,
-            limit=limit,
+    controls = st.columns([2, 2, 2, 2, 4])
+    with controls[0]:
+        scoring = st.selectbox(
+            "Scoring",
+            ("ppr", "half_ppr", "standard"),
+            index=0,
+            key="fantasy_rankings_scoring",
+        )
+    with controls[1]:
+        teams = st.selectbox(
+            "League size",
+            (8, 10, 12, 14, 16),
+            index=2,
+            key="fantasy_rankings_teams",
+        )
+    with controls[2]:
+        overall_limit = st.selectbox(
+            "Overall",
+            (25, 50, 100, 200),
+            index=1,
+            key="fantasy_rankings_limit",
+        )
+    with controls[3]:
+        position_limit = st.selectbox(
+            "Per position",
+            (10, 20, 30, 50, 100),
+            index=2,
+            key="fantasy_rankings_position_limit",
         )
 
-    population = snapshot.population
-    bye_week_by_team = ByeWeekService().load()
-    football_notes, football_summaries = _football_notes(population)
+    try:
+        snapshot = build_fantasy_ranking_snapshot(scoring=scoring, teams=teams, limit=None)
+    except Exception as exc:
+        st.error("Fantasy rankings could not be built from the current local data.")
+        with st.expander("Technical details", expanded=False):
+            st.code(str(exc))
+        return
 
-    metric_cols = st.columns(5)
-    metric_cols[0].metric("Historical", snapshot.historical_player_count)
-    metric_cols[1].metric("ADP", snapshot.adp_player_count)
-    metric_cols[2].metric("ADP Year", snapshot.adp_year or "—")
-    metric_cols[3].metric("Role", snapshot.role_player_count)
-    metric_cols[4].metric("Role Season", snapshot.role_season or "—")
-    if snapshot.adp_sources:
-        st.caption(f"ADP sources: {', '.join(snapshot.adp_sources)}")
+    meta = st.columns(4)
+    meta[0].metric("Historical", snapshot.historical_player_count)
+    source_label = ", ".join(snapshot.adp_sources) if snapshot.adp_sources else "Unavailable"
+    meta[1].metric(
+        "Consensus ADP",
+        snapshot.adp_player_count,
+        delta=source_label,
+    )
+    meta[2].metric(
+        "Role evidence",
+        snapshot.role_player_count,
+        delta=(f"{snapshot.role_season}" if snapshot.role_season else "Unavailable"),
+    )
+    meta[3].metric("Ranked players", len(snapshot.population.overall))
 
-    _render_export_controls(
-        population,
-        market_views_by_player_id=snapshot.market_views_by_player_id,
-        bye_week_by_team=bye_week_by_team,
-        football_notes_by_player_id=football_notes,
+    if not snapshot.population.explained_overall:
+        st.info("No players currently have sufficient anchor evidence to rank.")
+        return
+
+    football_notes, football_summaries = _football_notes(snapshot.population)
+    bye_weeks = ByeWeekService().load(season=2026)
+
+    st.divider()
+    st.markdown("### Export")
+    selected_fields = _selected_export_fields()
+
+    if not selected_fields:
+        st.warning("Select at least one export field.")
+    else:
+        export_columns = st.columns([1, 1, 4])
+        try:
+            xlsx_data = build_rankings_xlsx(
+                snapshot.population,
+                overall_limit=overall_limit,
+                position_limit=position_limit,
+                selected_fields=selected_fields,
+                bye_week_by_team=bye_weeks,
+                football_notes_by_player_id=football_notes,
+                market_views_by_player_id=snapshot.market_views_by_player_id,
+            )
+            export_columns[0].download_button(
+                "Download Excel",
+                data=xlsx_data,
+                file_name=f"gridirongpt_rankings_{scoring}_{teams}team.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True,
+            )
+        except Exception as exc:
+            export_columns[0].warning(f"Excel export unavailable: {exc}")
+
+        try:
+            pdf_data = build_rankings_pdf(
+                snapshot.population,
+                overall_limit=overall_limit,
+                position_limit=position_limit,
+                selected_fields=selected_fields,
+                bye_week_by_team=bye_weeks,
+                football_notes_by_player_id=football_notes,
+                market_views_by_player_id=snapshot.market_views_by_player_id,
+            )
+            export_columns[1].download_button(
+                "Download PDF",
+                data=pdf_data,
+                file_name=f"gridirongpt_rankings_{scoring}_{teams}team.pdf",
+                mime="application/pdf",
+                use_container_width=True,
+            )
+        except Exception as exc:
+            export_columns[1].warning(f"PDF export unavailable: {exc}")
+
+    st.caption(
+        "Draft Day includes position rank, tier, consensus ADP, Draft Value, bye, "
+        "GridironGPT score, and football notes. Individual ADP sources remain selectable."
     )
 
     st.divider()
-    expand_all = st.toggle("Expand all ranking entries", value=False)
-
     tabs = st.tabs(("Overall",) + POSITIONS)
+
     with tabs[0]:
-        _render_rankings(
-            population.overall,
-            market_views_by_player_id=snapshot.market_views_by_player_id,
-            football_notes_by_player_id=football_notes,
-            football_summaries_by_player_id=football_summaries,
-            expanded=expand_all,
+        overall_expansion = _expansion_controls("overall")
+        _render_overall_rows(
+            snapshot.population.explained_overall,
+            football_summaries=football_summaries,
+            market_views=snapshot.market_views_by_player_id,
+            limit=overall_limit,
+            expansion_mode=overall_expansion,
         )
 
     for tab, position in zip(tabs[1:], POSITIONS):
         with tab:
-            _render_rankings(
-                population.by_position.get(position, ()),
-                market_views_by_player_id=snapshot.market_views_by_player_id,
-                football_notes_by_player_id=football_notes,
-                football_summaries_by_player_id=football_summaries,
-                expanded=expand_all,
+            scores = snapshot.population.by_position.get(position, [])
+            st.caption(
+                f"Top {min(position_limit, len(scores))} {position} rankings "
+                "from the same integrated scoring model."
             )
-
-
-if __name__ == "__main__":
-    render()
+            expansion_mode = _expansion_controls(position)
+            _render_score_rows(
+                scores[:position_limit],
+                football_summaries=football_summaries,
+                market_views=snapshot.market_views_by_player_id,
+                expansion_mode=expansion_mode,
+            )
