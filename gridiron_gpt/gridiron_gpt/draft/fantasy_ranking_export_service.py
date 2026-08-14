@@ -5,6 +5,34 @@ from io import BytesIO
 from gridiron_gpt.draft.fantasy_ranking_population_service import FantasyRankingPopulation
 
 
+FIELD_LABELS = {
+    "rank": "Rank",
+    "player": "Player",
+    "position": "Pos",
+    "team": "Team",
+    "bye": "Bye",
+    "score": "Score",
+    "baseline": "Baseline",
+    "market": "Market",
+    "role": "Role",
+    "cortex": "Cortex",
+    "availability": "Availability",
+    "football_notes": "Football Notes",
+    "provenance": "Provenance",
+}
+
+DRAFT_DAY_FIELDS = (
+    "rank",
+    "player",
+    "position",
+    "team",
+    "bye",
+    "score",
+    "football_notes",
+)
+
+FULL_ANALYSIS_FIELDS = tuple(FIELD_LABELS)
+
 COMPONENT_LABELS = {
     "baseline": "baseline",
     "market": "market",
@@ -42,28 +70,51 @@ def compact_takeaway(score) -> str:
     return f"{best.title()}-led profile"
 
 
-def _rows(scores) -> list[dict]:
+def _validated_fields(selected_fields) -> tuple[str, ...]:
+    fields = tuple(selected_fields or DRAFT_DAY_FIELDS)
+    unknown = [field for field in fields if field not in FIELD_LABELS]
+    if unknown:
+        raise ValueError(f"Unknown export fields: {', '.join(unknown)}")
+    if not fields:
+        raise ValueError("At least one export field is required")
+    return fields
+
+
+def _rows(
+    scores,
+    *,
+    selected_fields,
+    bye_week_by_team: dict[str, int] | None = None,
+    football_notes_by_player_id: dict[str, str] | None = None,
+) -> list[dict]:
+    fields = _validated_fields(selected_fields)
+    bye_week_by_team = bye_week_by_team or {}
+    football_notes_by_player_id = football_notes_by_player_id or {}
+
     rows: list[dict] = []
     for rank, score in enumerate(scores, start=1):
-        rows.append(
-            {
-                "Rank": rank,
-                "Player": score.player_name,
-                "Pos": score.position or "-",
-                "Team": score.team or "-",
-                "Score": score.ranking_score,
-                "Baseline": score.components.get("baseline"),
-                "Market": score.components.get("market"),
-                "Role": score.components.get("role"),
-                "Cortex": score.components.get("cortex"),
-                "Availability": score.components.get("availability"),
-                "Takeaway": compact_takeaway(score),
-                "Provenance": " | ".join(
-                    f"{name}: {source}"
-                    for name, source in score.provenance.items()
-                ),
-            }
-        )
+        values = {
+            "rank": rank,
+            "player": score.player_name,
+            "position": score.position or "-",
+            "team": score.team or "-",
+            "bye": bye_week_by_team.get((score.team or "").upper()),
+            "score": score.ranking_score,
+            "baseline": score.components.get("baseline"),
+            "market": score.components.get("market"),
+            "role": score.components.get("role"),
+            "cortex": score.components.get("cortex"),
+            "availability": score.components.get("availability"),
+            "football_notes": football_notes_by_player_id.get(
+                score.player_id,
+                compact_takeaway(score),
+            ),
+            "provenance": " | ".join(
+                f"{name}: {source}"
+                for name, source in score.provenance.items()
+            ),
+        }
+        rows.append({FIELD_LABELS[field]: values[field] for field in fields})
     return rows
 
 
@@ -72,28 +123,39 @@ def build_rankings_xlsx(
     *,
     overall_limit: int | None = None,
     position_limit: int | None = None,
+    selected_fields=DRAFT_DAY_FIELDS,
+    bye_week_by_team: dict[str, int] | None = None,
+    football_notes_by_player_id: dict[str, str] | None = None,
 ) -> bytes:
-    """Build an XLSX workbook with overall and position-specific sheets."""
+    """Build an XLSX workbook with selectable fields and position sheets."""
     import pandas as pd
 
+    fields = _validated_fields(selected_fields)
     output = BytesIO()
     overall = population.overall[:overall_limit] if overall_limit else population.overall
 
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
-        pd.DataFrame(_rows(overall)).to_excel(
-            writer,
-            sheet_name="Overall",
-            index=False,
-        )
+        pd.DataFrame(
+            _rows(
+                overall,
+                selected_fields=fields,
+                bye_week_by_team=bye_week_by_team,
+                football_notes_by_player_id=football_notes_by_player_id,
+            )
+        ).to_excel(writer, sheet_name="Overall", index=False)
+
         for position in ("QB", "RB", "WR", "TE"):
             scores = population.by_position.get(position, [])
             if position_limit:
                 scores = scores[:position_limit]
-            pd.DataFrame(_rows(scores)).to_excel(
-                writer,
-                sheet_name=position,
-                index=False,
-            )
+            pd.DataFrame(
+                _rows(
+                    scores,
+                    selected_fields=fields,
+                    bye_week_by_team=bye_week_by_team,
+                    football_notes_by_player_id=football_notes_by_player_id,
+                )
+            ).to_excel(writer, sheet_name=position, index=False)
 
         for worksheet in writer.book.worksheets:
             worksheet.freeze_panes = "A2"
@@ -116,63 +178,89 @@ def build_rankings_pdf(
     *,
     overall_limit: int = 100,
     position_limit: int = 50,
+    selected_fields=DRAFT_DAY_FIELDS,
+    bye_week_by_team: dict[str, int] | None = None,
+    football_notes_by_player_id: dict[str, str] | None = None,
 ) -> bytes:
-    """Build a compact PDF draft list with short 2-5 word takeaways."""
+    """Build a compact PDF draft list using only selected fields."""
     from reportlab.lib import colors
-    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.pagesizes import landscape, letter
     from reportlab.lib.styles import getSampleStyleSheet
     from reportlab.lib.units import inch
     from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
+    fields = _validated_fields(selected_fields)
     output = BytesIO()
     doc = SimpleDocTemplate(
         output,
-        pagesize=letter,
-        rightMargin=0.35 * inch,
-        leftMargin=0.35 * inch,
-        topMargin=0.4 * inch,
-        bottomMargin=0.4 * inch,
+        pagesize=landscape(letter),
+        rightMargin=0.3 * inch,
+        leftMargin=0.3 * inch,
+        topMargin=0.35 * inch,
+        bottomMargin=0.35 * inch,
         title="GridironGPT Fantasy Rankings",
     )
     styles = getSampleStyleSheet()
     story = [
         Paragraph("GridironGPT Fantasy Rankings", styles["Title"]),
         Paragraph(
-            "Integrated evidence: historical production, market/ADP, role, Cortex, and availability.",
+            "Draft list generated from GridironGPT integrated rankings.",
             styles["BodyText"],
         ),
-        Spacer(1, 0.12 * inch),
+        Spacer(1, 0.1 * inch),
     ]
 
     def add_section(title: str, scores) -> None:
-        story.append(Paragraph(title, styles["Heading2"]))
-        data = [["#", "Player", "Pos", "Tm", "Score", "Takeaway"]]
-        for rank, score in enumerate(scores, start=1):
-            data.append(
-                [
-                    rank,
-                    score.player_name,
-                    score.position or "-",
-                    score.team or "-",
-                    f"{score.ranking_score:.2f}",
-                    compact_takeaway(score),
-                ]
-            )
-        table = Table(
-            data,
-            repeatRows=1,
-            colWidths=[0.32 * inch, 2.15 * inch, 0.42 * inch, 0.42 * inch, 0.55 * inch, 2.45 * inch],
+        rows = _rows(
+            scores,
+            selected_fields=fields,
+            bye_week_by_team=bye_week_by_team,
+            football_notes_by_player_id=football_notes_by_player_id,
         )
+        story.append(Paragraph(title, styles["Heading2"]))
+        headers = [FIELD_LABELS[field] for field in fields]
+        data = [headers]
+        for row in rows:
+            formatted = []
+            for header in headers:
+                value = row.get(header)
+                if isinstance(value, float):
+                    value = f"{value:.1f}"
+                elif value is None:
+                    value = "-"
+                formatted.append(value)
+            data.append(formatted)
+
+        available_width = 10.4 * inch
+        preferred = {
+            "Rank": 0.38,
+            "Player": 1.65,
+            "Pos": 0.42,
+            "Team": 0.45,
+            "Bye": 0.42,
+            "Score": 0.55,
+            "Baseline": 0.62,
+            "Market": 0.58,
+            "Role": 0.52,
+            "Cortex": 0.58,
+            "Availability": 0.72,
+            "Football Notes": 2.2,
+            "Provenance": 2.6,
+        }
+        raw_widths = [preferred.get(header, 0.8) for header in headers]
+        scale = min(1.0, available_width / sum(raw_widths))
+        col_widths = [width * scale * inch for width in raw_widths]
+
+        table = Table(data, repeatRows=1, colWidths=col_widths)
         table.setStyle(
             TableStyle(
                 [
                     ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
                     ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                    ("FONTSIZE", (0, 0), (-1, -1), 8),
-                    ("BOTTOMPADDING", (0, 0), (-1, 0), 5),
-                    ("TOPPADDING", (0, 0), (-1, -1), 3),
-                    ("BOTTOMPADDING", (0, 1), (-1, -1), 3),
-                    ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
+                    ("FONTSIZE", (0, 0), (-1, -1), 7),
+                    ("TOPPADDING", (0, 0), (-1, -1), 2.5),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 2.5),
+                    ("GRID", (0, 0), (-1, -1), 0.2, colors.grey),
                     ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                 ]
             )
