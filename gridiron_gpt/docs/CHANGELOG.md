@@ -1,5 +1,50 @@
 # Changelog
 
+## 2026-08-14 — Integrated Fantasy Ranking Intelligence
+
+### Added
+- `FantasyRankingDataService` for loading real historical, market, role, and canonical football-state data into the ranking pipeline.
+- Current-season ADP/market evidence with explicit season provenance and stale-market protection.
+- Recent role/usage evidence normalized within fantasy position.
+- Conservative cross-source player-name normalization for historical and ADP matching.
+- Legacy Cortex scorecard fallback matching by normalized player name and team when canonical IDs differ.
+- Anchor-evidence validation so availability/role/context alone cannot manufacture a fantasy ranking.
+- `FantasyRankingExplanationService` for evidence-based ranking explanations.
+- `explained_overall` population output with rank, score, strengths, concerns, provenance, and missing-evidence context.
+
+### Ranking Model
+
+The integrated ranking path now combines:
+
+```text
+historical production
++ current 2026 ADP / market
++ recent role / usage
++ Cortex intelligence
++ canonical availability
+→ evidence sufficiency
+→ weighted fantasy ranking
+→ rank-aware explanation
+```
+
+Missing evidence is treated as unavailable evidence rather than negative evidence. Available weights are renormalized rather than silently assigning zeroes to missing sources.
+
+### Explanation Semantics
+- Availability remains evidence but is not described as an elite fantasy strength.
+- Neutral Cortex intelligence is not presented as a negative factor.
+- Missing evidence is called out explicitly without being converted into a concern.
+- Explanation generation is downstream of scoring and does not alter ranking results.
+
+### Validation
+
+```text
+780 passed
+```
+
+Real-data verification produced integrated Top-25 rankings using historical, 2026 market, role, Cortex, and availability evidence while preserving source-specific provenance.
+
+---
+
 ## 2026-08-10 — v1.0 Cortex Runtime Integration & Stabilization
 
 ### Added
@@ -35,15 +80,7 @@
 702 passed
 ```
 
-This is the current verified full regression checkpoint before the final v1.0 stabilization/smoke-test pass.
-
-### Stabilization Remaining
-- Refresh remaining contributor documentation.
-- Review known issues and commands.
-- Complete deployment-plan documentation.
-- Run final full regression suite after documentation/stale-reference cleanup.
-- Perform Streamlit smoke test.
-- Reconcile branch/README history and prepare merge/release boundary.
+This checkpoint preceded the integrated fantasy-ranking work.
 
 ---
 
