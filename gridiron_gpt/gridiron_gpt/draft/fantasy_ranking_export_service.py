@@ -9,9 +9,17 @@ FIELD_LABELS = {
     "rank": "Rank",
     "player": "Player",
     "position": "Pos",
+    "position_rank": "Pos Rank",
+    "tier": "Tier",
     "team": "Team",
     "bye": "Bye",
     "score": "Score",
+    "consensus_adp": "Consensus ADP",
+    "ffc_adp": "FFC ADP",
+    "nfl_adp": "NFL ADP",
+    "adp_spread": "ADP Spread",
+    "adp_source_count": "ADP Sources",
+    "draft_value": "Draft Value",
     "baseline": "Baseline",
     "market": "Market",
     "role": "Role",
@@ -25,9 +33,13 @@ DRAFT_DAY_FIELDS = (
     "rank",
     "player",
     "position",
+    "position_rank",
+    "tier",
     "team",
     "bye",
     "score",
+    "consensus_adp",
+    "draft_value",
     "football_notes",
 )
 
@@ -86,20 +98,32 @@ def _rows(
     selected_fields,
     bye_week_by_team: dict[str, int] | None = None,
     football_notes_by_player_id: dict[str, str] | None = None,
+    market_views_by_player_id: dict | None = None,
 ) -> list[dict]:
     fields = _validated_fields(selected_fields)
     bye_week_by_team = bye_week_by_team or {}
     football_notes_by_player_id = football_notes_by_player_id or {}
+    market_views_by_player_id = market_views_by_player_id or {}
 
     rows: list[dict] = []
     for rank, score in enumerate(scores, start=1):
+        market_view = market_views_by_player_id.get(score.player_id)
+        source_adps = getattr(market_view, "source_adps", {}) if market_view else {}
         values = {
             "rank": rank,
             "player": score.player_name,
             "position": score.position or "-",
+            "position_rank": getattr(market_view, "position_rank", None),
+            "tier": getattr(market_view, "tier", None),
             "team": score.team or "-",
             "bye": bye_week_by_team.get((score.team or "").upper()),
             "score": score.ranking_score,
+            "consensus_adp": getattr(market_view, "consensus_adp", None),
+            "ffc_adp": source_adps.get("Fantasy Football Calculator"),
+            "nfl_adp": source_adps.get("NFL Fantasy"),
+            "adp_spread": getattr(market_view, "adp_spread", None),
+            "adp_source_count": getattr(market_view, "adp_source_count", 0),
+            "draft_value": getattr(market_view, "draft_value", None),
             "baseline": score.components.get("baseline"),
             "market": score.components.get("market"),
             "role": score.components.get("role"),
@@ -126,6 +150,7 @@ def build_rankings_xlsx(
     selected_fields=DRAFT_DAY_FIELDS,
     bye_week_by_team: dict[str, int] | None = None,
     football_notes_by_player_id: dict[str, str] | None = None,
+    market_views_by_player_id: dict | None = None,
 ) -> bytes:
     """Build an XLSX workbook with selectable fields and position sheets."""
     import pandas as pd
@@ -141,6 +166,7 @@ def build_rankings_xlsx(
                 selected_fields=fields,
                 bye_week_by_team=bye_week_by_team,
                 football_notes_by_player_id=football_notes_by_player_id,
+                market_views_by_player_id=market_views_by_player_id,
             )
         ).to_excel(writer, sheet_name="Overall", index=False)
 
@@ -154,6 +180,7 @@ def build_rankings_xlsx(
                     selected_fields=fields,
                     bye_week_by_team=bye_week_by_team,
                     football_notes_by_player_id=football_notes_by_player_id,
+                    market_views_by_player_id=market_views_by_player_id,
                 )
             ).to_excel(writer, sheet_name=position, index=False)
 
@@ -181,6 +208,7 @@ def build_rankings_pdf(
     selected_fields=DRAFT_DAY_FIELDS,
     bye_week_by_team: dict[str, int] | None = None,
     football_notes_by_player_id: dict[str, str] | None = None,
+    market_views_by_player_id: dict | None = None,
 ) -> bytes:
     """Build a compact PDF draft list using only selected fields."""
     from reportlab.lib import colors
@@ -216,6 +244,7 @@ def build_rankings_pdf(
             selected_fields=fields,
             bye_week_by_team=bye_week_by_team,
             football_notes_by_player_id=football_notes_by_player_id,
+            market_views_by_player_id=market_views_by_player_id,
         )
         story.append(Paragraph(title, styles["Heading2"]))
         headers = [FIELD_LABELS[field] for field in fields]
@@ -233,19 +262,27 @@ def build_rankings_pdf(
 
         available_width = 10.4 * inch
         preferred = {
-            "Rank": 0.38,
-            "Player": 1.65,
-            "Pos": 0.42,
-            "Team": 0.45,
-            "Bye": 0.42,
-            "Score": 0.55,
-            "Baseline": 0.62,
-            "Market": 0.58,
-            "Role": 0.52,
-            "Cortex": 0.58,
-            "Availability": 0.72,
-            "Football Notes": 2.2,
-            "Provenance": 2.6,
+            "Rank": 0.36,
+            "Player": 1.55,
+            "Pos": 0.38,
+            "Pos Rank": 0.48,
+            "Tier": 0.38,
+            "Team": 0.42,
+            "Bye": 0.38,
+            "Score": 0.52,
+            "Consensus ADP": 0.68,
+            "FFC ADP": 0.55,
+            "NFL ADP": 0.55,
+            "ADP Spread": 0.58,
+            "ADP Sources": 0.55,
+            "Draft Value": 0.62,
+            "Baseline": 0.58,
+            "Market": 0.54,
+            "Role": 0.48,
+            "Cortex": 0.54,
+            "Availability": 0.68,
+            "Football Notes": 2.0,
+            "Provenance": 2.4,
         }
         raw_widths = [preferred.get(header, 0.8) for header in headers]
         scale = min(1.0, available_width / sum(raw_widths))
