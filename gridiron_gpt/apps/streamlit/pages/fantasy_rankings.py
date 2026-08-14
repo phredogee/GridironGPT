@@ -86,10 +86,42 @@ def _football_notes(population) -> tuple[dict[str, str], dict[str, str]]:
     return compact, summaries
 
 
+def _expansion_controls(scope: str) -> str:
+    """Render expansion controls and return the requested expander mode."""
+    state_key = f"fantasy_rankings_expansion_{scope.lower()}"
+    if state_key not in st.session_state:
+        st.session_state[state_key] = "default"
+
+    controls = st.columns([1, 1, 5])
+    if controls[0].button(
+        "Expand All",
+        key=f"fantasy_rankings_expand_all_{scope.lower()}",
+        use_container_width=True,
+    ):
+        st.session_state[state_key] = "all"
+    if controls[1].button(
+        "Collapse All",
+        key=f"fantasy_rankings_collapse_all_{scope.lower()}",
+        use_container_width=True,
+    ):
+        st.session_state[state_key] = "none"
+
+    return st.session_state[state_key]
+
+
+def _is_expanded(rank: int, mode: str, *, default_count: int = 5) -> bool:
+    if mode == "all":
+        return True
+    if mode == "none":
+        return False
+    return rank <= default_count
+
+
 def _render_score_rows(
     scores,
     *,
     football_summaries: dict[str, str],
+    expansion_mode: str = "default",
     expanded_count: int = 5,
 ) -> None:
     for rank, score in enumerate(scores, start=1):
@@ -97,7 +129,14 @@ def _render_score_rows(
             f"#{rank}  {score.player_name}  ·  {score.position or '-'}  ·  "
             f"{score.team or '-'}  ·  {score.ranking_score:.2f}"
         )
-        with st.expander(header, expanded=rank <= expanded_count):
+        with st.expander(
+            header,
+            expanded=_is_expanded(
+                rank,
+                expansion_mode,
+                default_count=expanded_count,
+            ),
+        ):
             football_summary = football_summaries.get(score.player_id)
             if football_summary:
                 st.markdown("**Football read**")
@@ -121,6 +160,7 @@ def _render_overall_rows(
     *,
     football_summaries: dict[str, str],
     limit: int,
+    expansion_mode: str = "default",
 ) -> None:
     for item in explained_overall[:limit]:
         score = item.score
@@ -129,7 +169,10 @@ def _render_overall_rows(
             f"#{item.rank}  {score.player_name}  ·  {score.position or '-'}  ·  "
             f"{score.team or '-'}  ·  {score.ranking_score:.2f}"
         )
-        with st.expander(header, expanded=item.rank <= 5):
+        with st.expander(
+            header,
+            expanded=_is_expanded(item.rank, expansion_mode),
+        ):
             football_summary = football_summaries.get(score.player_id)
             if football_summary:
                 st.markdown("**Football read**")
@@ -314,10 +357,12 @@ def render_fantasy_rankings() -> None:
     tabs = st.tabs(("Overall",) + POSITIONS)
 
     with tabs[0]:
+        overall_expansion = _expansion_controls("overall")
         _render_overall_rows(
             snapshot.population.explained_overall,
             football_summaries=football_summaries,
             limit=overall_limit,
+            expansion_mode=overall_expansion,
         )
 
     for tab, position in zip(tabs[1:], POSITIONS):
@@ -327,7 +372,9 @@ def render_fantasy_rankings() -> None:
                 f"Top {min(position_limit, len(scores))} {position} rankings "
                 "from the same integrated scoring model."
             )
+            expansion_mode = _expansion_controls(position)
             _render_score_rows(
                 scores[:position_limit],
                 football_summaries=football_summaries,
+                expansion_mode=expansion_mode,
             )
