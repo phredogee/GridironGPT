@@ -68,11 +68,13 @@ class FantasyRankingScore:
 class FantasyRankingScorer:
     """Combine normalized fantasy inputs without redefining Cortex score semantics."""
 
-    PRIMARY_EVIDENCE_COMPONENTS = {
+    # Baseline production and current market value are anchor evidence: either
+    # can establish that a player belongs in the overall fantasy ranking pool.
+    # Role, Cortex, and availability are contextual modifiers and must not create
+    # an elite ranking on their own when both anchor sources are absent.
+    ANCHOR_EVIDENCE_COMPONENTS = {
         "baseline",
         "market",
-        "role",
-        "cortex",
     }
 
     def __init__(self, weights: FantasyRankingWeights | None = None) -> None:
@@ -109,13 +111,13 @@ class FantasyRankingScorer:
         if active_weight <= 0:
             raise ValueError("at least one weighted ranking component must be available")
 
-        has_primary_evidence = any(
+        has_anchor_evidence = any(
             name in components and configured_weights[name] > 0
-            for name in self.PRIMARY_EVIDENCE_COMPONENTS
+            for name in self.ANCHOR_EVIDENCE_COMPONENTS
         )
-        if not has_primary_evidence:
+        if not has_anchor_evidence:
             raise ValueError(
-                "at least one primary ranking evidence component must be available"
+                "at least one anchor ranking evidence component must be available"
             )
 
         weighted = {
