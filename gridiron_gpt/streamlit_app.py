@@ -3,6 +3,7 @@ from apps.streamlit.components.theme import apply_cortex_theme
 from apps.streamlit.pages.dashboard import render_dashboard
 from apps.streamlit.pages.ingestion_status import render_ingestion_status
 from apps.streamlit.pages.cortex_explorer import render_cortex_explorer
+from apps.streamlit.pages.fantasy_rankings import render_fantasy_rankings
 from apps.streamlit.components.intelligence_charts import render_confidence_panel, render_cortex_timeline, render_signal_breakdown
 from gridiron_cortex.presentation.builders.dashboard_builder import build_dashboard_view_model
 from gridiron_cortex.facade import CortexFacade
@@ -97,8 +98,9 @@ version = get_project_version(); selected_page = render_sidebar(version=version)
 if selected_page == "Inspector": render_cortex_inspector(cortex)
 if selected_page == "Ingestion": render_ingestion_status()
 if selected_page == "Explorer": render_cortex_explorer(player_names, cortex)
+if selected_page == "Rankings": render_fantasy_rankings()
 if selected_page == "Dashboard":
-    dashboard = build_dashboard_view_model(ranked_players=ranked_players, buy_players=buy_players, watch_players=watch_players, risk_players=risk_players, player_count=len(player_names), recommendation_from_score=recommendation_from_score, confidence_from_signals=confidence_from_signals, passing_tests=702); render_dashboard(dashboard, scores=scores, positions=positions, activity_groups=activity_feed.latest(limit=10))
+    dashboard = build_dashboard_view_model(ranked_players=ranked_players, buy_players=buy_players, watch_players=watch_players, risk_players=risk_players, player_count=len(player_names), recommendation_from_score=recommendation_from_score, confidence_from_signals=confidence_from_signals, passing_tests=780); render_dashboard(dashboard, scores=scores, positions=positions, activity_groups=activity_feed.latest(limit=10))
 if selected_page == "Advisor":
     st.markdown("### Ask Cortex"); st.caption("Ask football questions in natural language."); question = st.text_area("Ask Gridiron Cortex", placeholder="Examples:\n• Who should I start this week?\n• Best waiver pickup over the next 3 weeks?\n• Should I trade Tank Dell?\n• Best DST to stream next week?", height=140)
     if st.button("Ask Cortex", use_container_width=True):
