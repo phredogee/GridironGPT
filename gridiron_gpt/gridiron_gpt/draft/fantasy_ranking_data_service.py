@@ -68,19 +68,20 @@ class FantasyRankingDataService:
         self.historical_loader = historical_loader
         self.adp_loader = adp_loader
         self.role_loader = role_loader or self._load_observed_role_snapshot
-        self.adp_source_loaders: dict[str, Callable] = {}
-        if adp_source_loaders is not None:
-            self.adp_source_loaders.update(
-                self._default_runtime_adp_source_loaders(season=ranking_season)
-            )
-            self.adp_source_loaders.update(adp_source_loaders)
+        # Explicit source loaders are authoritative. This keeps tests/custom
+        # compositions deterministic instead of silently adding network feeds.
+        self.adp_source_loaders = (
+            self._default_runtime_adp_source_loaders(season=ranking_season)
+            if adp_source_loaders is None
+            else dict(adp_source_loaders)
+        )
         self.consensus_adp_service = consensus_adp_service or ConsensusAdpService()
         self.tier_service = tier_service or FantasyRankingTierService()
         self.ranking_season = ranking_season
 
     @staticmethod
     def _default_runtime_adp_source_loaders(*, season: int) -> dict[str, Callable]:
-        """Return built-in secondary feeds when runtime composition opts in."""
+        """Return built-in secondary feeds for normal runtime composition."""
         from gridiron_gpt.draft.espn_adp_loader import EspnAdpLoader
 
         espn = EspnAdpLoader(season=season)
