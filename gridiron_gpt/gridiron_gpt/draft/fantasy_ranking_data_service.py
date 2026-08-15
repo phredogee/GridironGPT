@@ -51,6 +51,7 @@ class FantasyRankingDataService:
     """Load real project data and feed the fantasy-ranking pipeline."""
 
     PRIMARY_ADP_SOURCE = "Fantasy Football Calculator"
+    MARKET_DRAFT_POOL_SIZE = 256
 
     def __init__(
         self,
@@ -107,7 +108,14 @@ class FantasyRankingDataService:
             record.player_name: record.consensus_adp
             for record in consensus_adp_by_key.values()
         }
-        draft_pool_size = len(adp_by_name) or None
+        # Keep the Market component on the same 256-pick scale used by the
+        # original ADP feed. Broader feeds (for example ESPN's 1,000+ records)
+        # improve consensus coverage but must not inflate every market score.
+        draft_pool_size = (
+            min(len(adp_by_name), self.MARKET_DRAFT_POOL_SIZE)
+            if adp_by_name
+            else None
+        )
 
         role_snapshot = RoleSnapshot({}, {}, None)
         if role_scores_by_player_id is None:
