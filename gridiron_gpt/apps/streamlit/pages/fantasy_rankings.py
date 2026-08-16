@@ -33,13 +33,14 @@ POSITIONS = ("QB", "RB", "WR", "TE")
 DRAFTED_IDS_KEY = "fantasy_rankings_drafted_player_ids"
 
 
+@st.cache_resource(show_spinner=False)
 def build_fantasy_ranking_snapshot(
     *,
     scoring: str = "ppr",
     teams: int = 12,
     limit: int | None = None,
 ):
-    """Build the production fantasy-ranking snapshot used by the UI."""
+    """Build and cache the production fantasy-ranking snapshot used by the UI."""
     player_repository = JsonlPlayerStateRepository()
     scorecard_repository = JsonPlayerScorecardRepository(
         "data/cortex/player_scorecards.jsonl"
@@ -126,17 +127,13 @@ def _remaining_population(
     population: FantasyRankingPopulation,
     drafted_ids: set[str],
 ) -> FantasyRankingPopulation:
-    """Return a view of the ranking population with drafted players removed."""
+    """Return a view with drafted players removed, primarily for draft exports."""
     if not drafted_ids:
         return population
 
     overall = [score for score in population.overall if score.player_id not in drafted_ids]
     by_position = {
-        position: [
-            score
-            for score in scores
-            if score.player_id not in drafted_ids
-        ]
+        position: [score for score in scores if score.player_id not in drafted_ids]
         for position, scores in population.by_position.items()
     }
     explained = [
@@ -265,7 +262,16 @@ def _render_market_context(score, market_views: dict) -> None:
         st.caption(f"ADP sources: {source_text}")
 
 
-def _draft_button(score, *, scope: str) -> None:
+def _draft_control(score, *, scope: str, drafted_ids: set[str]) -> None:
+    drafted = score.player_id in drafted_ids
+    if drafted:
+        st.button(
+            "DRAFTED",
+            key=f"fantasy_rankings_drafted_{scope}_{score.player_id}",
+            disabled=True,
+        )
+        return
+
     if st.button(
         "Mark Drafted",
         key=f"fantasy_rankings_mark_drafted_{scope}_{score.player_id}",
@@ -280,23 +286,29 @@ def _render_score_rows(
     *,
     football_summaries: dict[str, str],
     market_views: dict,
+    drafted_ids: set[str] | None = None,
     draft_mode: bool = False,
     scope: str,
     expansion_mode: str = "default",
     expanded_count: int = 5,
 ) -> None:
+    drafted_ids = drafted_ids or set()
     for rank, score in enumerate(scores, start=1):
+        drafted = draft_mode and score.player_id in drafted_ids
         market_badge = _market_badge(score, market_views)
+        prefix = "DRAFTED · " if drafted else ""
         header = (
-            f"#{rank}  {score.player_name}  ·  {market_badge or (score.position or '-')}  ·  "
+            f"{prefix}#{rank}  {score.player_name}  ·  {market_badge or (score.position or '-')}  ·  "
             f"{score.team or '-'}  ·  {score.ranking_score:.2f}"
         )
         with st.expander(
             header,
             expanded=_is_expanded(rank, expansion_mode, default_count=expanded_count),
         ):
+            if drafted:
+                st.caption("Drafted — no longer available")
             if draft_mode:
-                _draft_button(score, scope=scope)
+                _draft_control(score, scope=scope, drafted_ids=drafted_ids)
             _render_market_context(score, market_views)
 
             football_summary = football_summaries.get(score.player_id)
@@ -320,20 +332,26 @@ def _render_overall_rows(
     football_summaries: dict[str, str],
     market_views: dict,
     limit: int,
+    drafted_ids: set[str] | None = None,
     draft_mode: bool = False,
     expansion_mode: str = "default",
 ) -> None:
+    drafted_ids = drafted_ids or set()
     for item in explained_overall[:limit]:
         score = item.score
         explanation = item.explanation
+        drafted = draft_mode and score.player_id in drafted_ids
         market_badge = _market_badge(score, market_views)
+        prefix = "DRAFTED · " if drafted else ""
         header = (
-            f"#{item.rank}  {score.player_name}  ·  {market_badge or (score.position or '-')}  ·  "
+            f"{prefix}#{item.rank}  {score.player_name}  ·  {market_badge or (score.position or '-')}  ·  "
             f"{score.team or '-'}  ·  {score.ranking_score:.2f}"
         )
         with st.expander(header, expanded=_is_expanded(item.rank, expansion_mode)):
+            if drafted:
+                st.caption("Drafted — no longer available")
             if draft_mode:
-                _draft_button(score, scope="overall")
+                _draft_control(score, scope="overall", drafted_ids=drafted_ids)
             _render_market_context(score, market_views)
 
             football_summary = football_summaries.get(score.player_id)
@@ -429,8 +447,18 @@ def render_fantasy_rankings() -> None:
             "Draft Mode",
             value=False,
             key="fantasy_rankings_draft_mode",
-            help="Mark drafted players and remove them from all ranking lists and exports for this session.",
+            help="Mark drafted players in place while preserving the original draft board order.",
         )
+
+    refresh = st.columns([1, 5])
+    if refresh[0].button(
+        "Refresh Rankings",
+        key="fantasy_rankings_refresh_snapshot",
+        use_container_width=True,
+        help="Rebuild rankings and refresh external ADP data. Draft selections are preserved.",
+    ):
+        build_fantasy_ranking_snapshot.clear()
+        st.rerun()
 
     try:
         snapshot = build_fantasy_ranking_snapshot(scoring=scoring, teams=teams, limit=None)
@@ -441,7 +469,7 @@ def render_fantasy_rankings() -> None:
         return
 
     drafted_ids = set(_drafted_ids()) if draft_mode else set()
-    active_population = _remaining_population(snapshot.population, drafted_ids)
+    export_population = _remaining_population(snapshot.population, drafted_ids)
 
     meta = st.columns(4)
     meta[0].metric("Historical", snapshot.historical_player_count)
@@ -458,8 +486,8 @@ def render_fantasy_rankings() -> None:
     )
     if draft_mode:
         meta[3].metric(
-            "Remaining",
-            len(active_population.overall),
+            "Available",
+            len(export_population.overall),
             delta=f"{len(drafted_ids)} drafted",
         )
     else:
@@ -485,7 +513,7 @@ def render_fantasy_rankings() -> None:
         export_columns = st.columns([1, 1, 4])
         try:
             xlsx_data = build_rankings_xlsx(
-                active_population,
+                export_population,
                 overall_limit=overall_limit,
                 position_limit=position_limit,
                 selected_fields=selected_fields,
@@ -505,7 +533,7 @@ def render_fantasy_rankings() -> None:
 
         try:
             pdf_data = build_rankings_pdf(
-                active_population,
+                export_population,
                 overall_limit=overall_limit,
                 position_limit=position_limit,
                 selected_fields=selected_fields,
@@ -525,8 +553,8 @@ def render_fantasy_rankings() -> None:
 
     st.caption(
         "Draft Day includes position rank, tier, consensus ADP, Draft Value, bye, "
-        "GridironGPT score, and football notes. In Draft Mode, drafted players are "
-        "also removed from generated exports."
+        "GridironGPT score, and football notes. Drafted players remain visible on the "
+        "live board but are excluded from Draft Mode exports."
     )
 
     st.divider()
@@ -535,17 +563,18 @@ def render_fantasy_rankings() -> None:
     with tabs[0]:
         overall_expansion = _expansion_controls("overall")
         _render_overall_rows(
-            active_population.explained_overall,
+            snapshot.population.explained_overall,
             football_summaries=football_summaries,
             market_views=snapshot.market_views_by_player_id,
             limit=overall_limit,
+            drafted_ids=drafted_ids,
             draft_mode=draft_mode,
             expansion_mode=overall_expansion,
         )
 
     for tab, position in zip(tabs[1:], POSITIONS):
         with tab:
-            scores = active_population.by_position.get(position, [])
+            scores = snapshot.population.by_position.get(position, [])
             st.caption(
                 f"Top {min(position_limit, len(scores))} {position} rankings "
                 "from the same integrated scoring model."
@@ -555,6 +584,7 @@ def render_fantasy_rankings() -> None:
                 scores[:position_limit],
                 football_summaries=football_summaries,
                 market_views=snapshot.market_views_by_player_id,
+                drafted_ids=drafted_ids,
                 draft_mode=draft_mode,
                 scope=position.lower(),
                 expansion_mode=expansion_mode,
