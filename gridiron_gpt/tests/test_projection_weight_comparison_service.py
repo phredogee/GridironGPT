@@ -1,4 +1,4 @@
-from gridiron_gpt.draft.fantasy_projection_view import FantasyProjectionView
+from gridiron_gpt.draft.fantasy_projection_view_service import FantasyProjectionView
 from gridiron_gpt.draft.fantasy_ranking_population_service import FantasyRankingPopulation
 from gridiron_gpt.draft.fantasy_ranking_score import FantasyRankingScore
 from gridiron_gpt.draft.projection_weight_comparison_service import ProjectionWeightComparisonService
@@ -25,9 +25,8 @@ def _population(*scores: FantasyRankingScore) -> FantasyRankingPopulation:
     )
 
 
-def _view(name: str, points: float) -> FantasyProjectionView:
+def _view(points: float) -> FantasyProjectionView:
     return FantasyProjectionView(
-        player_name=name,
         projected_points=points,
         projected_ppg=points / 17.0,
     )
@@ -39,8 +38,8 @@ def test_projection_points_are_normalized_to_ranked_pool_maximum():
         _score("two", "Player Two", 80.0),
     )
     views = {
-        "player one": _view("Player One", 400.0),
-        "player two": _view("Player Two", 200.0),
+        "player one": _view(400.0),
+        "player two": _view(200.0),
     }
 
     rows = ProjectionWeightComparisonService().compare(population, views)
@@ -56,8 +55,8 @@ def test_projection_weight_can_change_rank_without_mutating_production_order():
         _score("two", "Player Two", 89.0),
     )
     views = {
-        "player one": _view("Player One", 200.0),
-        "player two": _view("Player Two", 400.0),
+        "player one": _view(200.0),
+        "player two": _view(400.0),
     }
 
     rows = ProjectionWeightComparisonService().compare(population, views)
@@ -77,7 +76,7 @@ def test_missing_projection_does_not_penalize_production_score():
         _score("one", "Player One", 88.0),
         _score("two", "Player Two", 80.0),
     )
-    views = {"player two": _view("Player Two", 300.0)}
+    views = {"player two": _view(300.0)}
 
     rows = ProjectionWeightComparisonService().compare(population, views)
     first = rows[0]
