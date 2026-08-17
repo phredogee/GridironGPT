@@ -31,6 +31,30 @@ from gridiron_gpt.football_state.repositories.jsonl_player_state_repository impo
 
 POSITIONS = ("QB", "RB", "WR", "TE")
 DRAFTED_IDS_KEY = "fantasy_rankings_drafted_player_ids"
+DRAFTED_PLAYER_CSS = """
+<style>
+/* A drafted expander contains the hidden marker rendered inside its body. */
+div[data-testid="stExpander"]:has(.gridiron-drafted-marker) {
+    background: rgba(128, 128, 128, 0.18) !important;
+    border-color: rgba(128, 128, 128, 0.42) !important;
+    opacity: 0.58;
+    filter: grayscale(0.75);
+}
+
+div[data-testid="stExpander"]:has(.gridiron-drafted-marker) > details > summary {
+    background: rgba(128, 128, 128, 0.14) !important;
+}
+
+div[data-testid="stExpander"]:has(.gridiron-drafted-marker) > details > summary p {
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+}
+
+.gridiron-drafted-marker {
+    display: none;
+}
+</style>
+"""
 
 
 @st.cache_resource(show_spinner=False)
@@ -262,6 +286,14 @@ def _render_market_context(score, market_views: dict) -> None:
         st.caption(f"ADP sources: {source_text}")
 
 
+def _render_drafted_marker() -> None:
+    """Mark the containing Streamlit expander so CSS can mute the full card."""
+    st.markdown(
+        '<span class="gridiron-drafted-marker" aria-hidden="true"></span>',
+        unsafe_allow_html=True,
+    )
+
+
 def _draft_control(score, *, scope: str, drafted_ids: set[str]) -> None:
     drafted = score.player_id in drafted_ids
     if drafted:
@@ -306,6 +338,7 @@ def _render_score_rows(
             expanded=_is_expanded(rank, expansion_mode, default_count=expanded_count),
         ):
             if drafted:
+                _render_drafted_marker()
                 st.caption("Drafted — no longer available")
             if draft_mode:
                 _draft_control(score, scope=scope, drafted_ids=drafted_ids)
@@ -349,6 +382,7 @@ def _render_overall_rows(
         )
         with st.expander(header, expanded=_is_expanded(item.rank, expansion_mode)):
             if drafted:
+                _render_drafted_marker()
                 st.caption("Drafted — no longer available")
             if draft_mode:
                 _draft_control(score, scope="overall", drafted_ids=drafted_ids)
@@ -407,6 +441,7 @@ def _selected_export_fields() -> tuple[str, ...]:
 
 
 def render_fantasy_rankings() -> None:
+    st.markdown(DRAFTED_PLAYER_CSS, unsafe_allow_html=True)
     st.markdown("### Integrated Fantasy Rankings")
     st.caption(
         "GridironGPT combines historical production, consensus market ADP, recent role, "
