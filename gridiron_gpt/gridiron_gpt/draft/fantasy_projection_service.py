@@ -36,18 +36,24 @@ class FantasyPointProjection:
 
 
 class FantasyProjectionService:
-    """Convert independent statistical projections into fantasy points.
-
-    V1 deliberately does not use ADP or the GridironGPT composite ranking score.
-    This keeps projected production an independent signal that can be validated
-    before it is allowed to influence ranking weights.
-    """
+    """Convert independent statistical projections into fantasy points."""
 
     RECEPTION_POINTS = {
         FantasyScoring.STANDARD: 0.0,
         FantasyScoring.HALF_PPR: 0.5,
         FantasyScoring.PPR: 1.0,
     }
+
+    NONNEGATIVE_FIELDS = (
+        "games",
+        "passing_touchdowns",
+        "interceptions",
+        "rushing_touchdowns",
+        "receptions",
+        "receiving_touchdowns",
+        "fumbles_lost",
+        "two_point_conversions",
+    )
 
     def project(
         self,
@@ -79,8 +85,9 @@ class FantasyProjectionService:
             scoring=scoring,
         )
 
-    @staticmethod
-    def _validate(stats: PlayerStatProjection) -> None:
-        for field_name, value in stats.__dict__.items():
+    @classmethod
+    def _validate(cls, stats: PlayerStatProjection) -> None:
+        for field_name in cls.NONNEGATIVE_FIELDS:
+            value = getattr(stats, field_name)
             if value < 0:
                 raise ValueError(f"{field_name} cannot be negative")
