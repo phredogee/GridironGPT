@@ -6,6 +6,8 @@ from apps.streamlit.components.app_shell import (
     build_navigation_markup,
 )
 from apps.streamlit.pages.fantasy_rankings import (
+    _best_available_scores,
+    _best_value_scores,
     _remaining_population,
     build_fantasy_ranking_snapshot,
     render_fantasy_rankings,
@@ -65,3 +67,45 @@ def test_draft_mode_empty_selection_preserves_population_object():
     )
 
     assert _remaining_population(population, set()) is population
+
+
+def test_best_available_skips_drafted_players_without_reordering_board():
+    scores = [
+        SimpleNamespace(player_id="p1"),
+        SimpleNamespace(player_id="p2"),
+        SimpleNamespace(player_id="p3"),
+        SimpleNamespace(player_id="p4"),
+    ]
+    population = FantasyRankingPopulation(
+        overall=scores,
+        by_position={},
+        explained_overall=[],
+    )
+
+    result = _best_available_scores(population, {"p1", "p3"}, limit=2)
+
+    assert [score.player_id for score in result] == ["p2", "p4"]
+
+
+def test_best_value_uses_positive_draft_value_and_skips_drafted_players():
+    scores = [
+        SimpleNamespace(player_id="p1"),
+        SimpleNamespace(player_id="p2"),
+        SimpleNamespace(player_id="p3"),
+        SimpleNamespace(player_id="p4"),
+    ]
+    population = FantasyRankingPopulation(
+        overall=scores,
+        by_position={},
+        explained_overall=[],
+    )
+    market_views = {
+        "p1": SimpleNamespace(draft_value=15.0, overall_rank=1),
+        "p2": SimpleNamespace(draft_value=4.0, overall_rank=2),
+        "p3": SimpleNamespace(draft_value=-2.0, overall_rank=3),
+        "p4": SimpleNamespace(draft_value=9.0, overall_rank=4),
+    }
+
+    result = _best_value_scores(population, market_views, {"p1"}, limit=3)
+
+    assert [score.player_id for score in result] == ["p4", "p2"]
