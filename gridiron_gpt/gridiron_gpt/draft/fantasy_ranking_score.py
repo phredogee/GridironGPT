@@ -7,11 +7,14 @@ from dataclasses import dataclass, field
 class FantasyRankingWeights:
     """Explicit weights for the application-level fantasy ranking score."""
 
-    baseline: float = 0.55
-    market: float = 0.20
-    role: float = 0.10
-    cortex: float = 0.10
-    availability: float = 0.05
+    # Preserve the established five-signal balance inside 95% of the model and
+    # reserve 5% for position-normalized projected fantasy production.
+    baseline: float = 0.5225
+    market: float = 0.19
+    role: float = 0.095
+    cortex: float = 0.095
+    availability: float = 0.0475
+    projection: float = 0.05
 
     def validate(self) -> None:
         values = (
@@ -20,6 +23,7 @@ class FantasyRankingWeights:
             self.role,
             self.cortex,
             self.availability,
+            self.projection,
         )
         if any(weight < 0 for weight in values):
             raise ValueError("ranking weights must be non-negative")
@@ -46,6 +50,7 @@ class FantasyRankingInputs:
     role_score: float | None
     cortex_score: float | None
     availability_score: float | None
+    projection_score: float | None = None
 
     provenance: dict[str, str] = field(default_factory=dict)
 
@@ -68,10 +73,6 @@ class FantasyRankingScore:
 class FantasyRankingScorer:
     """Combine normalized fantasy inputs without redefining Cortex score semantics."""
 
-    # Baseline production and current market value are anchor evidence: either
-    # can establish that a player belongs in the overall fantasy ranking pool.
-    # Role, Cortex, and availability are contextual modifiers and must not create
-    # an elite ranking on their own when both anchor sources are absent.
     ANCHOR_EVIDENCE_COMPONENTS = {
         "baseline",
         "market",
@@ -88,6 +89,7 @@ class FantasyRankingScorer:
             "role": inputs.role_score,
             "cortex": inputs.cortex_score,
             "availability": inputs.availability_score,
+            "projection": inputs.projection_score,
         }
         configured_weights = {
             "baseline": self.weights.baseline,
@@ -95,6 +97,7 @@ class FantasyRankingScorer:
             "role": self.weights.role,
             "cortex": self.weights.cortex,
             "availability": self.weights.availability,
+            "projection": self.weights.projection,
         }
 
         components = {
@@ -135,10 +138,7 @@ class FantasyRankingScorer:
             position=inputs.position,
             ranking_score=ranking_score,
             components=components,
-            weighted_components={
-                key: round(value, 3)
-                for key, value in weighted.items()
-            },
+            weighted_components={key: round(value, 3) for key, value in weighted.items()},
             provenance={
                 key: value
                 for key, value in inputs.provenance.items()
