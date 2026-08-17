@@ -21,6 +21,7 @@ class FantasyRankingSourceValues:
     draft_pool_size: int | None = None
     role_score: float | None = None
     role_provenance: str | None = None
+    projection_score: float | None = None
 
 
 class FantasyRankingInputAdapter:
@@ -57,6 +58,7 @@ class FantasyRankingInputAdapter:
             source_values.draft_pool_size,
         )
         role_score = self._clamp_optional(source_values.role_score)
+        projection_score = self._clamp_optional(source_values.projection_score)
         cortex_score = (
             self._clamp_optional(cortex_scorecard.overall_score)
             if cortex_scorecard is not None
@@ -72,16 +74,13 @@ class FantasyRankingInputAdapter:
         if market_score is not None:
             provenance["market"] = "ADP normalized across configured draft pool"
         if role_score is not None:
-            provenance["role"] = (
-                source_values.role_provenance
-                or "explicit roster/depth role assessment"
-            )
+            provenance["role"] = source_values.role_provenance or "explicit roster/depth role assessment"
         if cortex_score is not None:
             provenance["cortex"] = "latest Cortex player scorecard overall_score"
         if availability_score is not None:
-            provenance["availability"] = (
-                f"canonical football state: {availability.value}"
-            )
+            provenance["availability"] = f"canonical football state: {availability.value}"
+        if projection_score is not None:
+            provenance["projection"] = "position-normalized projected fantasy production"
 
         return FantasyRankingInputs(
             player_id=player_state.player_id,
@@ -93,6 +92,7 @@ class FantasyRankingInputAdapter:
             role_score=role_score,
             cortex_score=cortex_score,
             availability_score=availability_score,
+            projection_score=projection_score,
             provenance=provenance,
         )
 
