@@ -18,6 +18,7 @@ class HistoricalStatProjectionService:
         "passing_2pt_conversions", "rushing_2pt_conversions",
         "receiving_2pt_conversions",
     )
+    FULL_CONFIDENCE_GAMES = 17.0
 
     def __init__(self, *, stats_loader: Callable | None = None) -> None:
         self.stats_loader = stats_loader or self._load_nfl_stats
@@ -51,16 +52,12 @@ class HistoricalStatProjectionService:
             frame = frame[frame["season_type"].astype(str).str.upper().eq("REG")]
         if frame.empty:
             return frame
-        # Already season-level data: preserve supplied games counts.
         if "games" in frame.columns or "games_played" in frame.columns:
             frame["season"] = season
             return frame
         numeric = [column for column in self.STAT_COLUMNS if column in frame.columns]
         grouped = frame.groupby("player_display_name", as_index=False)[numeric].sum() if numeric else frame[["player_display_name"]].drop_duplicates()
-        if "week" in frame.columns:
-            games = frame.groupby("player_display_name")["week"].nunique().rename("games")
-        else:
-            games = frame.groupby("player_display_name").size().rename("games")
+        games = (frame.groupby("player_display_name")["week"].nunique().rename("games") if "week" in frame.columns else frame.groupby("player_display_name").size().rename("games"))
         grouped = grouped.merge(games, on="player_display_name", how="left")
         grouped["season"] = season
         return grouped
@@ -68,6 +65,7 @@ class HistoricalStatProjectionService:
     def _blend_player(self, rows: pd.DataFrame, *, expected_games: float) -> PlayerStatProjection | None:
         weighted = {column: 0.0 for column in self.STAT_COLUMNS}
         total_weight = 0.0
+        weighted_games = 0.0
         for _, row in rows.iterrows():
             season = int(row["season"])
             weight = float(SEASON_WEIGHTS.get(season, 0.0))
@@ -75,11 +73,14 @@ class HistoricalStatProjectionService:
             if weight <= 0 or games <= 0:
                 continue
             total_weight += weight
+            weighted_games += games * weight
             for column in self.STAT_COLUMNS:
                 weighted[column] += (self._number(row.get(column, 0.0)) / games) * weight
         if total_weight <= 0:
             return None
-        annual = {key: (value / total_weight) * expected_games for key, value in weighted.items()}
+        observed_games = weighted_games / total_weight
+        confidence = min(1.0, observed_games / self.FULL_CONFIDENCE_GAMES)
+        annual = {key: (value / total_weight) * expected_games * confidence for key, value in weighted.items()}
         return PlayerStatProjection(
             games=expected_games,
             passing_yards=annual["passing_yards"], passing_touchdowns=annual["passing_tds"],
