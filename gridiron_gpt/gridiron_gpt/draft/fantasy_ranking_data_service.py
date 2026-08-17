@@ -9,6 +9,7 @@ from gridiron_gpt.draft.consensus_adp_service import (
     ConsensusAdpService,
 )
 from gridiron_gpt.draft.fetcher import fetch_adp
+from gridiron_gpt.draft.fantasy_player_projection_service import FantasyPlayerProjectionService
 from gridiron_gpt.draft.fantasy_ranking_population_service import (
     FantasyRankingPopulation,
     FantasyRankingPopulationService,
@@ -38,6 +39,7 @@ class FantasyRankingDataSnapshot:
     consensus_adp_by_key: dict[str, ConsensusAdpRecord] = field(default_factory=dict)
     market_views_by_player_id: dict[str, FantasyRankingMarketView] = field(default_factory=dict)
     adp_sources: tuple[str, ...] = ()
+    projection_player_count: int = 0
 
 
 @dataclass(frozen=True)
@@ -60,6 +62,7 @@ class FantasyRankingDataService:
         historical_loader: Callable = get_historical_scores,
         adp_loader: Callable = fetch_adp,
         role_loader: Callable | None = None,
+        projection_loader: Callable | None = None,
         adp_source_loaders: dict[str, Callable] | None = None,
         consensus_adp_service: ConsensusAdpService | None = None,
         tier_service: FantasyRankingTierService | None = None,
@@ -69,8 +72,7 @@ class FantasyRankingDataService:
         self.historical_loader = historical_loader
         self.adp_loader = adp_loader
         self.role_loader = role_loader or self._load_observed_role_snapshot
-        # Explicit source loaders are authoritative. This keeps tests/custom
-        # compositions deterministic instead of silently adding network feeds.
+        self.projection_loader = projection_loader or FantasyPlayerProjectionService().build
         self.adp_source_loaders = (
             self._default_runtime_adp_source_loaders(season=ranking_season)
             if adp_source_loaders is None
@@ -82,7 +84,6 @@ class FantasyRankingDataService:
 
     @staticmethod
     def _default_runtime_adp_source_loaders(*, season: int) -> dict[str, Callable]:
-        """Return built-in secondary feeds for normal runtime composition."""
         from gridiron_gpt.draft.espn_adp_loader import EspnAdpLoader
 
         espn = EspnAdpLoader(season=season)
@@ -100,6 +101,17 @@ class FantasyRankingDataService:
         historical = self.historical_loader(scoring=scoring)
         historical_points = self._historical_points_by_name(historical)
 
+        try:
+            projections = self.projection_loader(scoring=scoring)
+        except Exception:
+            projections = {}
+        projected_points_by_name = {
+            str(name): float(projection.projected_points)
+            for name, projection in (projections or {}).items()
+            if getattr(projection, "projected_points", None) is not None
+            and self._finite_nonnegative(getattr(projection, "projected_points", None)) is not None
+        }
+
         primary_snapshot = self._load_adp(scoring=scoring, teams=teams)
         sources = self._adp_sources(primary_snapshot)
         consensus_adp_by_key = self.consensus_adp_service.build(sources)
@@ -108,9 +120,6 @@ class FantasyRankingDataService:
             record.player_name: record.consensus_adp
             for record in consensus_adp_by_key.values()
         }
-        # Keep the Market component on the same 256-pick scale used by the
-        # original ADP feed. Broader feeds (for example ESPN's 1,000+ records)
-        # improve consensus coverage but must not inflate every market score.
         draft_pool_size = (
             min(len(adp_by_name), self.MARKET_DRAFT_POOL_SIZE)
             if adp_by_name
@@ -129,6 +138,7 @@ class FantasyRankingDataService:
             adp_by_name=adp_by_name,
             role_scores_by_player_id=role_scores_by_player_id,
             role_provenance_by_player_id=role_provenance_by_player_id,
+            projected_points_by_name=projected_points_by_name,
             draft_pool_size=draft_pool_size,
             limit=limit,
         )
@@ -151,6 +161,7 @@ class FantasyRankingDataService:
             consensus_adp_by_key=consensus_adp_by_key,
             market_views_by_player_id=market_views,
             adp_sources=source_names,
+            projection_player_count=len(projected_points_by_name),
         )
 
     def _adp_sources(self, primary_snapshot: AdpSnapshot) -> dict[str, dict[str, float]]:
@@ -195,8 +206,17 @@ class FantasyRankingDataService:
             return None
         return numeric
 
+    @staticmethod
+    def _finite_nonnegative(value) -> float | None:
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError):
+            return None
+        if not math.isfinite(numeric) or numeric < 0:
+            return None
+        return numeric
+
     def _load_adp(self, *, scoring: str, teams: int) -> AdpSnapshot:
-        """Support both legacy and future year-aware ADP loaders."""
         result = self.adp_loader(scoring=scoring, teams=teams)
         if isinstance(result, AdpSnapshot):
             return result
@@ -204,7 +224,6 @@ class FantasyRankingDataService:
 
     @staticmethod
     def _load_observed_role_snapshot(*, season: int) -> RoleSnapshot:
-        """Derive 0-100 role percentiles from recent observed NFL usage."""
         try:
             import nflreadpy as nfl
 
