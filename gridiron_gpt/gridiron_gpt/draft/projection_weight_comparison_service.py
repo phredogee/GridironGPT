@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from gridiron_gpt.draft.fantasy_projection_view import FantasyProjectionView
+from gridiron_gpt.draft.fantasy_projection_view_service import FantasyProjectionView
 from gridiron_gpt.draft.fantasy_ranking_population_service import FantasyRankingPopulation
 
 
@@ -109,8 +109,6 @@ class ProjectionWeightComparisonService:
         result: dict[str, float] = {}
         for score in production:
             projection_score = projection_scores[score.player_id]
-            # Missing projection evidence must not penalize a player. In that case
-            # the experimental score remains identical to the production control.
             if projection_score is None:
                 result[score.player_id] = score.ranking_score
             else:
