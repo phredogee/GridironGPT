@@ -4,7 +4,7 @@ import pytest
 from gridiron_gpt.draft.historical_stat_projection_service import HistoricalStatProjectionService
 
 
-def test_build_blends_per_game_stats_with_recency_weights():
+def test_build_blends_per_game_stats_with_recency_weights_and_sample_confidence():
     frames = {
         2023: pd.DataFrame([{"player_display_name": "Player One", "games": 10, "rushing_yards": 500, "rushing_tds": 5}]),
         2024: pd.DataFrame([{"player_display_name": "Player One", "games": 10, "rushing_yards": 600, "rushing_tds": 6}]),
@@ -12,13 +12,20 @@ def test_build_blends_per_game_stats_with_recency_weights():
     }
     service = HistoricalStatProjectionService(stats_loader=lambda *, season: frames[season])
     projection = service.build(expected_games=10)["Player One"]
-    assert projection.rushing_yards == pytest.approx(640.0)
-    assert projection.rushing_touchdowns == pytest.approx(6.4)
+    assert projection.rushing_yards == pytest.approx(640.0 * (10.0 / 17.0))
+    assert projection.rushing_touchdowns == pytest.approx(6.4 * (10.0 / 17.0))
     assert projection.games == 10
 
 
-def test_missing_seasons_renormalize_available_weights():
+def test_missing_seasons_renormalize_available_weights_and_damp_small_sample():
     frame = pd.DataFrame([{"player_display_name": "Player One", "games": 10, "receptions": 50}])
+    service = HistoricalStatProjectionService(stats_loader=lambda *, season: frame if season == 2025 else pd.DataFrame())
+    projection = service.build(expected_games=17)["Player One"]
+    assert projection.receptions == pytest.approx(50.0)
+
+
+def test_full_season_sample_keeps_full_projection_strength():
+    frame = pd.DataFrame([{"player_display_name": "Player One", "games": 17, "receptions": 85}])
     service = HistoricalStatProjectionService(stats_loader=lambda *, season: frame if season == 2025 else pd.DataFrame())
     projection = service.build(expected_games=17)["Player One"]
     assert projection.receptions == pytest.approx(85.0)
