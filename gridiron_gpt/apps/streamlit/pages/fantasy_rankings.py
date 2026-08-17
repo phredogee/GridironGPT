@@ -126,6 +126,40 @@ def _remaining_population(population: FantasyRankingPopulation, drafted_ids: set
     )
 
 
+def _best_available_scores(population: FantasyRankingPopulation, drafted_ids: set[str], *, limit: int = 5):
+    """Return the highest-ranked undrafted players without changing model order."""
+    if limit <= 0:
+        return []
+    return [score for score in population.overall if score.player_id not in drafted_ids][:limit]
+
+
+def _best_value_scores(
+    population: FantasyRankingPopulation,
+    market_views: dict,
+    drafted_ids: set[str],
+    *,
+    limit: int = 5,
+):
+    """Return undrafted players with the strongest positive rank-vs-ADP value."""
+    if limit <= 0:
+        return []
+    candidates = []
+    for score in population.overall:
+        if score.player_id in drafted_ids:
+            continue
+        view = market_views.get(score.player_id)
+        if view is None or view.draft_value is None or view.draft_value <= 0:
+            continue
+        candidates.append(score)
+    candidates.sort(
+        key=lambda score: (
+            -market_views[score.player_id].draft_value,
+            market_views[score.player_id].overall_rank,
+        )
+    )
+    return candidates[:limit]
+
+
 def _render_drafted_players(population: FantasyRankingPopulation) -> None:
     drafted = _drafted_ids()
     if not drafted:
@@ -211,6 +245,46 @@ def _draft_row_control(score, *, scope: str, drafted_ids: set[str]) -> None:
         return
     if st.button("Draft", key=f"fantasy_rankings_row_mark_{scope}_{score.player_id}", type="primary", use_container_width=True):
         _mark_drafted(score.player_id); st.rerun()
+
+
+def _render_draft_assistant(population: FantasyRankingPopulation, market_views: dict, drafted_ids: set[str]) -> None:
+    """Render fast best-available and market-value recommendations for Draft Mode."""
+    best_available = _best_available_scores(population, drafted_ids, limit=5)
+    best_value = _best_value_scores(population, market_views, drafted_ids, limit=5)
+
+    st.markdown("### Draft Assistant")
+    st.caption("Live recommendations use the frozen GridironGPT board and update instantly as players are marked drafted.")
+    columns = st.columns(2)
+
+    with columns[0]:
+        st.markdown("**Best Available**")
+        if not best_available:
+            st.caption("No undrafted ranked players remain.")
+        for score in best_available:
+            view = market_views.get(score.player_id)
+            details = [score.position or "-", score.team or "-"]
+            if view is not None:
+                details.insert(1, f"{score.position or '-'}{view.position_rank}")
+                details.append(f"Tier {view.tier}")
+            row = st.columns([5, 1])
+            row[0].write(f"**{score.player_name}** · {' · '.join(details)} · {score.ranking_score:.2f}")
+            with row[1]:
+                _draft_row_control(score, scope="assistant_available", drafted_ids=drafted_ids)
+
+    with columns[1]:
+        st.markdown("**Best Value**")
+        if not best_value:
+            st.caption("No positive Draft Value opportunities are currently available.")
+        for score in best_value:
+            view = market_views[score.player_id]
+            adp = f"ADP {view.consensus_adp:.1f}" if view.consensus_adp is not None else "ADP —"
+            row = st.columns([5, 1])
+            row[0].write(
+                f"**{score.player_name}** · {score.position or '-'}{view.position_rank} · "
+                f"Tier {view.tier} · {adp} · **{view.draft_value:+.1f} value**"
+            )
+            with row[1]:
+                _draft_row_control(score, scope="assistant_value", drafted_ids=drafted_ids)
 
 
 def _render_score_rows(scores, *, football_summaries: dict[str, str], market_views: dict, drafted_ids: set[str] | None = None, draft_mode: bool = False, scope: str, expansion_mode: str = "default", expanded_count: int = 5) -> None:
@@ -312,7 +386,9 @@ def render_fantasy_rankings() -> None:
     else: meta[3].metric("Ranked players", len(snapshot.population.overall))
     if not snapshot.population.explained_overall:
         st.info("No players currently have sufficient anchor evidence to rank."); return
-    if draft_mode: _render_drafted_players(snapshot.population)
+    if draft_mode:
+        _render_drafted_players(snapshot.population)
+        _render_draft_assistant(snapshot.population, snapshot.market_views_by_player_id, drafted_ids)
     football_notes, football_summaries = _football_notes(snapshot.population)
     bye_weeks = ByeWeekService().load(season=2026)
     st.divider(); st.markdown("### Export")
