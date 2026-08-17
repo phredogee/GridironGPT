@@ -67,6 +67,7 @@ class FantasyRankingPopulationService:
         adp_by_name: dict[str, float] | None = None,
         role_scores_by_player_id: dict[str, float] | None = None,
         role_provenance_by_player_id: dict[str, str] | None = None,
+        projected_points_by_name: dict[str, float] | None = None,
         draft_pool_size: int | None = None,
         limit: int | None = None,
     ) -> FantasyRankingPopulation:
@@ -74,9 +75,11 @@ class FantasyRankingPopulationService:
         adp_by_name = adp_by_name or {}
         role_scores_by_player_id = role_scores_by_player_id or {}
         role_provenance_by_player_id = role_provenance_by_player_id or {}
+        projected_points_by_name = projected_points_by_name or {}
 
         historical_by_key = self._normalized_source_map(historical_points_by_name)
         adp_by_key = self._normalized_source_map(adp_by_name)
+        projections_by_key = self._normalized_source_map(projected_points_by_name)
         legacy_scorecards = self._legacy_scorecard_index()
 
         players = [
@@ -93,10 +96,29 @@ class FantasyRankingPopulationService:
             ),
             default=None,
         )
+        projection_max_by_position: dict[str, float] = {}
+        for player in players:
+            player_key = self._name_key(player.player_name)
+            projected_points = projections_by_key.get(player_key)
+            if projected_points is None or projected_points < 0:
+                continue
+            position = (player.position or "").upper()
+            projection_max_by_position[position] = max(
+                projection_max_by_position.get(position, 0.0),
+                projected_points,
+            )
 
         scores: list[FantasyRankingScore] = []
         for player in players:
             player_key = self._name_key(player.player_name)
+            projected_points = projections_by_key.get(player_key)
+            position = (player.position or "").upper()
+            projection_max = projection_max_by_position.get(position, 0.0)
+            projection_score = (
+                (projected_points / projection_max) * 100.0
+                if projected_points is not None and projection_max > 0
+                else None
+            )
             source_values = FantasyRankingSourceValues(
                 historical_points=historical_by_key.get(player_key),
                 historical_max_points=historical_max,
@@ -104,6 +126,7 @@ class FantasyRankingPopulationService:
                 draft_pool_size=draft_pool_size,
                 role_score=role_scores_by_player_id.get(player.player_id),
                 role_provenance=role_provenance_by_player_id.get(player.player_id),
+                projection_score=projection_score,
             )
             scorecard = self._get_scorecard(player, legacy_scorecards)
             inputs = self.adapter.build(
