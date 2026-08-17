@@ -2,417 +2,191 @@ from __future__ import annotations
 
 import streamlit as st
 
-from gridiron_cortex.remember.json_player_scorecard_repository import (
-    JsonPlayerScorecardRepository,
-)
+from gridiron_cortex.remember.json_player_scorecard_repository import JsonPlayerScorecardRepository
 from gridiron_gpt.data_ingest.player_scores import calculate_player_scores
 from gridiron_gpt.draft.bye_week_service import ByeWeekService
 from gridiron_gpt.draft.espn_adp_loader import EspnAdpLoader
+from gridiron_gpt.draft.fantasy_player_projection_service import FantasyPlayerProjectionService
+from gridiron_gpt.draft.fantasy_projection_view_service import build_projection_views, projection_view_for_player
 from gridiron_gpt.draft.fantasy_ranking_data_service import FantasyRankingDataService
-from gridiron_gpt.draft.fantasy_ranking_export_service import (
-    DRAFT_DAY_FIELDS,
-    FIELD_LABELS,
-    FULL_ANALYSIS_FIELDS,
-    build_rankings_pdf,
-    build_rankings_xlsx,
-    compact_takeaway,
-)
-from gridiron_gpt.draft.fantasy_ranking_population_service import (
-    FantasyRankingPopulation,
-    FantasyRankingPopulationService,
-)
-from gridiron_gpt.draft.football_ranking_explanation_service import (
-    FootballRankingExplanationService,
-)
-from gridiron_gpt.football_state.repositories.jsonl_player_state_repository import (
-    JsonlPlayerStateRepository,
-)
-
+from gridiron_gpt.draft.fantasy_ranking_export_service import DRAFT_DAY_FIELDS, FIELD_LABELS, FULL_ANALYSIS_FIELDS, build_rankings_pdf, build_rankings_xlsx, compact_takeaway
+from gridiron_gpt.draft.fantasy_ranking_population_service import FantasyRankingPopulation, FantasyRankingPopulationService
+from gridiron_gpt.draft.football_ranking_explanation_service import FootballRankingExplanationService
+from gridiron_gpt.football_state.repositories.jsonl_player_state_repository import JsonlPlayerStateRepository
 
 POSITIONS = ("QB", "RB", "WR", "TE")
 DRAFTED_IDS_KEY = "fantasy_rankings_drafted_player_ids"
-DRAFTED_PLAYER_CSS = """
-<style>
-/* A drafted expander contains the hidden marker rendered inside its body. */
-div[data-testid="stExpander"]:has(.gridiron-drafted-marker) {
-    background: rgba(128, 128, 128, 0.18) !important;
-    border-color: rgba(128, 128, 128, 0.42) !important;
-    opacity: 0.58;
-    filter: grayscale(0.75);
-}
-
-div[data-testid="stExpander"]:has(.gridiron-drafted-marker) > details > summary {
-    background: rgba(128, 128, 128, 0.14) !important;
-}
-
-div[data-testid="stExpander"]:has(.gridiron-drafted-marker) > details > summary p {
-    text-decoration: line-through;
-    text-decoration-thickness: 1px;
-}
-
-.gridiron-drafted-marker {
-    display: none;
-}
-</style>
-"""
-
+DRAFTED_PLAYER_CSS = """<style>
+div[data-testid="stExpander"]:has(.gridiron-drafted-marker){background:rgba(128,128,128,.18)!important;border-color:rgba(128,128,128,.42)!important;opacity:.58;filter:grayscale(.75)}
+div[data-testid="stExpander"]:has(.gridiron-drafted-marker)>details>summary{background:rgba(128,128,128,.14)!important}
+div[data-testid="stExpander"]:has(.gridiron-drafted-marker)>details>summary p{text-decoration:line-through;text-decoration-thickness:1px}.gridiron-drafted-marker{display:none}</style>"""
 
 @st.cache_resource(show_spinner=False)
-def build_fantasy_ranking_snapshot(
-    *, scoring: str = "ppr", teams: int = 12, limit: int | None = None
-):
-    """Build and cache the production fantasy-ranking snapshot used by the UI."""
-    player_repository = JsonlPlayerStateRepository()
-    scorecard_repository = JsonPlayerScorecardRepository("data/cortex/player_scorecards.jsonl")
-    espn_adp_loader = EspnAdpLoader(season=2026)
-    service = FantasyRankingDataService(
-        FantasyRankingPopulationService(player_repository, scorecard_repository),
-        adp_source_loaders={"ESPN": espn_adp_loader.load},
-    )
-    return service.build(scoring=scoring, teams=teams, limit=limit)
+def build_fantasy_ranking_snapshot(*, scoring: str="ppr", teams: int=12, limit: int|None=None):
+    player_repository=JsonlPlayerStateRepository(); scorecard_repository=JsonPlayerScorecardRepository("data/cortex/player_scorecards.jsonl"); espn_adp_loader=EspnAdpLoader(season=2026)
+    return FantasyRankingDataService(FantasyRankingPopulationService(player_repository,scorecard_repository),adp_source_loaders={"ESPN":espn_adp_loader.load}).build(scoring=scoring,teams=teams,limit=limit)
 
+@st.cache_resource(show_spinner=False)
+def build_fantasy_projection_views(*, scoring: str="ppr"):
+    """Build informational projected-points metrics separately from ranking scores."""
+    return build_projection_views(FantasyPlayerProjectionService().build(scoring=scoring))
 
-def _football_notes(population) -> tuple[dict[str, str], dict[str, str]]:
-    try:
-        scored = calculate_player_scores()
-    except Exception:
-        scored = {}
-    by_name_team = {(str(player).casefold(), str(team).upper()): data for (player, team), data in scored.items()}
-    service = FootballRankingExplanationService()
-    compact, summaries = {}, {}
-    for score in population.overall:
-        data = by_name_team.get((score.player_name.casefold(), (score.team or "").upper()), {})
-        explanation = service.explain(recent_signals=data.get("signals", [])[-5:], fallback=compact_takeaway(score))
-        compact[score.player_id] = explanation.takeaway
-        summaries[score.player_id] = explanation.summary
-    return compact, summaries
-
-
-def _drafted_ids() -> list[str]:
-    if DRAFTED_IDS_KEY not in st.session_state:
-        st.session_state[DRAFTED_IDS_KEY] = []
-    return list(st.session_state[DRAFTED_IDS_KEY])
-
-
-def _mark_drafted(player_id: str) -> None:
-    drafted = _drafted_ids()
-    if player_id not in drafted:
-        drafted.append(player_id)
-    st.session_state[DRAFTED_IDS_KEY] = drafted
-
-
-def _restore_drafted(player_id: str) -> None:
-    st.session_state[DRAFTED_IDS_KEY] = [value for value in _drafted_ids() if value != player_id]
-
-
-def _undo_last_drafted() -> None:
-    drafted = _drafted_ids()
-    if drafted:
-        drafted.pop()
-    st.session_state[DRAFTED_IDS_KEY] = drafted
-
-
-def _clear_drafted() -> None:
-    st.session_state[DRAFTED_IDS_KEY] = []
-
-
-def _remaining_population(population: FantasyRankingPopulation, drafted_ids: set[str]) -> FantasyRankingPopulation:
-    if not drafted_ids:
-        return population
-    return FantasyRankingPopulation(
-        overall=[score for score in population.overall if score.player_id not in drafted_ids],
-        by_position={position: [score for score in scores if score.player_id not in drafted_ids] for position, scores in population.by_position.items()},
-        explained_overall=[item for item in population.explained_overall if item.score.player_id not in drafted_ids],
-    )
-
-
-def _best_available_scores(population: FantasyRankingPopulation, drafted_ids: set[str], *, limit: int = 5):
-    """Return the highest-ranked undrafted players without changing model order."""
-    if limit <= 0:
-        return []
-    return [score for score in population.overall if score.player_id not in drafted_ids][:limit]
-
-
-def _best_value_scores(
-    population: FantasyRankingPopulation,
-    market_views: dict,
-    drafted_ids: set[str],
-    *,
-    limit: int = 5,
-):
-    """Return undrafted players with the strongest positive rank-vs-ADP value."""
-    if limit <= 0:
-        return []
-    candidates = []
-    for score in population.overall:
-        if score.player_id in drafted_ids:
-            continue
-        view = market_views.get(score.player_id)
-        if view is None or view.draft_value is None or view.draft_value <= 0:
-            continue
-        candidates.append(score)
-    candidates.sort(
-        key=lambda score: (
-            -market_views[score.player_id].draft_value,
-            market_views[score.player_id].overall_rank,
-        )
-    )
-    return candidates[:limit]
-
-
-def _render_drafted_players(population: FantasyRankingPopulation) -> None:
-    drafted = _drafted_ids()
-    if not drafted:
-        st.caption("No players marked drafted yet.")
-        return
-    by_id = {score.player_id: score for score in population.overall}
-    controls = st.columns([1, 1, 5])
-    if controls[0].button("Undo Last", key="fantasy_rankings_undo_last_drafted", use_container_width=True):
-        _undo_last_drafted(); st.rerun()
-    if controls[1].button("Reset Draft", key="fantasy_rankings_reset_drafted", use_container_width=True):
-        _clear_drafted(); st.rerun()
-    with st.expander(f"Drafted Players ({len(drafted)})", expanded=False):
-        for player_id in reversed(drafted):
-            score = by_id.get(player_id)
-            if score is None:
-                continue
-            row = st.columns([5, 1])
-            row[0].write(f"{score.player_name} · {score.position or '-'} · {score.team or '-'}")
-            if row[1].button("Restore", key=f"fantasy_rankings_restore_{player_id}", use_container_width=True):
-                _restore_drafted(player_id); st.rerun()
-
-
-def _expansion_controls(scope: str) -> str:
-    state_key = f"fantasy_rankings_expansion_{scope.lower()}"
-    if state_key not in st.session_state:
-        st.session_state[state_key] = "default"
-    controls = st.columns([1, 1, 5])
-    if controls[0].button("Expand All", key=f"fantasy_rankings_expand_all_{scope.lower()}", use_container_width=True):
-        st.session_state[state_key] = "all"
-    if controls[1].button("Collapse All", key=f"fantasy_rankings_collapse_all_{scope.lower()}", use_container_width=True):
-        st.session_state[state_key] = "none"
-    return st.session_state[state_key]
-
-
-def _is_expanded(rank: int, mode: str, *, default_count: int = 5) -> bool:
-    if mode == "all": return True
-    if mode == "none": return False
-    return rank <= default_count
-
-
-def _market_badge(score, market_views: dict) -> str:
-    view = market_views.get(score.player_id)
-    if view is None: return ""
-    parts = [f"{score.position or '-'}{view.position_rank}", f"Tier {view.tier}"]
-    if view.consensus_adp is not None: parts.append(f"ADP {view.consensus_adp:.1f}")
-    if view.draft_value is not None:
-        sign = "+" if view.draft_value > 0 else ""
-        parts.append(f"Value {sign}{view.draft_value:.1f}")
-    return " · ".join(parts)
-
-
-def _render_market_context(score, market_views: dict) -> None:
-    view = market_views.get(score.player_id)
+def _projection_metrics(score, projection_views: dict) -> None:
+    view=projection_view_for_player(score.player_name,projection_views)
     if view is None: return
-    columns = st.columns(5)
-    columns[0].metric("Position Rank", f"{score.position or '-'}{view.position_rank}")
-    columns[1].metric("Tier", view.tier)
-    columns[2].metric("Consensus ADP" if view.adp_source_count >= 2 else "ADP", f"{view.consensus_adp:.1f}" if view.consensus_adp is not None else "—")
-    columns[3].metric("ADP Spread", f"{view.adp_spread:.1f}" if view.adp_spread is not None else "—")
-    columns[4].metric("Draft Value", f"{view.draft_value:+.1f}" if view.draft_value is not None else "—")
-    if view.source_adps:
-        st.caption("ADP sources: " + " · ".join(f"{source}: {value:.1f}" for source, value in sorted(view.source_adps.items())))
+    columns=st.columns(2); columns[0].metric("Proj Pts",f"{view.projected_points:.1f}"); columns[1].metric("Proj PPG",f"{view.projected_ppg:.1f}")
 
+def _projection_badge(score, projection_views: dict) -> str:
+    view=projection_view_for_player(score.player_name,projection_views)
+    return f"Proj {view.projected_points:.0f} pts · {view.projected_ppg:.1f} PPG" if view else ""
 
-def _render_drafted_marker() -> None:
-    st.markdown('<span class="gridiron-drafted-marker" aria-hidden="true"></span>', unsafe_allow_html=True)
+def _football_notes(population):
+    try: scored=calculate_player_scores()
+    except Exception: scored={}
+    by_name_team={(str(player).casefold(),str(team).upper()):data for (player,team),data in scored.items()}; service=FootballRankingExplanationService(); compact,summaries={},{}
+    for score in population.overall:
+        data=by_name_team.get((score.player_name.casefold(),(score.team or "").upper()),{}); explanation=service.explain(recent_signals=data.get("signals",[])[-5:],fallback=compact_takeaway(score)); compact[score.player_id]=explanation.takeaway; summaries[score.player_id]=explanation.summary
+    return compact,summaries
 
-
-def _draft_control(score, *, scope: str, drafted_ids: set[str]) -> None:
-    drafted = score.player_id in drafted_ids
-    if drafted:
-        st.button("DRAFTED", key=f"fantasy_rankings_drafted_{scope}_{score.player_id}", disabled=True)
-        return
-    if st.button("Mark Drafted", key=f"fantasy_rankings_mark_drafted_{scope}_{score.player_id}", type="primary"):
-        _mark_drafted(score.player_id); st.rerun()
-
-
-def _draft_row_control(score, *, scope: str, drafted_ids: set[str]) -> None:
-    """Render the fast draft control beside a ranking row, visible while collapsed."""
-    drafted = score.player_id in drafted_ids
-    if drafted:
-        st.button("DRAFTED", key=f"fantasy_rankings_row_drafted_{scope}_{score.player_id}", disabled=True, use_container_width=True)
-        return
-    if st.button("Draft", key=f"fantasy_rankings_row_mark_{scope}_{score.player_id}", type="primary", use_container_width=True):
-        _mark_drafted(score.player_id); st.rerun()
-
-
-def _render_draft_assistant(population: FantasyRankingPopulation, market_views: dict, drafted_ids: set[str]) -> None:
-    """Render fast best-available and market-value recommendations for Draft Mode."""
-    best_available = _best_available_scores(population, drafted_ids, limit=5)
-    best_value = _best_value_scores(population, market_views, drafted_ids, limit=5)
-
-    st.markdown("### Draft Assistant")
-    st.caption("Live recommendations use the frozen GridironGPT board and update instantly as players are marked drafted.")
-    columns = st.columns(2)
-
+def _drafted_ids():
+    if DRAFTED_IDS_KEY not in st.session_state: st.session_state[DRAFTED_IDS_KEY]=[]
+    return list(st.session_state[DRAFTED_IDS_KEY])
+def _mark_drafted(player_id):
+    drafted=_drafted_ids()
+    if player_id not in drafted: drafted.append(player_id)
+    st.session_state[DRAFTED_IDS_KEY]=drafted
+def _restore_drafted(player_id): st.session_state[DRAFTED_IDS_KEY]=[v for v in _drafted_ids() if v!=player_id]
+def _undo_last_drafted():
+    drafted=_drafted_ids()
+    if drafted: drafted.pop()
+    st.session_state[DRAFTED_IDS_KEY]=drafted
+def _clear_drafted(): st.session_state[DRAFTED_IDS_KEY]=[]
+def _remaining_population(population,drafted_ids):
+    if not drafted_ids:return population
+    return FantasyRankingPopulation(overall=[s for s in population.overall if s.player_id not in drafted_ids],by_position={p:[s for s in scores if s.player_id not in drafted_ids] for p,scores in population.by_position.items()},explained_overall=[i for i in population.explained_overall if i.score.player_id not in drafted_ids])
+def _best_available_scores(population,drafted_ids,*,limit=5): return [] if limit<=0 else [s for s in population.overall if s.player_id not in drafted_ids][:limit]
+def _best_value_scores(population,market_views,drafted_ids,*,limit=5):
+    if limit<=0:return []
+    candidates=[s for s in population.overall if s.player_id not in drafted_ids and market_views.get(s.player_id) is not None and market_views[s.player_id].draft_value is not None and market_views[s.player_id].draft_value>0]
+    candidates.sort(key=lambda s:(-market_views[s.player_id].draft_value,market_views[s.player_id].overall_rank)); return candidates[:limit]
+def _render_drafted_players(population):
+    drafted=_drafted_ids()
+    if not drafted: st.caption("No players marked drafted yet."); return
+    by_id={s.player_id:s for s in population.overall}; controls=st.columns([1,1,5])
+    if controls[0].button("Undo Last",key="fantasy_rankings_undo_last_drafted",use_container_width=True): _undo_last_drafted(); st.rerun()
+    if controls[1].button("Reset Draft",key="fantasy_rankings_reset_drafted",use_container_width=True): _clear_drafted(); st.rerun()
+    with st.expander(f"Drafted Players ({len(drafted)})",expanded=False):
+        for player_id in reversed(drafted):
+            score=by_id.get(player_id)
+            if score is None:continue
+            row=st.columns([5,1]); row[0].write(f"{score.player_name} · {score.position or '-'} · {score.team or '-'}")
+            if row[1].button("Restore",key=f"fantasy_rankings_restore_{player_id}",use_container_width=True): _restore_drafted(player_id); st.rerun()
+def _expansion_controls(scope):
+    state_key=f"fantasy_rankings_expansion_{scope.lower()}"
+    if state_key not in st.session_state:st.session_state[state_key]="default"
+    controls=st.columns([1,1,5])
+    if controls[0].button("Expand All",key=f"fantasy_rankings_expand_all_{scope.lower()}",use_container_width=True):st.session_state[state_key]="all"
+    if controls[1].button("Collapse All",key=f"fantasy_rankings_collapse_all_{scope.lower()}",use_container_width=True):st.session_state[state_key]="none"
+    return st.session_state[state_key]
+def _is_expanded(rank,mode,*,default_count=5): return True if mode=="all" else False if mode=="none" else rank<=default_count
+def _market_badge(score,market_views):
+    view=market_views.get(score.player_id)
+    if view is None:return ""
+    parts=[f"{score.position or '-'}{view.position_rank}",f"Tier {view.tier}"]
+    if view.consensus_adp is not None:parts.append(f"ADP {view.consensus_adp:.1f}")
+    if view.draft_value is not None:parts.append(f"Value {'+' if view.draft_value>0 else ''}{view.draft_value:.1f}")
+    return " · ".join(parts)
+def _render_market_context(score,market_views):
+    view=market_views.get(score.player_id)
+    if view is None:return
+    columns=st.columns(5); columns[0].metric("Position Rank",f"{score.position or '-'}{view.position_rank}"); columns[1].metric("Tier",view.tier); columns[2].metric("Consensus ADP" if view.adp_source_count>=2 else "ADP",f"{view.consensus_adp:.1f}" if view.consensus_adp is not None else "—"); columns[3].metric("ADP Spread",f"{view.adp_spread:.1f}" if view.adp_spread is not None else "—"); columns[4].metric("Draft Value",f"{view.draft_value:+.1f}" if view.draft_value is not None else "—")
+    if view.source_adps:st.caption("ADP sources: "+" · ".join(f"{source}: {value:.1f}" for source,value in sorted(view.source_adps.items())))
+def _render_drafted_marker():st.markdown('<span class="gridiron-drafted-marker" aria-hidden="true"></span>',unsafe_allow_html=True)
+def _draft_control(score,*,scope,drafted_ids):
+    if score.player_id in drafted_ids:st.button("DRAFTED",key=f"fantasy_rankings_drafted_{scope}_{score.player_id}",disabled=True);return
+    if st.button("Mark Drafted",key=f"fantasy_rankings_mark_drafted_{scope}_{score.player_id}",type="primary"): _mark_drafted(score.player_id);st.rerun()
+def _draft_row_control(score,*,scope,drafted_ids):
+    if score.player_id in drafted_ids:st.button("DRAFTED",key=f"fantasy_rankings_row_drafted_{scope}_{score.player_id}",disabled=True,use_container_width=True);return
+    if st.button("Draft",key=f"fantasy_rankings_row_mark_{scope}_{score.player_id}",type="primary",use_container_width=True):_mark_drafted(score.player_id);st.rerun()
+def _render_draft_assistant(population,market_views,drafted_ids,projection_views):
+    best_available=_best_available_scores(population,drafted_ids,limit=5);best_value=_best_value_scores(population,market_views,drafted_ids,limit=5);st.markdown("### Draft Assistant");st.caption("Live recommendations use the frozen GridironGPT board and update instantly as players are marked drafted.");columns=st.columns(2)
     with columns[0]:
         st.markdown("**Best Available**")
-        if not best_available:
-            st.caption("No undrafted ranked players remain.")
+        if not best_available:st.caption("No undrafted ranked players remain.")
         for score in best_available:
-            view = market_views.get(score.player_id)
-            details = [score.position or "-", score.team or "-"]
-            if view is not None:
-                details.insert(1, f"{score.position or '-'}{view.position_rank}")
-                details.append(f"Tier {view.tier}")
-            row = st.columns([5, 1])
-            row[0].write(f"**{score.player_name}** · {' · '.join(details)} · {score.ranking_score:.2f}")
-            with row[1]:
-                _draft_row_control(score, scope="assistant_available", drafted_ids=drafted_ids)
-
+            view=market_views.get(score.player_id);details=[score.position or "-",score.team or "-"]
+            if view is not None:details.insert(1,f"{score.position or '-'}{view.position_rank}");details.append(f"Tier {view.tier}")
+            projection=_projection_badge(score,projection_views);row=st.columns([5,1]);row[0].write(f"**{score.player_name}** · {' · '.join(details)} · {score.ranking_score:.2f}"+(f" · {projection}" if projection else ""))
+            with row[1]:_draft_row_control(score,scope="assistant_available",drafted_ids=drafted_ids)
     with columns[1]:
         st.markdown("**Best Value**")
-        if not best_value:
-            st.caption("No positive Draft Value opportunities are currently available.")
+        if not best_value:st.caption("No positive Draft Value opportunities are currently available.")
         for score in best_value:
-            view = market_views[score.player_id]
-            adp = f"ADP {view.consensus_adp:.1f}" if view.consensus_adp is not None else "ADP —"
-            row = st.columns([5, 1])
-            row[0].write(
-                f"**{score.player_name}** · {score.position or '-'}{view.position_rank} · "
-                f"Tier {view.tier} · {adp} · **{view.draft_value:+.1f} value**"
-            )
-            with row[1]:
-                _draft_row_control(score, scope="assistant_value", drafted_ids=drafted_ids)
-
-
-def _render_score_rows(scores, *, football_summaries: dict[str, str], market_views: dict, drafted_ids: set[str] | None = None, draft_mode: bool = False, scope: str, expansion_mode: str = "default", expanded_count: int = 5) -> None:
-    drafted_ids = drafted_ids or set()
-    for rank, score in enumerate(scores, start=1):
-        drafted = draft_mode and score.player_id in drafted_ids
-        market_badge = _market_badge(score, market_views)
-        prefix = "DRAFTED · " if drafted else ""
-        header = f"{prefix}#{rank}  {score.player_name}  ·  {market_badge or (score.position or '-')}  ·  {score.team or '-'}  ·  {score.ranking_score:.2f}"
-        row = st.columns([12, 2], vertical_alignment="top") if draft_mode else [st.container()]
+            view=market_views[score.player_id];adp=f"ADP {view.consensus_adp:.1f}" if view.consensus_adp is not None else "ADP —";projection=_projection_badge(score,projection_views);row=st.columns([5,1]);row[0].write(f"**{score.player_name}** · {score.position or '-'}{view.position_rank} · Tier {view.tier} · {adp} · **{view.draft_value:+.1f} value**"+(f" · {projection}" if projection else ""))
+            with row[1]:_draft_row_control(score,scope="assistant_value",drafted_ids=drafted_ids)
+def _render_score_rows(scores,*,football_summaries,market_views,projection_views,drafted_ids=None,draft_mode=False,scope,expansion_mode="default",expanded_count=5):
+    drafted_ids=drafted_ids or set()
+    for rank,score in enumerate(scores,start=1):
+        drafted=draft_mode and score.player_id in drafted_ids;market_badge=_market_badge(score,market_views);projection=_projection_badge(score,projection_views);prefix="DRAFTED · " if drafted else "";header=f"{prefix}#{rank}  {score.player_name}  ·  {market_badge or (score.position or '-')}  ·  {score.team or '-'}  ·  {score.ranking_score:.2f}"+(f"  ·  {projection}" if projection else "");row=st.columns([12,2],vertical_alignment="top") if draft_mode else [st.container()]
         with row[0]:
-            with st.expander(header, expanded=_is_expanded(rank, expansion_mode, default_count=expanded_count)):
-                if drafted:
-                    _render_drafted_marker(); st.caption("Drafted — no longer available")
-                if draft_mode:
-                    _draft_control(score, scope=scope, drafted_ids=drafted_ids)
-                _render_market_context(score, market_views)
-                football_summary = football_summaries.get(score.player_id)
-                if football_summary:
-                    st.markdown("**Football read**"); st.write(football_summary)
-                component_columns = st.columns(len(score.components))
-                for column, (name, value) in zip(component_columns, score.components.items()):
-                    column.metric(name.title(), f"{value:.1f}")
+            with st.expander(header,expanded=_is_expanded(rank,expansion_mode,default_count=expanded_count)):
+                if drafted:_render_drafted_marker();st.caption("Drafted — no longer available")
+                if draft_mode:_draft_control(score,scope=scope,drafted_ids=drafted_ids)
+                _render_market_context(score,market_views);_projection_metrics(score,projection_views);football_summary=football_summaries.get(score.player_id)
+                if football_summary:st.markdown("**Football read**");st.write(football_summary)
+                component_columns=st.columns(len(score.components))
+                for column,(name,value) in zip(component_columns,score.components.items()):column.metric(name.title(),f"{value:.1f}")
                 if score.provenance:
-                    with st.expander("Evidence & provenance", expanded=False):
-                        for name, source in score.provenance.items(): st.write(f"• **{name.title()}** — {source}")
+                    with st.expander("Evidence & provenance",expanded=False):
+                        for name,source in score.provenance.items():st.write(f"• **{name.title()}** — {source}")
         if draft_mode:
-            with row[1]: _draft_row_control(score, scope=scope, drafted_ids=drafted_ids)
-
-
-def _render_overall_rows(explained_overall, *, football_summaries: dict[str, str], market_views: dict, limit: int, drafted_ids: set[str] | None = None, draft_mode: bool = False, expansion_mode: str = "default") -> None:
-    drafted_ids = drafted_ids or set()
+            with row[1]:_draft_row_control(score,scope=scope,drafted_ids=drafted_ids)
+def _render_overall_rows(explained_overall,*,football_summaries,market_views,projection_views,limit,drafted_ids=None,draft_mode=False,expansion_mode="default"):
+    drafted_ids=drafted_ids or set()
     for item in explained_overall[:limit]:
-        score, explanation = item.score, item.explanation
-        drafted = draft_mode and score.player_id in drafted_ids
-        market_badge = _market_badge(score, market_views)
-        prefix = "DRAFTED · " if drafted else ""
-        header = f"{prefix}#{item.rank}  {score.player_name}  ·  {market_badge or (score.position or '-')}  ·  {score.team or '-'}  ·  {score.ranking_score:.2f}"
-        row = st.columns([12, 2], vertical_alignment="top") if draft_mode else [st.container()]
+        score,explanation=item.score,item.explanation;drafted=draft_mode and score.player_id in drafted_ids;market_badge=_market_badge(score,market_views);projection=_projection_badge(score,projection_views);prefix="DRAFTED · " if drafted else "";header=f"{prefix}#{item.rank}  {score.player_name}  ·  {market_badge or (score.position or '-')}  ·  {score.team or '-'}  ·  {score.ranking_score:.2f}"+(f"  ·  {projection}" if projection else "");row=st.columns([12,2],vertical_alignment="top") if draft_mode else [st.container()]
         with row[0]:
-            with st.expander(header, expanded=_is_expanded(item.rank, expansion_mode)):
-                if drafted:
-                    _render_drafted_marker(); st.caption("Drafted — no longer available")
-                if draft_mode:
-                    _draft_control(score, scope="overall", drafted_ids=drafted_ids)
-                _render_market_context(score, market_views)
-                football_summary = football_summaries.get(score.player_id)
-                if football_summary:
-                    st.markdown("**Football read**"); st.write(football_summary)
-                st.markdown("**Model explanation**"); st.write(explanation.summary)
-                component_columns = st.columns(len(score.components))
-                for column, (name, value) in zip(component_columns, score.components.items()): column.metric(name.title(), f"{value:.1f}")
-                if explanation.strengths:
-                    st.markdown("**Strengths**")
-                    for strength in explanation.strengths: st.write(f"• {strength}")
-                if explanation.concerns:
-                    st.markdown("**Concerns**")
-                    for concern in explanation.concerns: st.write(f"• {concern}")
-                with st.expander("Evidence & provenance", expanded=False):
-                    for evidence in explanation.evidence: st.write(f"• {evidence}")
+            with st.expander(header,expanded=_is_expanded(item.rank,expansion_mode)):
+                if drafted:_render_drafted_marker();st.caption("Drafted — no longer available")
+                if draft_mode:_draft_control(score,scope="overall",drafted_ids=drafted_ids)
+                _render_market_context(score,market_views);_projection_metrics(score,projection_views);football_summary=football_summaries.get(score.player_id)
+                if football_summary:st.markdown("**Football read**");st.write(football_summary)
+                st.markdown("**Model explanation**");st.write(explanation.summary);component_columns=st.columns(len(score.components))
+                for column,(name,value) in zip(component_columns,score.components.items()):column.metric(name.title(),f"{value:.1f}")
+                if explanation.strengths:st.markdown("**Strengths**");[st.write(f"• {x}") for x in explanation.strengths]
+                if explanation.concerns:st.markdown("**Concerns**");[st.write(f"• {x}") for x in explanation.concerns]
+                with st.expander("Evidence & provenance",expanded=False):
+                    for evidence in explanation.evidence:st.write(f"• {evidence}")
         if draft_mode:
-            with row[1]: _draft_row_control(score, scope="overall", drafted_ids=drafted_ids)
-
-
-def _selected_export_fields() -> tuple[str, ...]:
-    preset = st.radio("Export preset", ("Draft Day", "Full Analysis", "Custom"), horizontal=True, key="fantasy_rankings_export_preset")
-    defaults = list(FULL_ANALYSIS_FIELDS) if preset == "Full Analysis" else list(DRAFT_DAY_FIELDS)
-    selected = st.multiselect("Export fields", options=list(FIELD_LABELS), default=defaults, format_func=lambda field: FIELD_LABELS[field], key=f"fantasy_rankings_export_fields_{preset}")
-    return tuple(selected)
-
-
-def render_fantasy_rankings() -> None:
-    st.markdown(DRAFTED_PLAYER_CSS, unsafe_allow_html=True)
-    st.markdown("### Integrated Fantasy Rankings")
-    st.caption("GridironGPT combines historical production, consensus market ADP, recent role, Cortex intelligence, and canonical availability.")
-    controls = st.columns([2, 2, 2, 2, 4])
-    with controls[0]: scoring = st.selectbox("Scoring", ("ppr", "half_ppr", "standard"), index=0, key="fantasy_rankings_scoring")
-    with controls[1]: teams = st.selectbox("League size", (8, 10, 12, 14, 16), index=2, key="fantasy_rankings_teams")
-    with controls[2]: overall_limit = st.selectbox("Overall", (25, 50, 100, 200), index=1, key="fantasy_rankings_limit")
-    with controls[3]: position_limit = st.selectbox("Per position", (10, 20, 30, 50, 100), index=2, key="fantasy_rankings_position_limit")
-    with controls[4]: draft_mode = st.toggle("Draft Mode", value=False, key="fantasy_rankings_draft_mode", help="Mark drafted players in place while preserving the original draft board order.")
-    refresh = st.columns([1, 5])
-    if refresh[0].button("Refresh Rankings", key="fantasy_rankings_refresh_snapshot", use_container_width=True, help="Rebuild rankings and refresh external ADP data. Draft selections are preserved."):
-        build_fantasy_ranking_snapshot.clear(); st.rerun()
-    try:
-        snapshot = build_fantasy_ranking_snapshot(scoring=scoring, teams=teams, limit=None)
-    except Exception as exc:
-        st.error("Fantasy rankings could not be built from the current local data.")
-        with st.expander("Technical details", expanded=False): st.code(str(exc))
+            with row[1]:_draft_row_control(score,scope="overall",drafted_ids=drafted_ids)
+def _selected_export_fields():
+    preset=st.radio("Export preset",("Draft Day","Full Analysis","Custom"),horizontal=True,key="fantasy_rankings_export_preset");defaults=list(FULL_ANALYSIS_FIELDS) if preset=="Full Analysis" else list(DRAFT_DAY_FIELDS);selected=st.multiselect("Export fields",options=list(FIELD_LABELS),default=defaults,format_func=lambda field:FIELD_LABELS[field],key=f"fantasy_rankings_export_fields_{preset}");return tuple(selected)
+def render_fantasy_rankings():
+    st.markdown(DRAFTED_PLAYER_CSS,unsafe_allow_html=True);st.markdown("### Integrated Fantasy Rankings");st.caption("GridironGPT combines historical production, consensus market ADP, recent role, Cortex intelligence, and canonical availability.");controls=st.columns([2,2,2,2,4])
+    with controls[0]:scoring=st.selectbox("Scoring",("ppr","half_ppr","standard"),index=0,key="fantasy_rankings_scoring")
+    with controls[1]:teams=st.selectbox("League size",(8,10,12,14,16),index=2,key="fantasy_rankings_teams")
+    with controls[2]:overall_limit=st.selectbox("Overall",(25,50,100,200),index=1,key="fantasy_rankings_limit")
+    with controls[3]:position_limit=st.selectbox("Per position",(10,20,30,50,100),index=2,key="fantasy_rankings_position_limit")
+    with controls[4]:draft_mode=st.toggle("Draft Mode",value=False,key="fantasy_rankings_draft_mode",help="Mark drafted players in place while preserving the original draft board order.")
+    refresh=st.columns([1,5])
+    if refresh[0].button("Refresh Rankings",key="fantasy_rankings_refresh_snapshot",use_container_width=True,help="Rebuild rankings, projections, and refresh external ADP data. Draft selections are preserved."):build_fantasy_ranking_snapshot.clear();build_fantasy_projection_views.clear();st.rerun()
+    try:snapshot=build_fantasy_ranking_snapshot(scoring=scoring,teams=teams,limit=None);projection_views=build_fantasy_projection_views(scoring=scoring)
+    except Exception as exc:st.error("Fantasy rankings could not be built from the current local data.");
+    if 'snapshot' not in locals():
+        with st.expander("Technical details",expanded=False):st.code(str(exc))
         return
-    drafted_ids = set(_drafted_ids()) if draft_mode else set()
-    export_population = _remaining_population(snapshot.population, drafted_ids)
-    meta = st.columns(4)
-    meta[0].metric("Historical", snapshot.historical_player_count)
-    source_label = ", ".join(snapshot.adp_sources) if snapshot.adp_sources else "Unavailable"
-    meta[1].metric("Consensus ADP", snapshot.adp_player_count, delta=source_label)
-    meta[2].metric("Role evidence", snapshot.role_player_count, delta=(f"{snapshot.role_season}" if snapshot.role_season else "Unavailable"))
-    if draft_mode: meta[3].metric("Available", len(export_population.overall), delta=f"{len(drafted_ids)} drafted")
-    else: meta[3].metric("Ranked players", len(snapshot.population.overall))
-    if not snapshot.population.explained_overall:
-        st.info("No players currently have sufficient anchor evidence to rank."); return
-    if draft_mode:
-        _render_drafted_players(snapshot.population)
-        _render_draft_assistant(snapshot.population, snapshot.market_views_by_player_id, drafted_ids)
-    football_notes, football_summaries = _football_notes(snapshot.population)
-    bye_weeks = ByeWeekService().load(season=2026)
-    st.divider(); st.markdown("### Export")
-    selected_fields = _selected_export_fields()
-    if not selected_fields:
-        st.warning("Select at least one export field.")
+    drafted_ids=set(_drafted_ids()) if draft_mode else set();export_population=_remaining_population(snapshot.population,drafted_ids);meta=st.columns(4);meta[0].metric("Historical",snapshot.historical_player_count);source_label=", ".join(snapshot.adp_sources) if snapshot.adp_sources else "Unavailable";meta[1].metric("Consensus ADP",snapshot.adp_player_count,delta=source_label);meta[2].metric("Role evidence",snapshot.role_player_count,delta=(f"{snapshot.role_season}" if snapshot.role_season else "Unavailable"));meta[3].metric("Available" if draft_mode else "Ranked players",len(export_population.overall) if draft_mode else len(snapshot.population.overall),delta=f"{len(drafted_ids)} drafted" if draft_mode else None)
+    if not snapshot.population.explained_overall:st.info("No players currently have sufficient anchor evidence to rank.");return
+    if draft_mode:_render_drafted_players(snapshot.population);_render_draft_assistant(snapshot.population,snapshot.market_views_by_player_id,drafted_ids,projection_views)
+    football_notes,football_summaries=_football_notes(snapshot.population);bye_weeks=ByeWeekService().load(season=2026);st.divider();st.markdown("### Export");selected_fields=_selected_export_fields()
+    if not selected_fields:st.warning("Select at least one export field.")
     else:
-        export_columns = st.columns([1, 1, 4])
-        try:
-            xlsx_data = build_rankings_xlsx(export_population, overall_limit=overall_limit, position_limit=position_limit, selected_fields=selected_fields, bye_week_by_team=bye_weeks, football_notes_by_player_id=football_notes, market_views_by_player_id=snapshot.market_views_by_player_id)
-            export_columns[0].download_button("Download Excel", data=xlsx_data, file_name=f"gridirongpt_rankings_{scoring}_{teams}team.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
-        except Exception as exc: export_columns[0].warning(f"Excel export unavailable: {exc}")
-        try:
-            pdf_data = build_rankings_pdf(export_population, overall_limit=overall_limit, position_limit=position_limit, selected_fields=selected_fields, bye_week_by_team=bye_weeks, football_notes_by_player_id=football_notes, market_views_by_player_id=snapshot.market_views_by_player_id)
-            export_columns[1].download_button("Download PDF", data=pdf_data, file_name=f"gridirongpt_rankings_{scoring}_{teams}team.pdf", mime="application/pdf", use_container_width=True)
-        except Exception as exc: export_columns[1].warning(f"PDF export unavailable: {exc}")
-    st.caption("Draft Day includes position rank, tier, consensus ADP, Draft Value, bye, GridironGPT score, and football notes. Drafted players remain visible on the live board but are excluded from Draft Mode exports.")
-    st.divider(); tabs = st.tabs(("Overall",) + POSITIONS)
-    with tabs[0]:
-        overall_expansion = _expansion_controls("overall")
-        _render_overall_rows(snapshot.population.explained_overall, football_summaries=football_summaries, market_views=snapshot.market_views_by_player_id, limit=overall_limit, drafted_ids=drafted_ids, draft_mode=draft_mode, expansion_mode=overall_expansion)
-    for tab, position in zip(tabs[1:], POSITIONS):
-        with tab:
-            scores = snapshot.population.by_position.get(position, [])
-            st.caption(f"Top {min(position_limit, len(scores))} {position} rankings from the same integrated scoring model.")
-            expansion_mode = _expansion_controls(position)
-            _render_score_rows(scores[:position_limit], football_summaries=football_summaries, market_views=snapshot.market_views_by_player_id, drafted_ids=drafted_ids, draft_mode=draft_mode, scope=position.lower(), expansion_mode=expansion_mode)
+        export_columns=st.columns([1,1,4])
+        try:xlsx_data=build_rankings_xlsx(export_population,overall_limit=overall_limit,position_limit=position_limit,selected_fields=selected_fields,bye_week_by_team=bye_weeks,football_notes_by_player_id=football_notes,market_views_by_player_id=snapshot.market_views_by_player_id);export_columns[0].download_button("Download Excel",data=xlsx_data,file_name=f"gridirongpt_rankings_{scoring}_{teams}team.xlsx",mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",use_container_width=True)
+        except Exception as exc:export_columns[0].warning(f"Excel export unavailable: {exc}")
+        try:pdf_data=build_rankings_pdf(export_population,overall_limit=overall_limit,position_limit=position_limit,selected_fields=selected_fields,bye_week_by_team=bye_weeks,football_notes_by_player_id=football_notes,market_views_by_player_id=snapshot.market_views_by_player_id);export_columns[1].download_button("Download PDF",data=pdf_data,file_name=f"gridirongpt_rankings_{scoring}_{teams}team.pdf",mime="application/pdf",use_container_width=True)
+        except Exception as exc:export_columns[1].warning(f"PDF export unavailable: {exc}")
+    st.caption("Projected Points and PPG are informational only and do not currently affect GridironGPT score, Best Available, or Best Value.");st.divider();tabs=st.tabs(("Overall",)+POSITIONS)
+    with tabs[0]:overall_expansion=_expansion_controls("overall");_render_overall_rows(snapshot.population.explained_overall,football_summaries=football_summaries,market_views=snapshot.market_views_by_player_id,projection_views=projection_views,limit=overall_limit,drafted_ids=drafted_ids,draft_mode=draft_mode,expansion_mode=overall_expansion)
+    for tab,position in zip(tabs[1:],POSITIONS):
+        with tab:scores=snapshot.population.by_position.get(position,[]);st.caption(f"Top {min(position_limit,len(scores))} {position} rankings from the same integrated scoring model.");expansion_mode=_expansion_controls(position);_render_score_rows(scores[:position_limit],football_summaries=football_summaries,market_views=snapshot.market_views_by_player_id,projection_views=projection_views,drafted_ids=drafted_ids,draft_mode=draft_mode,scope=position.lower(),expansion_mode=expansion_mode)
