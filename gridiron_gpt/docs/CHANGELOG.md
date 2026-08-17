@@ -1,5 +1,45 @@
 # Changelog
 
+## 2026-08-17 — Projected Fantasy Points v1
+
+### Added
+- Historical-stat projection pipeline using regular-season NFL history only; preseason statistics are intentionally excluded.
+- Recency-weighted per-game historical blending with available-season weight renormalization.
+- Small-sample handling so limited appearances do not extrapolate directly to a full 17-game workload without adjustment.
+- Fantasy scoring projections for PPR, half-PPR, and standard formats.
+- Player-level projected season points and projected points per game.
+- Cached projection views on the Streamlit Fantasy Rankings page.
+- `Proj Pts` and `Proj PPG` visibility in expanded and collapsed ranking rows.
+- Projection context in Draft Assistant Best Available and Best Value displays.
+- Projected Points and Projected PPG support in Excel and PDF ranking exports, including the Draft Day preset.
+
+### Projection Boundary
+
+Projected production is currently informational only. It does not alter the production GridironGPT ranking score, Best Available ordering, or Best Value calculation.
+
+```text
+regular-season historical stats
+→ per-game normalization
+→ recency-weighted blending
+→ small-sample adjustment
+→ expected 17-game production
+→ fantasy scoring
+→ projected points / projected PPG
+→ Rankings UI + Draft Assistant + Excel/PDF
+```
+
+This boundary intentionally provides a stable projection baseline before projected production receives any scoring weight. The next scoring experiment will compare 0%, 5%, and 10% projection influence without changing the live production formula.
+
+### Validation
+
+```text
+834 passed
+```
+
+The UI and Draft Day Excel export were manually verified to expose the same projection values. This is the stable baseline for the projection-weight comparison experiment.
+
+---
+
 ## 2026-08-14 — Integrated Fantasy Ranking Intelligence
 
 ### Added
