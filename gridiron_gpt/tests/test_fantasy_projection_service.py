@@ -64,6 +64,15 @@ def test_zero_games_has_no_ppg_instead_of_dividing_by_zero():
     assert projection.projected_ppg is None
 
 
-def test_negative_counting_stats_are_rejected():
-    with pytest.raises(ValueError, match="rushing_yards cannot be negative"):
-        FantasyProjectionService().project(PlayerStatProjection(rushing_yards=-1))
+def test_negative_yardage_is_allowed_and_scores_normally():
+    projection = FantasyProjectionService().project(
+        PlayerStatProjection(games=1, receiving_yards=-5)
+    )
+
+    assert projection.projected_points == -0.5
+    assert projection.projected_ppg == -0.5
+
+
+def test_negative_nonnegative_counting_stats_are_rejected():
+    with pytest.raises(ValueError, match="receptions cannot be negative"):
+        FantasyProjectionService().project(PlayerStatProjection(receptions=-1))
