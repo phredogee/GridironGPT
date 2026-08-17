@@ -28,9 +28,10 @@ class ProjectionWeightComparisonService:
     """Compare hypothetical projection weights without mutating production rankings.
 
     The existing ranking score remains the 0% control. Projected fantasy points
-    are normalized to 0-100 against the maximum projection in the ranked pool.
-    Experimental scores reserve 5% or 10% for projection and proportionally
-    scale the complete production score into the remaining weight.
+    are normalized to 0-100 within each fantasy position so raw QB scoring does
+    not establish the projection scale for RB, WR, or TE players. Experimental
+    scores reserve 5% or 10% for projection and proportionally scale the complete
+    production score into the remaining weight.
     """
 
     WEIGHTS = (0.05, 0.10)
@@ -48,16 +49,23 @@ class ProjectionWeightComparisonService:
             score.player_id: projection_views.get(score.player_name.casefold())
             for score in production
         }
-        available_points = [
-            view.projected_points
-            for view in projections.values()
-            if view is not None and view.projected_points >= 0
-        ]
-        maximum = max(available_points, default=0.0)
+        position_maximums: dict[str, float] = {}
+        for score in production:
+            view = projections[score.player_id]
+            if view is None or view.projected_points < 0:
+                continue
+            position = (score.position or "UNKNOWN").upper()
+            position_maximums[position] = max(
+                position_maximums.get(position, 0.0),
+                view.projected_points,
+            )
 
         projection_scores = {
-            player_id: self._normalize_projection(view, maximum)
-            for player_id, view in projections.items()
+            score.player_id: self._normalize_projection(
+                projections[score.player_id],
+                position_maximums.get((score.position or "UNKNOWN").upper(), 0.0),
+            )
+            for score in production
         }
         experimental = {
             weight: self._experimental_scores(production, projection_scores, weight)
