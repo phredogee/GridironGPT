@@ -18,6 +18,11 @@ from gridiron_gpt.draft.fantasy_ranking_export_service import (
     build_rankings_xlsx,
     compact_takeaway,
 )
+from gridiron_gpt.draft.fantasy_draft_pool_service import (
+    best_available_scores,
+    best_value_scores,
+    remaining_population,
+)
 from gridiron_gpt.draft.fantasy_ranking_population_service import FantasyRankingPopulation, FantasyRankingPopulationService
 from gridiron_gpt.draft.football_ranking_explanation_service import FootballRankingExplanationService
 from gridiron_gpt.football_state.repositories.jsonl_player_state_repository import JsonlPlayerStateRepository
@@ -132,31 +137,15 @@ def _clear_drafted():
 
 
 def _remaining_population(population, drafted_ids):
-    if not drafted_ids:
-        return population
-    return FantasyRankingPopulation(
-        overall=[s for s in population.overall if s.player_id not in drafted_ids],
-        by_position={p: [s for s in scores if s.player_id not in drafted_ids] for p, scores in population.by_position.items()},
-        explained_overall=[i for i in population.explained_overall if i.score.player_id not in drafted_ids],
-    )
+    return remaining_population(population, drafted_ids)
 
 
 def _best_available_scores(population, drafted_ids, *, limit=5):
-    return [] if limit <= 0 else [s for s in population.overall if s.player_id not in drafted_ids][:limit]
+    return best_available_scores(population, drafted_ids, limit=limit)
 
 
 def _best_value_scores(population, market_views, drafted_ids, *, limit=5):
-    if limit <= 0:
-        return []
-    candidates = [
-        s for s in population.overall
-        if s.player_id not in drafted_ids
-        and market_views.get(s.player_id) is not None
-        and market_views[s.player_id].draft_value is not None
-        and market_views[s.player_id].draft_value > 0
-    ]
-    candidates.sort(key=lambda s: (-market_views[s.player_id].draft_value, market_views[s.player_id].overall_rank))
-    return candidates[:limit]
+    return best_value_scores(population, market_views, drafted_ids, limit=limit)
 
 
 def _render_my_team(population):
