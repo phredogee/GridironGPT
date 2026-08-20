@@ -6,11 +6,12 @@ from gridiron_cortex.remember.json_player_scorecard_repository import JsonPlayer
 from gridiron_gpt.data_ingest.player_scores import calculate_player_scores
 from gridiron_gpt.draft.bye_week_service import ByeWeekService
 from gridiron_gpt.draft.espn_adp_loader import EspnAdpLoader
+from gridiron_gpt.draft.fantasy_draft_pool_service import best_available_scores, best_value_scores, remaining_population
 from gridiron_gpt.draft.fantasy_player_projection_service import FantasyPlayerProjectionService
 from gridiron_gpt.draft.fantasy_projection_view_service import build_projection_views, projection_view_for_player
 from gridiron_gpt.draft.fantasy_ranking_data_service import FantasyRankingDataService
 from gridiron_gpt.draft.fantasy_ranking_export_service import DRAFT_DAY_FIELDS, FIELD_LABELS, FULL_ANALYSIS_FIELDS, build_rankings_pdf, build_rankings_xlsx, compact_takeaway
-from gridiron_gpt.draft.fantasy_ranking_population_service import FantasyRankingPopulation, FantasyRankingPopulationService
+from gridiron_gpt.draft.fantasy_ranking_population_service import FantasyRankingPopulationService
 from gridiron_gpt.draft.football_ranking_explanation_service import FootballRankingExplanationService
 from gridiron_gpt.football_state.repositories.jsonl_player_state_repository import JsonlPlayerStateRepository
 
@@ -56,13 +57,9 @@ def _undo_last_drafted():
     if drafted:drafted.pop()
     st.session_state[DRAFTED_IDS_KEY]=drafted
 def _clear_drafted():st.session_state[DRAFTED_IDS_KEY]=[]
-def _remaining_population(population,drafted_ids):
-    if not drafted_ids:return population
-    return FantasyRankingPopulation(overall=[s for s in population.overall if s.player_id not in drafted_ids],by_position={p:[s for s in scores if s.player_id not in drafted_ids] for p,scores in population.by_position.items()},explained_overall=[i for i in population.explained_overall if i.score.player_id not in drafted_ids])
-def _best_available_scores(population,drafted_ids,*,limit=5):return [] if limit<=0 else [s for s in population.overall if s.player_id not in drafted_ids][:limit]
-def _best_value_scores(population,market_views,drafted_ids,*,limit=5):
-    if limit<=0:return []
-    candidates=[s for s in population.overall if s.player_id not in drafted_ids and market_views.get(s.player_id) is not None and market_views[s.player_id].draft_value is not None and market_views[s.player_id].draft_value>0];candidates.sort(key=lambda s:(-market_views[s.player_id].draft_value,market_views[s.player_id].overall_rank));return candidates[:limit]
+def _remaining_population(population,drafted_ids):return remaining_population(population,drafted_ids)
+def _best_available_scores(population,drafted_ids,*,limit=5):return best_available_scores(population,drafted_ids,limit=limit)
+def _best_value_scores(population,market_views,drafted_ids,*,limit=5):return best_value_scores(population,market_views,drafted_ids,limit=limit)
 def _render_drafted_players(population):
     drafted=_drafted_ids()
     if not drafted:st.caption("No players marked drafted yet.");return
@@ -180,7 +177,7 @@ def render_fantasy_rankings():
         except Exception as exc:export_columns[0].warning(f"Excel export unavailable: {exc}")
         try:pdf_data=build_rankings_pdf(export_population,overall_limit=overall_limit,position_limit=position_limit,selected_fields=selected_fields,bye_week_by_team=bye_weeks,football_notes_by_player_id=football_notes,market_views_by_player_id=snapshot.market_views_by_player_id,projection_views=projection_views);export_columns[1].download_button("Download PDF",data=pdf_data,file_name=f"gridirongpt_rankings_{scoring}_{teams}team.pdf",mime="application/pdf",use_container_width=True)
         except Exception as exc:export_columns[1].warning(f"PDF export unavailable: {exc}")
-    st.caption("Projected Points and PPG are informational only and do not currently affect GridironGPT score, Best Available, or Best Value.");st.divider();tabs=st.tabs(("Overall",)+POSITIONS)
+    st.caption("Projected Points and PPG are included in the production ranking at the configured projection weight.");st.divider();tabs=st.tabs(("Overall",)+POSITIONS)
     with tabs[0]:overall_expansion=_expansion_controls("overall");_render_overall_rows(snapshot.population.explained_overall,football_summaries=football_summaries,market_views=snapshot.market_views_by_player_id,projection_views=projection_views,limit=overall_limit,drafted_ids=drafted_ids,draft_mode=draft_mode,expansion_mode=overall_expansion)
     for tab,position in zip(tabs[1:],POSITIONS):
         with tab:scores=snapshot.population.by_position.get(position,[]);st.caption(f"Top {min(position_limit,len(scores))} {position} rankings from the same integrated scoring model.");expansion_mode=_expansion_controls(position);_render_score_rows(scores[:position_limit],football_summaries=football_summaries,market_views=snapshot.market_views_by_player_id,projection_views=projection_views,drafted_ids=drafted_ids,draft_mode=draft_mode,scope=position.lower(),expansion_mode=expansion_mode)
