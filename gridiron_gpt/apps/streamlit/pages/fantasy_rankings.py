@@ -6,6 +6,7 @@ from gridiron_cortex.remember.json_player_scorecard_repository import JsonPlayer
 from gridiron_gpt.data_ingest.player_scores import calculate_player_scores
 from gridiron_gpt.draft.bye_week_service import ByeWeekService
 from gridiron_gpt.draft.draft_board_state import DraftBoardState, DraftOwnership
+from gridiron_gpt.draft.fantasy_roster_advice_service import FantasyRosterAdviceService
 from gridiron_gpt.draft.espn_adp_loader import EspnAdpLoader
 from gridiron_gpt.draft.fantasy_player_projection_service import FantasyPlayerProjectionService
 from gridiron_gpt.draft.fantasy_projection_view_service import build_projection_views, projection_view_for_player
@@ -272,8 +273,17 @@ def _draft_row_control(score, *, scope, drafted_ids):
 def _render_draft_assistant(population, market_views, drafted_ids, projection_views):
     best_available = _best_available_scores(population, drafted_ids, limit=5)
     best_value = _best_value_scores(population, market_views, drafted_ids, limit=5)
+    my_team_ids = set(_my_team_ids())
+    by_id = {score.player_id: score for score in population.overall}
+    roster_scores = [
+        by_id[player_id]
+        for player_id in my_team_ids
+        if player_id in by_id
+    ]
+    roster_advice = FantasyRosterAdviceService().build(roster_scores)
     st.markdown("### Draft Assistant")
     st.caption("Live recommendations use the frozen GridironGPT board and update instantly as players are drafted. Use Mine when the pick belongs to your roster.")
+    st.caption(roster_advice.summary)
     columns = st.columns(2)
     with columns[0]:
         st.markdown("**Best Available**")
@@ -285,9 +295,14 @@ def _render_draft_assistant(population, market_views, drafted_ids, projection_vi
             if view is not None:
                 details.insert(1, f"{score.position or '-'}{view.position_rank}")
                 details.append(f"Tier {view.tier}")
+            roster_badge = roster_advice.badge_for(score.position)
             projection = _projection_badge(score, projection_views)
             row = st.columns([5, 1.5])
-            row[0].write(f"**{score.player_name}** · {' · '.join(details)} · {score.ranking_score:.2f}" + (f" · {projection}" if projection else ""))
+            row[0].write(
+                f"**{score.player_name}** · {' · '.join(details)} · {score.ranking_score:.2f}"
+                + (f" · {projection}" if projection else "")
+                + (f" · **{roster_badge}**" if roster_badge else "")
+            )
             with row[1]:
                 _draft_row_control(score, scope="assistant_available", drafted_ids=drafted_ids)
     with columns[1]:
@@ -298,8 +313,14 @@ def _render_draft_assistant(population, market_views, drafted_ids, projection_vi
             view = market_views[score.player_id]
             adp = f"ADP {view.consensus_adp:.1f}" if view.consensus_adp is not None else "ADP —"
             projection = _projection_badge(score, projection_views)
+            roster_badge = roster_advice.badge_for(score.position)
             row = st.columns([5, 1.5])
-            row[0].write(f"**{score.player_name}** · {score.position or '-'}{view.position_rank} · Tier {view.tier} · {adp} · **{view.draft_value:+.1f} value**" + (f" · {projection}" if projection else ""))
+            row[0].write(
+                f"**{score.player_name}** · {score.position or '-'}{view.position_rank} · "
+                f"Tier {view.tier} · {adp} · **{view.draft_value:+.1f} value**"
+                + (f" · {projection}" if projection else "")
+                + (f" · **{roster_badge}**" if roster_badge else "")
+            )
             with row[1]:
                 _draft_row_control(score, scope="assistant_value", drafted_ids=drafted_ids)
 
@@ -311,6 +332,7 @@ def _render_score_rows(scores, *, football_summaries, market_views, projection_v
         drafted = draft_mode and score.player_id in drafted_ids
         market_badge = _market_badge(score, market_views)
         projection = _projection_badge(score, projection_views)
+        roster_badge = roster_advice.badge_for(score.position)
         prefix = "MY TEAM · " if score.player_id in my_team_ids else "DRAFTED · " if drafted else ""
         header = f"{prefix}#{rank}  {score.player_name}  ·  {market_badge or (score.position or '-')}  ·  {score.team or '-'}  ·  {score.ranking_score:.2f}" + (f"  ·  {projection}" if projection else "")
         row = st.columns([12, 2.5], vertical_alignment="top") if draft_mode else [st.container()]
