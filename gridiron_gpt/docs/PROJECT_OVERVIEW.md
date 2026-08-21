@@ -2,126 +2,145 @@
 
 ## Vision
 
-GridironGPT is a fantasy-football intelligence platform powered by **Gridiron Cortex**. It converts NFL news and structured football evidence into persistent, explainable player intelligence, recommendations, trends, and decision history.
+GridironGPT is a fantasy-football intelligence platform powered by **Gridiron Cortex**. It converts NFL news, structured football evidence, market context, historical production, projections, and live draft state into explainable player intelligence and fantasy decision support.
 
-GridironGPT is the flagship football application built on Cortex. Cortex owns reusable intelligence and reasoning; GridironGPT owns football-specific ingestion, workflows, presentation, and league-management features.
+GridironGPT is the football product layer. Cortex owns reusable intelligence and reasoning; GridironGPT owns football-specific ingestion, fantasy workflows, draft state, presentation, and commissioner features.
 
-## v1.0 System
+## Current System
 
 ```text
-ESPN / NBC Sports / ProFootballTalk / RotoWire / nflverse
-                         ↓
-                  Provider Adapters
-                         ↓
-                  IngestionService
-                         ↓
-             Normalize + Deduplicate
-                         ↓
-                     RawEvent
-                         ↓
-                  Gridiron Cortex
-                         ↓
-       Resolve → Classify → Propagate → Score
-                         ↓
-             Recommend → Explain
-                         ↓
-       Event Bus + Scorecard Persistence
-                         ↓
- Dashboard / Advisor / Players / Explorer / Replay / Mission Control
+NFL sources / nflverse / market data
+                ↓
+         provider adapters
+                ↓
+        IngestionService
+                ↓
+          RawEvent contract
+                ↓
+          Gridiron Cortex
+                ↓
+resolve → classify → propagate → score → explain
+                ↓
+scorecards + event history + replay
+                ↓
+GridironGPT product services and Streamlit UI
 ```
 
-The production ingestion boundary automatically forwards normalized `RawEvent` objects into Cortex. Individual providers remain responsible only for retrieving and translating source data. Downstream Cortex failures are fail-open so provider ingestion remains successful and is not retried simply because the intelligence processor is unavailable.
+## Fantasy Ranking Pipeline
+
+The production fantasy board combines independent evidence sources and keeps presentation logic downstream of scoring.
+
+```text
+Historical production ─┐
+Current ADP / market ───┤
+Recent role / usage ────┤
+Cortex intelligence ────┤→ weighted production ranking
+Availability ────────────┤
+Projected production ────┘
+                         ↓
+                frozen draft board
+                         ↓
+          tiers / value / explanations
+                         ↓
+               Draft Assistant
+```
+
+Projected production is now active in the production ranking model at its configured production weight. Projection values remain visible as projected points and projected PPG in the UI and exports.
+
+## Live Draft Assistant
+
+Draft Mode now maintains explicit live draft state rather than treating drafted players as a flat UI-only list.
+
+```text
+DraftBoardState
+  ├─ ordered drafted-player history
+  ├─ Other Team ownership
+  └─ My Team ownership
+           ↓
+FantasyDraftPoolService
+  ├─ remaining population
+  ├─ Best Available
+  └─ Best Value
+           ↓
+FantasyRosterNeedsService
+           ↓
+FantasyRosterAdviceService
+           ↓
+Draft Assistant advisory context
+```
+
+Current live behavior includes:
+- Marking players drafted by another team.
+- Assigning a drafted player to **My Team**.
+- Undo, restore, and reset behavior.
+- Removing drafted players from Best Available and Best Value.
+- Preserving the frozen production ranking order.
+- Tracking starter-oriented roster needs for QB, RB, WR, and TE.
+- Displaying advisory badges such as `Fills TE need`.
+
+Roster context is intentionally **advisory only** at this stage. It does not modify production `ranking_score`, Best Available ordering, or Best Value ordering.
 
 ## Major Capabilities
 
-### Live Football Intelligence
-- Multi-source provider ingestion
-- Structured nflverse statistical context
-- Normalized `RawEvent` contract
-- Duplicate-safe event processing
-- Player/entity resolution
-- Signal classification and impact scoring
-- Relationship-aware propagation
-- Confidence and recommendation generation
-- Persistent player scorecards
-- Momentum and trend history
-- Evidence chains and explanations
+### Football Intelligence
+- Multi-source ingestion and normalization.
+- Duplicate-safe event processing.
+- Entity resolution and signal classification.
+- Relationship-aware propagation.
+- Persistent multidimensional player scorecards.
+- Recommendation, confidence, evidence, and explanations.
+- Momentum, trends, and decision history.
 
-### Persistent Decision Trail
-- Cortex event bus records processing stages
-- Correlation IDs connect a source event to its downstream decision trail
-- Event history persists to JSONL
-- Player scorecards persist independently of the UI
-- Replay reconstructs prior Cortex decisions after an application restart
-- Mission-control/activity surfaces consume the same event history
+### Fantasy Decision Support
+- Integrated fantasy rankings.
+- Current market/ADP context.
+- Projected points and projected PPG.
+- Position ranks and tiers.
+- Draft Value vs. ADP.
+- Best Available and Best Value.
+- Live draft-state tracking.
+- My Team ownership.
+- Roster-needs advisory context.
+- Excel and PDF ranking exports.
 
-### Advisor
-- Natural-language football questions
-- Recommendation, score, and confidence cards
-- Supporting evidence and headlines
-- Signal-impact visualization
-- Cortex timeline
-- Health, opportunity, momentum, risk, and upside profile
-
-### Dashboard and Player Intelligence
-- Player and recommendation metrics
-- BUY/WATCH/risk candidates
-- Recommendation distribution
-- Team momentum
-- Position rankings
-- Cortex-ranked player table
-- Player trend and trajectory views
-
-### Cortex Explorer and Inspector
-- Player/entity exploration
-- Knowledge-graph visualization
-- Decision/event inspection
-- Manual diagnostic event processing through the same Cortex facade used by runtime intelligence
+### Persistence and Replay
+- Correlated Cortex event history.
+- JSON/JSONL repository-backed persistence.
+- Persistent player scorecards.
+- Replay of prior decisions after process restart.
 
 ### Commissioner Suite
-- Configurable league settings
-- Team/division management
-- Schedule generation and quality analytics
-- Rivalry and home/away constraints
-- CSV/iCalendar exports
-- Playoff and draft-room workflows
-- League history and commissioner insights
+- Configurable league settings.
+- Team/division management.
+- Schedule generation and analytics.
+- Rivalry and balance constraints.
+- CSV/iCalendar exports.
+- Playoff and draft workflows.
+- League history and commissioner insights.
 
-## Runtime Composition
+## Design Principles
 
-The Streamlit application keeps one `CortexFacade` in session state and shares it across Cortex-facing pages. Runtime ingestion can receive that same facade, ensuring ingestion, activity views, scorecards, and Replay operate against the same engine boundary and persistence model.
-
-## Persistence
-
-Cortex persistence is repository-oriented and currently uses local JSON/JSONL state for core engine artifacts, including event history and player scorecards. Ingestion-run observability is persisted separately. Provider/data infrastructure remains replaceable behind contracts so storage can evolve without coupling the reasoning pipeline to one backend.
+1. Cortex owns reusable intelligence; GridironGPT owns football product behavior.
+2. Evidence and provenance come before conclusions.
+3. Presentation must not become a second scoring engine.
+4. Missing evidence is not negative evidence.
+5. Draft-state context must remain separate from production player ranking.
+6. A player's football ranking should not change simply because a fantasy roster already filled that position.
+7. Roster-aware advice may influence presentation or future recommendation layers without silently rewriting the production board.
+8. Important decisions should be explainable and replayable.
+9. Infrastructure remains replaceable behind contracts.
+10. The full regression suite defines the protected development boundary.
 
 ## Quality Baseline
 
 Current verified full-suite checkpoint:
 
 ```text
-702 passed
+869 passed
 ```
 
-This checkpoint includes automatic runtime ingestion into Cortex and an end-to-end persistence test that verifies a decision can be reconstructed by Replay after a simulated application restart.
+This checkpoint includes the production projection-weight path, unified ranking consumers, tested live draft-pool filtering, ownership-aware `DraftBoardState`, roster-needs evaluation, and advisory Draft Assistant integration.
 
-## Design Principles
+## Current Development Direction
 
-1. Cortex owns intelligence; GridironGPT owns football product behavior.
-2. Providers retrieve data; the shared ingestion layer normalizes it.
-3. Normalized events cross one explicit boundary into Cortex.
-4. Evidence and provenance come before conclusions.
-5. Duplicate events must not produce duplicate decisions.
-6. Provider ingestion must remain resilient when downstream intelligence processing fails.
-7. User-facing recommendations should explain why.
-8. Decision history should survive process restarts and remain replayable.
-9. Infrastructure remains replaceable behind contracts.
-10. Tests define the regression boundary for every major development batch.
-
-## v1.0 Status
-
-The core intelligence architecture is feature-complete for the v1.0 stabilization phase. Current work is focused on documentation, stale-path cleanup, regression verification, Streamlit smoke testing, and merge/release preparation rather than adding another major engine subsystem.
-
-The system is designed to answer:
-
-> What happened, why does it matter, who else is affected, how confident is Cortex, what should a fantasy manager do next, and can Cortex show how it reached that decision?
+The next Draft Assistant milestone is a separate **Best Fit Right Now** advisory layer. It may consider roster need, production rank, tier, Draft Value, and positional scarcity, but it should remain downstream of the authoritative production ranking score.
