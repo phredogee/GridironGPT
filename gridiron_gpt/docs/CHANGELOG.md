@@ -1,5 +1,54 @@
 # Changelog
 
+## 2026-08-21 — Roster-Aware Draft Assistant
+
+### Added
+- `DraftBoardState` with ordered pick history and explicit `MY_TEAM` / `OTHER_TEAM` ownership.
+- Live Draft Mode controls for drafted players, My Team assignments, restore, undo, and reset.
+- `FantasyDraftPoolService` for tested remaining-population, Best Available, and Best Value filtering.
+- `FantasyRosterNeedsService` for starter-oriented QB/RB/WR/TE roster deficits.
+- `FantasyRosterAdviceService` for advisory roster summaries and per-player need badges.
+- Draft Assistant UI context such as `Roster Needs: ...` and `Fills TE need`.
+- Regression coverage for draft-pool filtering, roster needs, and advisory behavior.
+
+### Changed
+- The Streamlit Fantasy Rankings page now consumes the tested draft-pool service instead of duplicating filtering logic.
+- The CLI ranking path was migrated to the same production ranking source used by the current fantasy board.
+- Projected production is active in the production ranking model at its configured production weight.
+- Best Available and Best Value continue to consume the authoritative production population rather than recomputing an alternate score.
+
+### Architectural Boundary
+
+Roster context is downstream advice, not production scoring.
+
+```text
+Production Rankings
+        ↓
+Draft Pool
+  ├─ Best Available
+  └─ Best Value
+        ↓
+DraftBoardState + My Team
+        ↓
+Roster Needs
+        ↓
+Roster Advice
+        ↓
+Draft Assistant presentation
+```
+
+A player's `ranking_score` does not change because a user's roster already filled that position. Current roster advice annotates decisions without reordering Best Available or Best Value.
+
+### Validation
+
+```text
+869 passed
+```
+
+Interactive Streamlit validation confirmed that My Team assignments update roster-needs counts while drafted players leave the available pool and the underlying ranking order remains stable.
+
+---
+
 ## 2026-08-17 — Projected Fantasy Points v1
 
 ### Added
@@ -13,30 +62,15 @@
 - Projection context in Draft Assistant Best Available and Best Value displays.
 - Projected Points and Projected PPG support in Excel and PDF ranking exports, including the Draft Day preset.
 
-### Projection Boundary
+### Historical Note
 
-Projected production is currently informational only. It does not alter the production GridironGPT ranking score, Best Available ordering, or Best Value calculation.
-
-```text
-regular-season historical stats
-→ per-game normalization
-→ recency-weighted blending
-→ small-sample adjustment
-→ expected 17-game production
-→ fantasy scoring
-→ projected points / projected PPG
-→ Rankings UI + Draft Assistant + Excel/PDF
-```
-
-This boundary intentionally provides a stable projection baseline before projected production receives any scoring weight. The next scoring experiment will compare 0%, 5%, and 10% projection influence without changing the live production formula.
+This milestone originally introduced projections as informational-only output. That boundary was later superseded: projected production is now included in the production ranking model at its configured weight while the direct Proj Pts / Proj PPG values remain visible for interpretation.
 
 ### Validation
 
 ```text
 834 passed
 ```
-
-The UI and Draft Day Excel export were manually verified to expose the same projection values. This is the stable baseline for the projection-weight comparison experiment.
 
 ---
 
@@ -54,11 +88,9 @@ The UI and Draft Day Excel export were manually verified to expose the same proj
 
 ### Ranking Model
 
-The integrated ranking path now combines:
-
 ```text
 historical production
-+ current 2026 ADP / market
++ current ADP / market
 + recent role / usage
 + Cortex intelligence
 + canonical availability
@@ -69,19 +101,11 @@ historical production
 
 Missing evidence is treated as unavailable evidence rather than negative evidence. Available weights are renormalized rather than silently assigning zeroes to missing sources.
 
-### Explanation Semantics
-- Availability remains evidence but is not described as an elite fantasy strength.
-- Neutral Cortex intelligence is not presented as a negative factor.
-- Missing evidence is called out explicitly without being converted into a concern.
-- Explanation generation is downstream of scoring and does not alter ranking results.
-
 ### Validation
 
 ```text
 780 passed
 ```
-
-Real-data verification produced integrated Top-25 rankings using historical, 2026 market, role, Cortex, and availability evidence while preserving source-specific provenance.
 
 ---
 
@@ -95,32 +119,16 @@ Real-data verification produced integrated Top-25 rankings using historical, 202
 - End-to-end production-path coverage from provider record through Cortex persistence and Replay.
 - Restart verification proving persisted Cortex decisions can be reconstructed without reprocessing the source article.
 
-### Changed
-- Provider adapters remain source/translation components and no longer need engine-specific processing responsibilities.
-- Runtime ingestion now uses the same Cortex facade contract as the rest of the application.
-- Streamlit runtime architecture documented around one shared session-state `CortexFacade`.
-- Dashboard regression metadata updated from the stale 652 checkpoint to the verified 702 checkpoint.
-- Project overview and architecture documentation rewritten around the implemented v1.0 boundaries.
-
 ### Reliability
 - Downstream Cortex processor failures are fail-open at the ingestion boundary.
 - Successful provider fetches are not retried because Cortex processing failed.
-- Processor exception logging reads source provenance from the `RawEvent` evidence contract rather than nonexistent event attributes.
 - Duplicate-event handling remains upstream of duplicate downstream decisions.
-
-### Persistence & Replay
-- Cortex event history persists through the event-bus repository.
-- Player scorecards persist independently of Streamlit process lifetime.
-- Correlation IDs connect normalized input events to downstream Cortex decision events.
-- Replay reconstructs decisions from persisted event history after application restart.
 
 ### Validation
 
 ```text
 702 passed
 ```
-
-This checkpoint preceded the integrated fantasy-ranking work.
 
 ---
 
@@ -134,28 +142,14 @@ This checkpoint preceded the integrated fantasy-ranking work.
 - Dashboard 2.0 recommendation distribution, team momentum, position rankings, and live Cortex ranking views.
 - Expanded Commissioner Suite with configurable league settings, schedule generation, schedule alternatives/analytics, rivalry constraints, configurable playoff duration, draft workflows, league history, and schedule exports/delivery support.
 
-### Changed
-- Dashboard and Advisor consume the scored-player map rather than relying only on static presentation data.
-- UI chart calculations are separated from Streamlit rendering.
-- Commissioner scheduling treats divisional home/away requirements as hard constraints where configuration permits and optimizes remaining assignments for balance.
-
-### Fixed
-- Duplicate RSS stories no longer terminate ingestion with a Supabase unique-key error.
-- Advisor top-recommendation confidence path typo corrected.
-- Small-league schedule generation no longer assumes every schedule can achieve an impossible home/away spread.
-- Schedule analytics quality scoring handles balanced reference schedules correctly.
-- CSV and iCalendar schedule exports validated against generated schedules.
-
 ### Validation
 
 ```text
 619 passed
 ```
 
-This checkpoint preceded the later Cortex runtime-integration work.
-
 ---
 
 ## Historical Milestones
 
-Repository history preserves the detailed development sequence for Cortex foundation, persistent intelligence, semantic propagation, nflverse integration, evidence reasoning, multidimensional scoring, ingestion reliability, football context, Cortex Explorer, knowledge-graph work, event-bus observability, Replay, and intermediate regression checkpoints.
+Repository history preserves the detailed development sequence for Cortex foundation, persistent intelligence, semantic propagation, nflverse integration, evidence reasoning, multidimensional scoring, ingestion reliability, football context, Cortex Explorer, knowledge-graph work, event-bus observability, Replay, ranking integration, projection experiments, and intermediate regression checkpoints.
