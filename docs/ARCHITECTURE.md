@@ -18,6 +18,33 @@ Football-specific facts remain outside the reusable Cortex core until applicatio
 8. Cortex state and event-bus history are persisted for restart recovery and replay.
 9. Ingestion-run diagnostics are persisted independently for operational observability.
 
+### Daily Production Refresh
+
+`scripts/run_daily_ingestion.py` is the scheduler-facing production entry point. It composes the existing unified ingestion path rather than introducing a parallel pipeline. A healthy run requires zero provider failures and zero Cortex processor failures; otherwise the command exits non-zero so schedulers can surface the failure.
+
+The prepared GitHub Actions workflow runs the command daily and also supports manual dispatch. Production execution explicitly sets `GRIDIRON_INGESTION_RUN_PERSISTENCE=supabase` and requires `SUPABASE_URL` plus `SUPABASE_SERVICE_ROLE_KEY`.
+
+## Ingestion Freshness and Operational Persistence
+
+Ingestion-run persistence is selected at the application-composition boundary:
+
+```text
+Local development
+  ingestion -> JsonlIngestionRunRepository <- Streamlit
+
+Production / scheduled execution
+  ingestion -> SupabaseIngestionRunRepository <- Streamlit
+                         |
+                         v
+                cortex_ingestion_runs
+```
+
+JSONL remains the default for local development. Supabase must be explicitly selected with `GRIDIRON_INGESTION_RUN_PERSISTENCE=supabase`; unknown persistence modes fail rather than silently falling back to local storage.
+
+The dedicated `cortex_ingestion_runs` table stores operational run summaries separately from the legacy article-ingestion contract. It includes run timestamps, provider totals, records received, normalized events, Cortex accepts, duplicates, processor failures, diagnostics, and overall success.
+
+The freshness evaluator derives presentation-safe state from the latest persisted run. A successful run is considered fresh for 26 hours, allowing modest scheduling/runtime drift around a daily cadence. A recent failed run is still reported as failed rather than fresh. Streamlit uses the same configured repository and surfaces freshness, last-updated time, update age, provider diagnostics, Cortex outcomes, and recent history.
+
 ## Structured Football State
 
 GridironGPT maintains a factual football-state layer separate from Cortex news scoring.
@@ -54,11 +81,15 @@ Bye week: 8.
 
 Provider retrieval uses bounded attempts and timeout handling. Provider failures are isolated so healthy providers can continue. Downstream processor failures are fail-open from the ingestion perspective and are recorded as processor failures rather than causing provider refetches.
 
+The daily production command converts provider or processor failures into a non-zero process exit so external schedulers can detect an unhealthy refresh. Durable operational persistence prevents scheduler-local state from disappearing when an ephemeral runner exits.
+
 Football context is optional enrichment. Missing player state, schedule state, or stable identity must not prevent Cortex from processing the underlying news event.
 
 ## Deduplication Contract
 
 Ingestion may normalize the same source evidence on successive scheduled runs. Cortex remains the authority for determining whether evidence is new. Ingestion captures the Cortex result and reports accepted events separately from duplicates ignored.
+
+A verified Supabase-backed production run on 2026-08-22 processed 28 normalized records: 1 was accepted as new Cortex evidence, 27 were correctly ignored as duplicates, and no provider or processor failures occurred.
 
 ## Ranking Boundary
 
@@ -72,6 +103,6 @@ RSS retrieval uses an explicit HTTP timeout before feed parsing. Player alias re
 
 ## Persistence
 
-Cortex data-directory persistence supports event history, score state, and replay across application restarts. Ingestion run history is persisted separately and feeds the Streamlit Ingestion Status view.
+Cortex data-directory persistence supports event history, score state, and replay across application restarts. Ingestion operational history is persisted independently: JSONL for local development and the dedicated Supabase `cortex_ingestion_runs` table for production/scheduled execution. Both the ingestion runtime and Streamlit status view use the same repository-selection boundary.
 
 Structured football state is persisted separately under `data/football_state/`, currently using `player_states.jsonl` and `game_states.jsonl`. This separation prevents factual roster/schedule state from becoming indistinguishable from scored news evidence.
