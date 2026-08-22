@@ -6,29 +6,7 @@ GridironGPT is a fantasy-football intelligence platform powered by **Gridiron Co
 
 GridironGPT is the football product layer. Cortex owns reusable intelligence and reasoning; GridironGPT owns football-specific ingestion, fantasy workflows, draft state, presentation, and commissioner features.
 
-## Current System
-
-```text
-NFL sources / nflverse / market data
-                ↓
-         provider adapters
-                ↓
-        IngestionService
-                ↓
-          RawEvent contract
-                ↓
-          Gridiron Cortex
-                ↓
-resolve → classify → propagate → score → explain
-                ↓
-scorecards + event history + replay
-                ↓
-GridironGPT product services and Streamlit UI
-```
-
-## Fantasy Ranking Pipeline
-
-The production fantasy board combines independent evidence sources and keeps presentation logic downstream of scoring.
+## Fantasy Ranking and Draft Pipeline
 
 ```text
 Historical production ─┐
@@ -42,65 +20,43 @@ Projected production ────┘
                          ↓
           tiers / value / explanations
                          ↓
-               Draft Assistant
+                 Draft Assistant
+             ┌────────┼────────┐
+             ↓        ↓        ↓
+      Best Available  Best Value  Best Fit Right Now
 ```
 
-Projected production is now active in the production ranking model at its configured production weight. Projection values remain visible as projected points and projected PPG in the UI and exports.
+Projected production is active in the production ranking model at its configured weight. The live advisory layers consume that authoritative board rather than rewriting it.
 
 ## Live Draft Assistant
 
-Draft Mode now maintains explicit live draft state rather than treating drafted players as a flat UI-only list.
+`DraftBoardState` tracks ordered picks plus **My Team** vs. **Other Team** ownership. `FantasyDraftPoolService` removes drafted players while preserving board order. `FantasyRosterNeedsService` and `FantasyRosterAdviceService` evaluate the user's roster separately from league availability.
 
-```text
-DraftBoardState
-  ├─ ordered drafted-player history
-  ├─ Other Team ownership
-  └─ My Team ownership
-           ↓
-FantasyDraftPoolService
-  ├─ remaining population
-  ├─ Best Available
-  └─ Best Value
-           ↓
-FantasyRosterNeedsService
-           ↓
-FantasyRosterAdviceService
-           ↓
-Draft Assistant advisory context
-```
+**Best Fit Right Now** is now implemented as a separate advisory service and presentation view. It blends production ranking quality with modest roster-need and Draft Value context, then provides a concise explanation. The service reads `ranking_score` but never mutates it.
 
 Current live behavior includes:
-- Marking players drafted by another team.
-- Assigning a drafted player to **My Team**.
-- Undo, restore, and reset behavior.
-- Removing drafted players from Best Available and Best Value.
-- Preserving the frozen production ranking order.
-- Tracking starter-oriented roster needs for QB, RB, WR, and TE.
-- Displaying advisory badges such as `Fills TE need`.
-
-Roster context is intentionally **advisory only** at this stage. It does not modify production `ranking_score`, Best Available ordering, or Best Value ordering.
+- Mark drafted players or assign picks to **My Team**.
+- Undo, restore, and reset draft state.
+- Remove drafted players from Best Available, Best Value, and Best Fit candidate pools.
+- Preserve the frozen production ranking order.
+- Track starter-oriented QB/RB/WR/TE roster needs.
+- Display roster-need badges.
+- Display **Best Fit Right Now** recommendations that respond to My Team composition.
 
 ## Major Capabilities
 
 ### Football Intelligence
 - Multi-source ingestion and normalization.
-- Duplicate-safe event processing.
-- Entity resolution and signal classification.
-- Relationship-aware propagation.
-- Persistent multidimensional player scorecards.
-- Recommendation, confidence, evidence, and explanations.
-- Momentum, trends, and decision history.
+- Entity resolution, signal interpretation, relationship propagation, and multidimensional scorecards.
+- Persistent recommendations, confidence, evidence, explanations, trends, and decision history.
 
 ### Fantasy Decision Support
-- Integrated fantasy rankings.
-- Current market/ADP context.
-- Projected points and projected PPG.
-- Position ranks and tiers.
-- Draft Value vs. ADP.
+- Integrated production rankings with ADP, role, Cortex, availability, and projections.
+- Position ranks, tiers, and Draft Value.
 - Best Available and Best Value.
-- Live draft-state tracking.
-- My Team ownership.
+- Live draft-state and My Team ownership.
 - Roster-needs advisory context.
+- Best Fit Right Now advisory recommendations.
 - Excel and PDF ranking exports.
 
 ### Persistence and Replay
@@ -110,37 +66,30 @@ Roster context is intentionally **advisory only** at this stage. It does not mod
 - Replay of prior decisions after process restart.
 
 ### Commissioner Suite
-- Configurable league settings.
-- Team/division management.
-- Schedule generation and analytics.
-- Rivalry and balance constraints.
-- CSV/iCalendar exports.
-- Playoff and draft workflows.
-- League history and commissioner insights.
+- Configurable league settings, teams/divisions, schedules, rivalry/balance constraints, exports, playoffs, draft workflows, league history, and commissioner insights.
 
 ## Design Principles
 
 1. Cortex owns reusable intelligence; GridironGPT owns football product behavior.
 2. Evidence and provenance come before conclusions.
-3. Presentation must not become a second scoring engine.
+3. Presentation must not become a second production scoring engine.
 4. Missing evidence is not negative evidence.
-5. Draft-state context must remain separate from production player ranking.
-6. A player's football ranking should not change simply because a fantasy roster already filled that position.
-7. Roster-aware advice may influence presentation or future recommendation layers without silently rewriting the production board.
-8. Important decisions should be explainable and replayable.
-9. Infrastructure remains replaceable behind contracts.
-10. The full regression suite defines the protected development boundary.
+5. Draft-state context remains separate from production player ranking.
+6. Contextual advice may reorder an advisory view without silently rewriting the authoritative board.
+7. Important decisions should be explainable and replayable.
+8. Infrastructure remains replaceable behind contracts.
+9. The full regression suite defines the protected development boundary.
 
 ## Quality Baseline
 
 Current verified full-suite checkpoint:
 
 ```text
-869 passed
+878 passed
 ```
 
-This checkpoint includes the production projection-weight path, unified ranking consumers, tested live draft-pool filtering, ownership-aware `DraftBoardState`, roster-needs evaluation, and advisory Draft Assistant integration.
+This checkpoint includes Best Fit service tests, Best Fit view-model tests, live Draft Assistant integration, roster-aware behavior, and the previously protected production ranking/draft functionality.
 
 ## Current Development Direction
 
-The next Draft Assistant milestone is a separate **Best Fit Right Now** advisory layer. It may consider roster need, production rank, tier, Draft Value, and positional scarcity, but it should remain downstream of the authoritative production ranking score.
+The next Draft Assistant milestone is **positional scarcity / tier-drop awareness**: quantify how much worse the next realistic option at a position becomes if the user waits. Scarcity remains advisory-only and will be tested independently before it influences Best Fit explanations or fit scoring.
