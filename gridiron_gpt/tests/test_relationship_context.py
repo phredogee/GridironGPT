@@ -45,7 +45,7 @@ def test_unknown_classification_preserves_all_relationships() -> None:
     assert context.allows("throws_to")
 
 
-def test_first_team_reps_focuses_opportunity_relationships() -> None:
+def test_first_team_reps_adds_opportunity_relationships() -> None:
     context = RelationshipContextPolicy().from_signal(
         make_signal([classification("depth_chart", "first_team_reps")])
     )
@@ -54,11 +54,11 @@ def test_first_team_reps_focuses_opportunity_relationships() -> None:
     assert context.allows("competes_with")
     assert context.allows("target_competitor")
     assert context.allows("depth_chart_competitor")
-    assert not context.allows("throws_to")
-    assert not context.allows("teammate")
+    assert context.allows("throws_to")
+    assert context.allows("teammate")
 
 
-def test_return_to_practice_focuses_competition_relationships() -> None:
+def test_return_to_practice_adds_competition_relationships() -> None:
     context = RelationshipContextPolicy().from_signal(
         make_signal([classification("injury", "returned_to_practice")])
     )
@@ -67,7 +67,8 @@ def test_return_to_practice_focuses_competition_relationships() -> None:
     assert context.allows("competes_with")
     assert context.allows("depth_chart_competitor")
     assert not context.allows("target_competitor")
-    assert not context.allows("throws_to")
+    assert context.allows("throws_to")
+    assert context.allows("teammate")
 
 
 def test_compound_classifications_union_relationship_context() -> None:
@@ -85,8 +86,8 @@ def test_compound_classifications_union_relationship_context() -> None:
     assert context.allows("competes_with")
     assert context.allows("depth_chart_competitor")
     assert context.allows("target_competitor")
-    assert not context.allows("throws_to")
-    assert not context.allows("teammate")
+    assert context.allows("throws_to")
+    assert context.allows("teammate")
 
 
 def test_relationship_type_normalization() -> None:
