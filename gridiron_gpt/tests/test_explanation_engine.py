@@ -127,3 +127,70 @@ def test_propagated_impact_explanation_includes_relationship_context():
     assert "propagated impact" in summary
     assert "1-hop propagation" in summary
     assert "weight +0.767" in summary
+
+
+def test_explain_surfaces_compound_event_developments_without_rescoring() -> None:
+    signal = make_signal()
+    signal.evidence["event_classifications"] = [
+        {
+            "category": "injury",
+            "subtype": "returned_to_practice",
+            "polarity": "positive",
+            "confidence": 0.95,
+            "impact": 0.8,
+            "matched_rules": ["returned to practice"],
+        },
+        {
+            "category": "depth_chart",
+            "subtype": "first_team_reps",
+            "polarity": "positive",
+            "confidence": 0.93,
+            "impact": 0.7,
+            "matched_rules": ["first-team reps"],
+        },
+    ]
+
+    original_impact = signal.impact_score
+    explanation = ExplanationEngine().explain(
+        signal=signal,
+        impacts=[make_impact()],
+        recommendations=[make_recommendation()],
+        predictions=[make_prediction()],
+    )
+
+    assert (
+        "Football developments detected: injury.returned_to_practice, "
+        "depth_chart.first_team_reps."
+    ) in explanation
+    assert signal.impact_score == original_impact
+
+
+def test_compound_developments_flow_into_structured_evidence_reasons() -> None:
+    signal = make_signal()
+    signal.evidence["event_classifications"] = [
+        {
+            "category": "performance",
+            "subtype": "coach_praise",
+        },
+        {
+            "category": "depth_chart",
+            "subtype": "first_team_reps",
+        },
+    ]
+
+    chain = ExplanationEngine().build_evidence_chains(
+        signal=signal,
+        impacts=[make_impact()],
+        predictions=[],
+        recommendations=[make_recommendation()],
+    )[0]
+
+    understand_step = next(
+        step for step in chain.steps if step.faculty == "Understand"
+    )
+    assert "Detected football development: performance.coach_praise." in (
+        understand_step.reasons
+    )
+    assert "Detected football development: depth_chart.first_team_reps." in (
+        understand_step.reasons
+    )

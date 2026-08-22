@@ -5,6 +5,7 @@ from gridiron_cortex.models.raw_event import RawEvent
 from gridiron_cortex.models.source_evidence import SourceEvidence
 from gridiron_cortex.understand.signal_processor import SignalProcessor
 
+
 def make_event(
     headline: str = "Tank Dell returns to practice.",
     source: str = "ESPN",
@@ -14,9 +15,11 @@ def make_event(
         source=source,
     )
 
+
 @pytest.fixture
 def processor():
     return SignalProcessor()
+
 
 def test_signal_without_canonical_event_defaults_to_one_source(
     processor,
@@ -31,6 +34,7 @@ def test_signal_without_canonical_event_defaults_to_one_source(
     assert signal.source_count == 1
     assert signal.sources == ["ESPN"]
     assert signal.corroboration_confidence == signal.confidence
+
 
 def test_signal_uses_canonical_event_sources(
     processor,
@@ -77,7 +81,6 @@ def test_signal_uses_canonical_event_sources(
         ],
     )
 
-
     signal = processor.process(
         event,
         entities=[],
@@ -90,6 +93,7 @@ def test_signal_uses_canonical_event_sources(
         "NFL.com",
         "NBC Sports",
     ]
+
 
 def test_signal_uses_canonical_confidence(
     processor,
@@ -126,6 +130,7 @@ def test_signal_uses_canonical_confidence(
 
     assert signal.confidence != signal.corroboration_confidence
     assert signal.corroboration_confidence == 0.99
+
 
 def test_canonical_event_does_not_change_signal_interpretation(
     processor,
@@ -169,3 +174,47 @@ def test_canonical_event_does_not_change_signal_interpretation(
     assert with_canonical.impact_score == without_canonical.impact_score
     assert with_canonical.positive_hits == without_canonical.positive_hits
     assert with_canonical.negative_hits == without_canonical.negative_hits
+
+
+def test_compound_event_preserves_all_classifications_in_one_signal(
+    processor,
+):
+    event = RawEvent(
+        headline="Receiver returned to practice and is working with the starters",
+        summary="The receiver impressed the coaching staff.",
+        source="RotoWire",
+        player="Example Receiver",
+    )
+
+    signal = processor.process(event, entities=[])
+
+    assert signal.evidence["event_classification"]["subtype"] == (
+        "returned_to_practice"
+    )
+    assert [
+        (item["category"], item["subtype"])
+        for item in signal.evidence["event_classifications"]
+    ] == [
+        ("injury", "returned_to_practice"),
+        ("depth_chart", "first_team_reps"),
+        ("performance", "coach_praise"),
+    ]
+    assert signal.headline == event.headline
+
+
+def test_single_classification_keeps_primary_and_collection_evidence(
+    processor,
+):
+    event = RawEvent(
+        headline="Player placed on injured reserve",
+        source="ESPN",
+        player="Example Player",
+    )
+
+    signal = processor.process(event, entities=[])
+
+    assert signal.evidence["event_classification"]["subtype"] == "injured_reserve"
+    assert len(signal.evidence["event_classifications"]) == 1
+    assert signal.evidence["event_classifications"][0] == (
+        signal.evidence["event_classification"]
+    )

@@ -301,3 +301,105 @@ def test_unknown_relationship_preserves_legacy_behavior(
 
     assert len(propagated) == 1
     assert propagated[0].impact_score == 1.0
+
+
+def test_compound_classifications_do_not_inflate_direct_impact() -> None:
+    engine = RelationshipEngine()
+    entity = Entity(
+        entity_type="player",
+        name="Example Receiver",
+        team="TST",
+    )
+    signal = Signal(
+        headline="Receiver returns and works with the first team",
+        entities=[entity],
+        sentiment="positive",
+        impact_score=0.8,
+        evidence={
+            "event_classifications": [
+                {
+                    "category": "injury",
+                    "subtype": "returned_to_practice",
+                },
+                {
+                    "category": "depth_chart",
+                    "subtype": "first_team_reps",
+                },
+                {
+                    "category": "performance",
+                    "subtype": "coach_praise",
+                },
+            ]
+        },
+    )
+
+    impacts = engine.propagate(signal)
+    direct = [
+        impact for impact in impacts if impact.impact_type == "direct"
+    ]
+
+    assert len(direct) == 1
+    assert direct[0].entity_name == "Example Receiver"
+    assert direct[0].impact_score == 0.8
+
+
+def test_classification_count_does_not_change_direct_impact() -> None:
+    engine = RelationshipEngine()
+    entity = Entity(
+        entity_type="player",
+        name="Example Receiver",
+        team="TST",
+    )
+
+    one_classification = Signal(
+        headline="Receiver returns to practice",
+        entities=[entity],
+        sentiment="positive",
+        impact_score=0.8,
+        evidence={
+            "event_classifications": [
+                {
+                    "category": "injury",
+                    "subtype": "returned_to_practice",
+                }
+            ]
+        },
+    )
+    three_classifications = Signal(
+        headline="Receiver returns and works with the first team",
+        entities=[entity],
+        sentiment="positive",
+        impact_score=0.8,
+        evidence={
+            "event_classifications": [
+                {
+                    "category": "injury",
+                    "subtype": "returned_to_practice",
+                },
+                {
+                    "category": "depth_chart",
+                    "subtype": "first_team_reps",
+                },
+                {
+                    "category": "performance",
+                    "subtype": "coach_praise",
+                },
+            ]
+        },
+    )
+
+    one_direct = [
+        impact
+        for impact in engine.propagate(one_classification)
+        if impact.impact_type == "direct"
+    ]
+    three_direct = [
+        impact
+        for impact in engine.propagate(three_classifications)
+        if impact.impact_type == "direct"
+    ]
+
+    assert len(one_direct) == 1
+    assert len(three_direct) == 1
+    assert one_direct[0].impact_score == 0.8
+    assert three_direct[0].impact_score == 0.8

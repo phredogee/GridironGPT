@@ -20,9 +20,29 @@ def normalize_event_text(text: str) -> str:
 class EventClassifier:
     """
     Deterministic rule-based classifier for football events.
+
+    ``classify`` preserves the original single-best-match contract used by
+    existing Cortex callers. ``classify_all`` exposes every distinct signal
+    found in the event so richer consumers can reason over compound news.
     """
 
     def classify(self, event: RawEvent) -> EventClassification:
+        matches = self.classify_all(event)
+
+        if not matches:
+            return self._unknown_classification()
+
+        return matches[0]
+
+    def classify_all(self, event: RawEvent) -> list[EventClassification]:
+        """
+        Return all distinct classifications matched by an event.
+
+        Results use the same deterministic ranking as ``classify`` so the
+        first item is always the legacy best classification. Multiple phrases
+        belonging to the same category/subtype rule are represented by one
+        EventClassification with all matched phrases attached.
+        """
         searchable_text = self._build_searchable_text(event)
         matches: list[EventClassification] = []
 
@@ -50,19 +70,6 @@ class EventClassifier:
                 )
             )
 
-        if not matches:
-            return EventClassification(
-                category="unknown",
-                subtype="unclassified",
-                polarity="neutral",
-                impact=0.0,
-                confidence=0.0,
-                matched_rules=[],
-                metadata={
-                    "classifier": "deterministic_rules",
-                },
-            )
-
         matches.sort(
             key=lambda classification: (
                 classification.confidence,
@@ -77,7 +84,21 @@ class EventClassifier:
             reverse=True,
         )
 
-        return matches[0]
+        return matches
+
+    @staticmethod
+    def _unknown_classification() -> EventClassification:
+        return EventClassification(
+            category="unknown",
+            subtype="unclassified",
+            polarity="neutral",
+            impact=0.0,
+            confidence=0.0,
+            matched_rules=[],
+            metadata={
+                "classifier": "deterministic_rules",
+            },
+        )
 
     @staticmethod
     def _build_searchable_text(event: RawEvent) -> str:

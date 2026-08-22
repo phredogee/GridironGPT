@@ -38,6 +38,7 @@ class ExplanationEngine:
         methods = evidence.get("methods") or []
         classification = evidence.get("classification")
         reasons = evidence.get("reasons") or []
+        developments = self._event_developments(signal)
 
         if evidence_count:
             lines.append(f"Evidence count: {evidence_count}.")
@@ -50,6 +51,13 @@ class ExplanationEngine:
 
         if classification:
             lines.append(f"Trend classification: {classification}.")
+
+        if developments:
+            lines.append(
+                "Football developments detected: "
+                + ", ".join(developments)
+                + "."
+            )
 
         for reason in reasons[:3]:
             lines.append(f"Evidence: {reason}")
@@ -156,13 +164,36 @@ class ExplanationEngine:
             graphs.append(EvidenceGraph(entity_name=recommendation.entity_name, action=recommendation.action, confidence=recommendation.confidence, root_node_ids=[observe_id], terminal_node_ids=[decide_id], nodes=nodes))
         return graphs
 
-    @staticmethod
-    def _signal_reasons(signal) -> list[str]:
+    @classmethod
+    def _signal_reasons(cls, signal) -> list[str]:
         evidence = signal.evidence or {}
         reasons = list(evidence.get("reasons") or [])
+        reasons.extend(
+            f"Detected football development: {development}."
+            for development in cls._event_developments(signal)
+        )
         reasons.extend(f"Positive indicator: {hit}" for hit in signal.positive_hits)
         reasons.extend(f"Negative indicator: {hit}" for hit in signal.negative_hits)
         return list(dict.fromkeys(reasons))
+
+    @staticmethod
+    def _event_developments(signal) -> list[str]:
+        evidence = signal.evidence or {}
+        classifications = evidence.get("event_classifications") or []
+        developments = []
+
+        for item in classifications:
+            if not isinstance(item, dict):
+                continue
+            category = str(item.get("category") or "").strip()
+            subtype = str(item.get("subtype") or "").strip()
+            if not category or not subtype:
+                continue
+            developments.append(
+                f"{category}.{subtype}"
+            )
+
+        return list(dict.fromkeys(developments))
 
     @staticmethod
     def _impact_summary(impact) -> str:

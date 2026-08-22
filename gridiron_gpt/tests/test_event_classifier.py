@@ -100,6 +100,7 @@ def test_more_specific_rule_wins() -> None:
     assert result.subtype == "activated"
     assert result.confidence == 0.97
 
+
 def test_classifies_full_practice() -> None:
     classifier = EventClassifier()
 
@@ -114,6 +115,7 @@ def test_classifies_full_practice() -> None:
     assert result.category == "injury"
     assert result.subtype == "full_practice"
     assert result.polarity == "positive"
+
 
 def test_classifies_limited_practice() -> None:
     classifier = EventClassifier()
@@ -130,6 +132,7 @@ def test_classifies_limited_practice() -> None:
     assert result.subtype == "limited_practice"
     assert result.polarity == "monitor"
 
+
 def test_classifies_pup() -> None:
     classifier = EventClassifier()
 
@@ -145,6 +148,7 @@ def test_classifies_pup() -> None:
     assert result.subtype == "placed_on_pup"
     assert result.polarity == "negative"
 
+
 def test_classifies_game_time_decision() -> None:
     classifier = EventClassifier()
 
@@ -158,6 +162,7 @@ def test_classifies_game_time_decision() -> None:
 
     assert result.category == "injury"
     assert result.subtype == "game_time_decision"
+
 
 def test_classifies_from_summary() -> None:
     classifier = EventClassifier()
@@ -174,3 +179,49 @@ def test_classifies_from_summary() -> None:
     assert result.category == "injury"
     assert result.subtype == "full_practice"
     assert result.polarity == "positive"
+
+
+def test_classify_all_returns_compound_signals() -> None:
+    classifier = EventClassifier()
+
+    event = RawEvent(
+        headline="Receiver returned to practice and is working with the starters",
+        summary="The receiver is standing out in camp and impressed the coaching staff.",
+        source="RotoWire",
+        player="Example Receiver",
+    )
+
+    results = classifier.classify_all(event)
+    identities = [(result.category, result.subtype) for result in results]
+
+    assert identities == [
+        ("injury", "returned_to_practice"),
+        ("depth_chart", "first_team_reps"),
+        ("performance", "coach_praise"),
+    ]
+
+
+def test_classify_all_returns_empty_for_unmatched_event() -> None:
+    classifier = EventClassifier()
+
+    event = RawEvent(
+        headline="Team announces updated stadium parking policy",
+        source="Team Site",
+    )
+
+    assert classifier.classify_all(event) == []
+
+
+def test_classify_remains_compatible_with_multi_signal_events() -> None:
+    classifier = EventClassifier()
+
+    event = RawEvent(
+        headline="Player returned to practice and is working with the starters",
+        source="NFL",
+        player="Example Player",
+    )
+
+    result = classifier.classify(event)
+
+    assert result.category == "injury"
+    assert result.subtype == "returned_to_practice"
