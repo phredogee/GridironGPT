@@ -1,5 +1,27 @@
 # Changelog
 
+## v1.1 Development - 2026-08-22
+
+### Added
+- Production `scripts/run_daily_ingestion.py` command for scheduler-friendly NFL news ingestion through the existing Cortex runtime path.
+- Ingestion freshness evaluator with fresh, stale, failed, and missing states and a 26-hour daily freshness window.
+- Streamlit ingestion freshness metrics for last update time, update age, and stale/failed operational warnings.
+- Dedicated `cortex_ingestion_runs` Supabase persistence contract for durable operational history without changing the legacy article-ingestion table.
+- `SupabaseIngestionRunRepository` and explicit ingestion-run repository factory.
+- Environment-controlled persistence via `GRIDIRON_INGESTION_RUN_PERSISTENCE=jsonl|supabase`; local development defaults to JSONL while production must explicitly select Supabase.
+- GitHub Actions `Daily NFL Ingestion` workflow prepared for daily and manual execution with Supabase-backed persistence.
+
+### Improved
+- Streamlit Ingestion Operations now reads from the same configured ingestion-run repository as the production ingestion runtime.
+- Production persistence configuration fails on unsupported modes rather than silently falling back to ephemeral local storage.
+- Daily workflow validates required Supabase secrets before attempting ingestion and protects against overlapping scheduled runs.
+
+### Validated
+- Manual production ingestion successfully retrieved 28 records from ESPN NFL and RotoWire NFL, normalized all 28, and completed with zero provider or processor failures.
+- Supabase-backed end-to-end run `bae87553-00f7-4a21-998d-02474f33fd91` persisted 28 normalized events, including 1 newly accepted Cortex event and 27 correctly ignored duplicates.
+- Streamlit freshness/status UI was manually smoke-tested against the production ingestion flow.
+- 894 tests passing after durable persistence, runtime repository selection, Streamlit reader wiring, and scheduler preparation.
+
 ## v1.1 Development - 2026-08-12
 
 ### Added
