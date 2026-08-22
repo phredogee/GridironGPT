@@ -14,15 +14,47 @@ Football-specific facts remain outside the reusable Cortex core until applicatio
 4. Records are normalized into RawEvents.
 5. Ingestion forwards each event to the configured Cortex processor.
 6. Cortex fingerprints the event and rejects previously processed evidence.
-7. New evidence moves through entity resolution, signal processing, relationship propagation, scoring, recommendation, prediction, and explanation stages.
+7. New evidence moves through entity resolution, multi-signal classification, Signal construction, relationship propagation, scoring, recommendation, prediction, and explanation stages.
 8. Cortex state and event-bus history are persisted for restart recovery and replay.
 9. Ingestion-run diagnostics are persisted independently for operational observability.
+
+### Multi-Signal Classification Boundary
+
+EventClassifier supports two contracts:
+
+- `classify(event)` preserves the legacy single-best classification used by existing callers.
+- `classify_all(event)` returns all distinct structured football classifications detected in the same RawEvent, ordered so the first result remains the legacy best classification.
+
+SignalProcessor still creates exactly one Signal per RawEvent. The primary classification is stored under `event_classification`, while the complete collection is stored under `event_classifications`. This preserves compound developments such as return-to-practice plus first-team reps plus coach praise without creating multiple source Signals.
+
+Secondary classifications are evidence and context, not independent direct score contributions. The source Signal retains one impact magnitude and one direct player impact.
+
+### Context-Aware Relationship Propagation
+
+RelationshipContextPolicy derives relationship relevance from the Signal's structured classifications. Context-sensitive classifications can add opportunity-oriented graph relationships such as `backs_up`, `competes_with`, `target_competitor`, and `depth_chart_competitor` while preserving normal football dependency paths such as `throws_to` and `teammate`.
+
+RelationshipEngine applies the context before downstream propagation. PropagationPlanner then uses its existing relationship strength, confidence, hop-decay, and semantic multiplier calculations. Classification count does not modify source impact magnitude.
+
+```text
+RawEvent
+  -> classify_all()
+  -> one Signal
+       |- primary classification
+       |- compound classification evidence
+       v
+RelationshipContextPolicy
+  -> eligible graph paths
+  -> existing propagation math
+  -> one direct impact + contextual propagated impacts
+```
+
+Regression guards verify that a Signal with impact `0.8` remains a single `0.8` direct impact whether one or several classifications are attached.
 
 ### Daily Production Refresh
 
 `scripts/run_daily_ingestion.py` is the scheduler-facing production entry point. It composes the existing unified ingestion path rather than introducing a parallel pipeline. A healthy run requires zero provider failures and zero Cortex processor failures; otherwise the command exits non-zero so schedulers can surface the failure.
 
-The prepared GitHub Actions workflow runs the command daily and also supports manual dispatch. Production execution explicitly sets `GRIDIRON_INGESTION_RUN_PERSISTENCE=supabase` and requires `SUPABASE_URL` plus `SUPABASE_SERVICE_ROLE_KEY`.
+The GitHub Actions workflow runs the command daily and also supports manual dispatch. Production execution explicitly sets `GRIDIRON_INGESTION_RUN_PERSISTENCE=supabase` and requires `SUPABASE_URL` plus `SUPABASE_SERVICE_ROLE_KEY`.
 
 ## Ingestion Freshness and Operational Persistence
 
@@ -88,6 +120,8 @@ Football context is optional enrichment. Missing player state, schedule state, o
 ## Deduplication Contract
 
 Ingestion may normalize the same source evidence on successive scheduled runs. Cortex remains the authority for determining whether evidence is new. Ingestion captures the Cortex result and reports accepted events separately from duplicates ignored.
+
+Multi-signal classification does not weaken this contract: one source RawEvent remains one deduplicated event and one Signal even when several football developments are extracted from its text.
 
 A verified Supabase-backed production run on 2026-08-22 processed 28 normalized records: 1 was accepted as new Cortex evidence, 27 were correctly ignored as duplicates, and no provider or processor failures occurred.
 
