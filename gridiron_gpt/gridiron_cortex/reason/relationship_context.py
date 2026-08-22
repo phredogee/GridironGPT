@@ -5,9 +5,10 @@ from dataclasses import dataclass
 class RelationshipContext:
     """Contextual relationship policy derived from signal evidence.
 
-    The policy controls which relationship types are relevant for propagation.
-    It never changes the source signal magnitude, so secondary classifications
-    cannot create additional direct scoring contributions.
+    Context-sensitive relationships can be selected explicitly without
+    suppressing ordinary supportive graph relationships. The policy never
+    changes the source signal magnitude, so secondary classifications cannot
+    create additional direct scoring contributions.
     """
 
     allowed_relationship_types: frozenset[str] | None = None
@@ -26,6 +27,17 @@ class RelationshipContext:
 
 class RelationshipContextPolicy:
     """Map structured event classifications to relevant graph relationships."""
+
+    # These relationships represent ordinary football dependency paths and
+    # remain eligible when contextual filtering is active. This preserves
+    # existing graph reasoning such as QB -> receiver while classifications
+    # add opportunity-specific paths rather than replacing the graph.
+    BASE_RELATIONSHIPS = {
+        "throws_to",
+        "teammate",
+        "blocks_for",
+        "protected_by",
+    }
 
     CLASSIFICATION_RELATIONSHIPS = {
         ("depth_chart", "first_team_reps"): {
@@ -73,7 +85,7 @@ class RelationshipContextPolicy:
         if not classifications:
             return RelationshipContext()
 
-        allowed: set[str] = set()
+        contextual: set[str] = set()
         has_context_rule = False
 
         for classification in classifications:
@@ -85,11 +97,13 @@ class RelationshipContextPolicy:
             if relationship_types is None:
                 continue
             has_context_rule = True
-            allowed.update(relationship_types)
+            contextual.update(relationship_types)
 
         if not has_context_rule:
             return RelationshipContext()
 
         return RelationshipContext(
-            allowed_relationship_types=frozenset(allowed)
+            allowed_relationship_types=frozenset(
+                self.BASE_RELATIONSHIPS | contextual
+            )
         )
