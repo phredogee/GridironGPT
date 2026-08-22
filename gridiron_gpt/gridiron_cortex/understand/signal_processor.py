@@ -45,7 +45,12 @@ class SignalProcessor:
         entities: list[Entity],
         canonical_event: CanonicalEvent | None = None,
     ):
-        classification = self.classifier.classify(event)
+        classifications = self.classifier.classify_all(event)
+        classification = (
+            classifications[0]
+            if classifications
+            else self.classifier.classify(event)
+        )
         headline = event.headline
         headline_lower = headline.casefold()
 
@@ -115,14 +120,13 @@ class SignalProcessor:
             signal_type = event.event_type or "news"
 
         if classification.category != "unknown" and signal_type != "statistics":
-            evidence["event_classification"] = {
-                "category": classification.category,
-                "subtype": classification.subtype,
-                "polarity": classification.polarity,
-                "confidence": classification.confidence,
-                "impact": classification.impact,
-                "matched_rules": classification.matched_rules,
-            }
+            evidence["event_classification"] = self._classification_evidence(
+                classification
+            )
+            evidence["event_classifications"] = [
+                self._classification_evidence(item)
+                for item in classifications
+            ]
 
         if canonical_event is not None:
             source_count = len(canonical_event.sources)
@@ -148,6 +152,17 @@ class SignalProcessor:
             signal_type=signal_type,
             evidence=evidence,
         )
+
+    @staticmethod
+    def _classification_evidence(classification) -> dict:
+        return {
+            "category": classification.category,
+            "subtype": classification.subtype,
+            "polarity": classification.polarity,
+            "confidence": classification.confidence,
+            "impact": classification.impact,
+            "matched_rules": classification.matched_rules,
+        }
 
     @classmethod
     def _find_keyword_hits(cls, headline: str, keywords: list[str]) -> list[str]:
