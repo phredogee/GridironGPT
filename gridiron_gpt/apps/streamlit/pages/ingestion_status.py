@@ -5,6 +5,7 @@ from typing import Any
 
 import streamlit as st
 
+from gridiron_gpt.ingestion.freshness import evaluate_ingestion_freshness
 from gridiron_gpt.ingestion.services.ingestion_run_repository import (
     JsonlIngestionRunRepository,
 )
@@ -18,6 +19,19 @@ def _format_timestamp(value: str | None) -> str:
         return parsed.strftime("%Y-%m-%d %H:%M:%S UTC")
     except ValueError:
         return value
+
+
+def _format_age(seconds: float | None) -> str:
+    if seconds is None:
+        return "—"
+    minutes = max(0, int(seconds // 60))
+    if minutes < 60:
+        return f"{minutes}m ago"
+    hours, remainder = divmod(minutes, 60)
+    if hours < 48:
+        return f"{hours}h {remainder}m ago"
+    days, hours = divmod(hours, 24)
+    return f"{days}d {hours}h ago"
 
 
 def _status_label(status: str | None) -> str:
@@ -57,24 +71,43 @@ def _render_provider_diagnostic(item: dict[str, Any]) -> None:
 def render_ingestion_status(
     repository: JsonlIngestionRunRepository | None = None,
 ) -> None:
-    """Render persisted ingestion and Cortex-boundary observability information."""
+    """Render persisted ingestion, freshness, and Cortex-boundary observability."""
 
     repository = repository or JsonlIngestionRunRepository()
     runs = repository.load_all()
+    freshness = evaluate_ingestion_freshness(runs)
 
     st.markdown("### Ingestion Operations")
     st.caption(
-        "Provider health, reliability, persisted run history, and Cortex processing outcomes."
+        "Provider health, daily data freshness, persisted run history, and Cortex processing outcomes."
     )
 
-    if not runs:
+    freshness_cols = st.columns(3)
+    freshness_cols[0].metric("Data Freshness", freshness.label)
+    freshness_cols[1].metric(
+        "Last Updated",
+        _format_timestamp(freshness.completed_at.isoformat() if freshness.completed_at else None),
+    )
+    freshness_cols[2].metric(
+        "Update Age",
+        _format_age(freshness.age.total_seconds() if freshness.age is not None else None),
+    )
+
+    if freshness.status == "stale":
+        st.warning("The latest successful ingestion run is older than the daily freshness window.")
+    elif freshness.status == "failed":
+        st.error("The most recent ingestion run failed or completed with provider failures.")
+    elif freshness.status == "missing":
         st.info(
             "No persisted ingestion runs are available yet. "
             "Run the unified ingestion service to populate operational history."
         )
         return
 
-    latest = runs[-1]
+    latest = max(
+        runs,
+        key=lambda run: str(run.get("completed_at") or ""),
+    )
     success = bool(latest.get("success", False))
 
     st.markdown("### Latest Run")
@@ -116,7 +149,11 @@ def render_ingestion_status(
         st.info("No provider diagnostics were recorded for the latest run.")
 
     st.markdown("### Recent Run History")
-    recent = list(reversed(runs[-10:]))
+    recent = sorted(
+        runs,
+        key=lambda run: str(run.get("completed_at") or ""),
+        reverse=True,
+    )[:10]
     rows = []
     for run in recent:
         rows.append(
