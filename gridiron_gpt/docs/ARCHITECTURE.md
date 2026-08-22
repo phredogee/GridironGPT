@@ -2,119 +2,43 @@
 
 ## System Boundary
 
-GridironGPT is the football product layer. **Gridiron Cortex** is the reusable intelligence engine.
-
-### GridironGPT owns
-- NFL provider integration and source translation.
-- Football-specific data and league concepts.
-- Fantasy ranking inputs and draft-day workflows.
-- Runtime composition.
-- Streamlit presentation.
-- Commissioner features.
-
-### Cortex owns
-- `RawEvent` intelligence processing.
-- Entity resolution and signal interpretation.
-- Relationship reasoning and propagation.
-- Multidimensional scorecards.
-- Recommendation confidence and explanations.
-- Event-bus decision history.
-- Persistence and Replay of Cortex decisions.
-
-Providers do not call engine internals. They produce source records that the shared ingestion layer normalizes into the Cortex input contract.
+GridironGPT is the football product layer. **Gridiron Cortex** is the reusable intelligence engine. Cortex owns reusable reasoning, scorecards, recommendation confidence, explanations, event history, persistence, and Replay. GridironGPT owns NFL integrations, football-domain concepts, fantasy ranking inputs, draft workflows, runtime composition, Streamlit presentation, and commissioner features.
 
 ## Runtime Architecture
 
 ```text
-NFL Sources
-    ↓
-Provider Adapters
-    ↓
-IngestionService
-    ↓
-RawEvent[]
-    ↓
-CortexFacade.process_event()
-    ↓
-Resolve → Interpret → Propagate → Score
-    ↓
-Scorecards + Recommendations + Explanations
-    ↓
-Persistent Event History / Replay
-    ↓
-GridironGPT product services + Streamlit
+NFL Sources → Provider Adapters → IngestionService → RawEvent[]
+    → CortexFacade.process_event()
+    → Resolve → Interpret → Propagate → Score
+    → Scorecards + Recommendations + Explanations
+    → Persistent Event History / Replay
+    → GridironGPT product services + Streamlit
 ```
 
 Downstream Cortex failures are fail-open at the ingestion boundary so a healthy provider fetch is not retried because intelligence processing failed.
 
 ## Production Fantasy Ranking Architecture
 
-The production board combines independent evidence sources. Missing evidence is unavailable evidence rather than negative evidence, and available weights are renormalized.
+Independent evidence sources feed one authoritative production scorer. Missing evidence is unavailable rather than negative, and available weights are renormalized.
 
 ```text
-Historical fantasy production ─┐
-Current ADP / market ──────────┤
-Recent role / usage ───────────┤
-Cortex player intelligence ────┤
-Canonical availability ────────┤→ weighted scorer
-Projected fantasy production ──┘        ↓
-                                  anchor validation
-                                         ↓
-                               sorted production board
-                                         ↓
-                         tiers / value / explanations
+Historical production ─┐
+Current ADP / market ───┤
+Recent role / usage ────┤
+Cortex intelligence ────┤→ weighted scorer → anchor validation → production board
+Availability ────────────┤                                      ↓
+Projected production ────┘                              tiers / value / explanations
 ```
 
-### Ranking evidence
-- **Baseline** — normalized historical fantasy production.
-- **Market** — current-season ADP/market evidence.
-- **Role** — recent usage and opportunity evidence.
-- **Cortex** — latest player intelligence.
-- **Availability** — canonical football-state availability.
-- **Projection** — normalized projected fantasy production at its configured production weight.
-
-Projected points and projected PPG are also exposed directly in the UI and exports. Projection influence is part of the production ranking model; presentation code must not apply a second projection adjustment.
-
-### Anchor-evidence rule
-
-Secondary context cannot manufacture a meaningful fantasy ranking by itself. A player must have primary ranking evidence such as historical production or current market evidence before contextual signals can influence the final score.
+Projection influence is part of the production ranking model at its configured weight; presentation code must not apply a second production adjustment.
 
 ## Single Authoritative Ranking Source
 
-The production `FantasyRankingDataService` / ranking population is the authoritative source for player order across the current UI and CLI paths. Legacy competing ranking formulas must not be reintroduced as alternate definitions of GridironGPT ranking.
-
-```text
-Production ranking population
-        ↓
-Overall / position views
-        ↓
-Tier + market metadata
-        ↓
-Best Available / Best Value / CLI presentation
-```
+`FantasyRankingDataService` and its ranking population are authoritative for current UI and CLI ordering. Best Available preserves this order. Best Value derives market opportunity from it. Advisory services consume it downstream.
 
 ## Live Draft-State Architecture
 
-Live draft behavior is intentionally separated from player scoring.
-
-### DraftBoardState
-
-`DraftBoardState` owns ordered draft state and ownership.
-
-```text
-DraftBoardState
-  picks[]
-    ├─ player_id
-    └─ ownership
-         ├─ OTHER_TEAM
-         └─ MY_TEAM
-```
-
-It preserves pick order for Undo Last behavior while exposing both `drafted_ids` and `my_team_ids`. Restore and reset operate on this state. Streamlit session state stores the live board state for the current session.
-
-### FantasyDraftPoolService
-
-Draft-pool filtering is a pure downstream service:
+`DraftBoardState` owns ordered pick history and `MY_TEAM` / `OTHER_TEAM` ownership. `FantasyDraftPoolService` removes drafted players without rescoring remaining players.
 
 ```text
 production population + drafted IDs
@@ -125,36 +49,26 @@ production population + drafted IDs
       └─ best_value_scores
 ```
 
-The service removes drafted players but does not rescore the remaining population. Best Available preserves production ranking order. Best Value preserves the existing positive Draft Value calculation and ordering.
+`FantasyRosterNeedsService` evaluates My Team separately with starter-oriented defaults of QB 1, RB 2, WR 2, and TE 1. `FantasyRosterAdviceService` converts deficits into presentation-safe summaries and badges.
 
-### Roster Needs
+## Best Fit Right Now
 
-`FantasyRosterNeedsService` evaluates **My Team** separately from the league draft pool. Current starter-oriented defaults are:
-
-```text
-QB 1
-RB 2
-WR 2
-TE 1
-```
-
-The targets are configurable and report current count, target, and remaining deficit. Extra players never create a negative deficit.
-
-### Advisory Layer
-
-`FantasyRosterAdviceService` converts roster deficits into presentation-safe advice such as:
+`FantasyBestFitService` is a contextual recommendation layer downstream of production scoring. It consumes available candidates, My Team roster context, and market views. Its initial conservative heuristic keeps production ranking quality dominant while allowing modest active-roster-need and capped Draft Value adjustments.
 
 ```text
-Roster Needs: WR (1) · TE (1)
-Fills WR need
-Fills TE need
+production ranking score ─────────────┐
+active roster need ───────────────────┤→ FantasyBestFitService
+Draft Value / market opportunity ─────┘          ↓
+                                         advisory fit score
+                                                ↓
+                                     FantasyBestFitView
+                                                ↓
+                                   reason / Draft Assistant
 ```
 
-This layer is deliberately downstream of scoring.
+`FantasyBestFitView` converts recommendations into UI-ready explanations such as `fills active roster need` and `positive draft value`.
 
-**Invariant:** roster state does not modify production `ranking_score`, Best Available order, or Best Value order.
-
-This protects a key architectural distinction: a player can remain highly ranked while being a poor fit for a specific roster at a specific moment.
+**Invariant:** Best Fit may reorder its own advisory list, but it does not mutate `ranking_score`, Best Available order, or Best Value order.
 
 ## Draft Assistant Data Flow
 
@@ -163,77 +77,44 @@ Production Rankings
         ↓
 Frozen Draft Board
         ↓
-DraftBoardState ───────────────┐
-        ↓                      │
-FantasyDraftPoolService        │
-  ├─ Best Available            │
-  └─ Best Value                │
-                               │
-My Team IDs ───────────────────┘
+DraftBoardState ──────────────────────┐
+        ↓                             │
+FantasyDraftPoolService               │
+  ├─ Best Available                   │
+  └─ Best Value                       │
+                                      │
+My Team IDs ──────────────────────────┘
         ↓
-FantasyRosterNeedsService
+Roster Needs / Roster Advice
         ↓
-FantasyRosterAdviceService
+Best Fit Right Now
         ↓
 Draft Assistant UI
 ```
 
-The next planned layer, **Best Fit Right Now**, should sit beneath the Draft Assistant as an advisory recommendation service rather than rewriting the production ranking model.
+The next planned advisory input is **positional scarcity / tier-drop awareness**. It should quantify the cost of waiting at a position without becoming a second production ranking engine.
 
 ## Ranking Explanations and Market Views
 
-`FantasyRankingExplanationService` explains a score that already exists; it does not rescore the player. Tier and market services derive position rank, tier, ADP context, and Draft Value from the production population.
-
-Draft Value remains conceptually:
-
-```text
-consensus ADP - production overall rank
-```
-
-Because production overall rank already includes the configured ranking evidence, Draft Value must not independently reapply those inputs.
+Ranking explanations explain an existing score rather than rescoring it. Tier and market services derive position rank, tier, ADP context, and Draft Value from the production population. Draft Value remains conceptually `consensus ADP - production overall rank`.
 
 ## Persistence and Replay
 
-Core Cortex persistence uses repository-backed JSON/JSONL implementations. Important artifacts include event history, player scorecards, deduplication state, score history, and ingestion-run observability.
-
-Replay reads persisted decision history and reconstructs a prior decision; it does not rerun the original article through Cortex.
-
-## Presentation Architecture
-
-```text
-Cortex/domain services
-        ↓
-presentation/advisory services
-        ↓
-reusable Streamlit components/pages
-```
-
-Presentation code may format, filter, annotate, and explain domain output. It should not become a competing intelligence or ranking engine.
-
-## Commissioner Architecture
-
-Commissioner services remain deterministic football-product services separate from Cortex intelligence scoring. They cover league settings, scheduling, constraints, analytics, exports, playoffs, draft workflows, and league history.
+Core Cortex persistence uses repository-backed JSON/JSONL implementations for event history, player scorecards, deduplication state, score history, and ingestion-run observability. Replay reconstructs persisted decision history rather than rerunning the original source through Cortex.
 
 ## Extension Rules
 
-### New ranking evidence
-Normalize the source, preserve provenance, and add it through the production scorer rather than directly changing final rank order.
-
-### New draft advice
-Consume production ranking output plus draft/roster context. Keep the advice layer separate from `ranking_score` unless a deliberate scoring-model change is explicitly tested and approved.
-
-### New persistence backend
-Implement repository contracts without changing scoring/reasoning consumers.
-
-### New UI surface
-Consume facade/domain/advisory services rather than embedding domain rules directly in Streamlit.
+- New ranking evidence enters through the production scorer with normalization and provenance.
+- New draft advice consumes production output plus contextual state and remains separate from `ranking_score` unless an explicit scoring-model change is tested and approved.
+- New UI surfaces consume domain/advisory services rather than embedding intelligence rules directly in Streamlit.
+- New persistence backends implement repository contracts without changing consumers.
 
 ## Testing Boundary
 
 Current verified full regression checkpoint:
 
 ```text
-869 passed
+878 passed
 ```
 
-The regression suite now covers ingestion/runtime handoff, persistence and Replay, integrated ranking evidence, projection-weight production behavior, tier/value consumers, CLI ranking-source unification, draft-pool filtering, ownership-aware draft state, roster-needs evaluation, and roster-advice presentation semantics.
+The suite covers the established runtime, persistence, ranking, projection, tier/value, draft-state, draft-pool, roster-needs/advice boundaries plus Best Fit service and view-model behavior. Streamlit smoke validation confirms Best Fit responds to My Team context while the production board remains stable.
