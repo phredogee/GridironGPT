@@ -4,6 +4,7 @@ fastapi==0.116.1
 feedparser==6.0.12
 httpx==0.28.1
 lxml==6.0.1
+nflreadpy
 numpy==2.4.2
 openai==2.40.0
 openpyxl==3.1.5
@@ -16,4 +17,5 @@ reportlab==4.4.3
 requests==2.32.5
 rich==14.3.3
 streamlit
+supabase
 uvicorn==0.35.0
