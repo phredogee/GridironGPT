@@ -1,5 +1,27 @@
 # Changelog
 
+## v1.1 Development - 2026-08-22 - Multi-Signal Intelligence
+
+### Added
+- `EventClassifier.classify_all()` for extracting multiple structured football developments from one RawEvent while preserving the legacy single-best `classify()` contract.
+- Signal evidence now stores both the primary `event_classification` and complete `event_classifications` collection.
+- Explanation output and structured evidence chains can surface compound football developments.
+- `RelationshipContextPolicy` for using structured classifications to guide relationship-path relevance during propagation.
+- Context-aware propagation for opportunity-sensitive relationships such as `backs_up`, `competes_with`, `target_competitor`, and `depth_chart_competitor` while preserving normal football graph paths.
+- Regression guards proving that secondary classifications do not create additional direct score contributions.
+
+### Improved
+- Compound reports such as return-to-practice + first-team reps + coach praise now retain all detected developments instead of discarding all but the highest-ranked classification.
+- Relationship propagation now uses secondary classifications as context rather than independent source events.
+- Existing football dependency paths remain available when contextual relationship rules are active.
+
+### Validated
+- One RawEvent still produces one Cortex Signal.
+- A Signal with direct impact `0.8` remains one `0.8` direct impact whether one or three classifications are attached.
+- End-to-end Phase B graph propagation remains intact for normal QB-to-receiver relationships under contextual classification.
+- Full regression suite: 909 passing tests.
+- Feature merged to `main` through PR #6, merge commit `798b8e3052e61597bebac09c2f653f8239297536`.
+
 ## v1.1 Development - 2026-08-22
 
 ### Added
