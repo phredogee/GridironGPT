@@ -5,7 +5,6 @@ from datetime import datetime
 from typing import Any
 
 from gridiron_gpt.ingestion.models.provider_health import ProviderHealthStatus
-from gridiron_gpt.ingestion.models.provider_ingestion_result import ProviderIngestionResult
 
 
 @dataclass(frozen=True)
@@ -18,6 +17,9 @@ class ProviderDiagnostic:
     events_created: int
     error_type: str | None = None
     error_message: str | None = None
+    cortex_events_accepted: int = 0
+    cortex_duplicates_ignored: int = 0
+    processor_failures: int = 0
 
 
 @dataclass(frozen=True)
@@ -32,6 +34,9 @@ class IngestionRunSummary:
     records_received: int
     events_created: int
     diagnostics: list[ProviderDiagnostic] = field(default_factory=list)
+    cortex_events_accepted: int = 0
+    cortex_duplicates_ignored: int = 0
+    processor_failures: int = 0
 
     @property
     def success(self) -> bool:

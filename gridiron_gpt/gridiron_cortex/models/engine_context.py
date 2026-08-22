@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from typing import Any
 
 from gridiron_cortex.evidence.evidence_analyzer import (
     EvidenceAssessment,
@@ -38,6 +39,7 @@ class EngineContext:
     history: list["HistoricalSnapshot"] = field(default_factory=list)
 
     entities: list[Entity] = field(default_factory=list)
+    football_context: dict[str, Any] = field(default_factory=dict)
     signals: list[Signal] = field(default_factory=list)
     impacts: list[Impact] = field(default_factory=list)
     score_updates: list[ScoreUpdate] = field(default_factory=list)

@@ -2,9 +2,36 @@
 
 import click
 import pandas as pd
+
+from gridiron_cortex.remember.json_player_scorecard_repository import JsonPlayerScorecardRepository
 from gridiron_gpt.draft.config import LeagueConfig
-from gridiron_gpt.draft.ranker import build_rankings, get_round_targets
+from gridiron_gpt.draft.espn_adp_loader import EspnAdpLoader
+from gridiron_gpt.draft.fantasy_ranking_cli_adapter import production_rankings_to_cli_frame
+from gridiron_gpt.draft.fantasy_ranking_data_service import FantasyRankingDataService
+from gridiron_gpt.draft.fantasy_ranking_population_service import FantasyRankingPopulationService
+from gridiron_gpt.draft.ranker import get_round_targets
 from gridiron_gpt.feedback import banner, error
+from gridiron_gpt.football_state.repositories.jsonl_player_state_repository import JsonlPlayerStateRepository
+
+
+def _build_production_cli_frame(*, scoring: str, teams: int):
+    population_service = FantasyRankingPopulationService(
+        JsonlPlayerStateRepository(),
+        JsonPlayerScorecardRepository("data/cortex/player_scorecards.jsonl"),
+    )
+    snapshot = FantasyRankingDataService(
+        population_service,
+        adp_source_loaders={"ESPN": EspnAdpLoader(season=2026).load},
+    ).build(scoring=scoring, teams=teams)
+    adp_by_name = {
+        record.player_name: record.consensus_adp
+        for record in snapshot.consensus_adp_by_key.values()
+    }
+    return production_rankings_to_cli_frame(
+        snapshot.population,
+        adp_by_name=adp_by_name,
+        teams=teams,
+    )
 
 
 @click.group()
@@ -14,19 +41,19 @@ def draft():
 
 
 @draft.command()
-@click.option("--position", "-p", default=None, help="Filter by position (QB, RB, WR, TE, K, DEF)")
+@click.option("--position", "-p", default=None, help="Filter by position (QB, RB, WR, TE)")
 @click.option("--top", default=30, show_default=True, type=int, help="Number of players to show")
 @click.option("--scoring", default="ppr", show_default=True,
               type=click.Choice(["ppr", "half_ppr", "standard"]))
 @click.option("--teams", default=12, show_default=True, type=int, help="League size")
 @click.option("--rounds", default=15, show_default=True, type=int, help="Number of draft rounds")
 @click.option("--changes", "changes_path", default="data/offseason_changes.yaml",
-              show_default=True, help="Path to offseason changes YAML")
+              show_default=True, help="Retained for CLI compatibility; production rankings ignore this option")
 def rank(position, top, scoring, teams, rounds, changes_path):
-    """📋 Rank players for the upcoming draft"""
-    config = LeagueConfig(teams=teams, rounds=rounds, scoring=scoring)
+    """📋 Rank players for the upcoming draft using the production ranking engine."""
+    LeagueConfig(teams=teams, rounds=rounds, scoring=scoring)
     try:
-        df = build_rankings(config, changes_path=changes_path)
+        df = _build_production_cli_frame(scoring=scoring, teams=teams)
     except Exception as e:
         error(str(e))
         return
@@ -40,25 +67,15 @@ def rank(position, top, scoring, teams, rounds, changes_path):
     df = df.head(top)
 
     click.echo(f"\n🏆  Draft Rankings — {scoring.upper()}, {teams}-team\n")
-    click.echo(f"  {'#':<4} {'Name':<26} {'Pos':<5} {'Team':<5} {'Hist':>6} {'ADP':>6} {'Score':>7}  Notes")
-    click.echo("  " + "─" * 78)
+    click.echo(f"  {'#':<4} {'Name':<26} {'Pos':<5} {'Team':<5} {'Base':>6} {'ADP':>6} {'Score':>7}")
+    click.echo("  " + "─" * 69)
 
     for _, row in df.iterrows():
-        adp_str = f"{row['adp']:.1f}" if row["adp"] is not None else "—"
-        note_parts = []
-        inj = row.get("injury")
-        if inj and not pd.isna(inj):
-            note_parts.append(f"[{inj}]")
-        note_val = row.get("note")
-        if note_val and not pd.isna(note_val):
-            note_parts.append(str(note_val))
-        mult = row.get("multiplier", 1.0)
-        if mult and mult != 1.0:
-            note_parts.append(f"×{mult:.2f}")
-        note = " ".join(note_parts)
+        adp_str = f"{row['adp']:.1f}" if row["adp"] is not None and not pd.isna(row["adp"]) else "—"
+        base_str = f"{row['hist_score']:.1f}" if not pd.isna(row["hist_score"]) else "—"
         click.echo(
             f"  {int(row['rank']):<4} {row['name']:<26} {row['position']:<5} {row['team']:<5}"
-            f" {row['hist_score']:>6.1f} {adp_str:>6} {row['composite']:>7.1f}  {note}"
+            f" {base_str:>6} {adp_str:>6} {row['composite']:>7.2f}"
         )
     click.echo()
 
@@ -70,9 +87,9 @@ def rank(position, top, scoring, teams, rounds, changes_path):
 @click.option("--scoring", default="ppr", show_default=True,
               type=click.Choice(["ppr", "half_ppr", "standard"]))
 @click.option("--changes", "changes_path", default="data/offseason_changes.yaml",
-              show_default=True, help="Path to offseason changes YAML")
+              show_default=True, help="Retained for CLI compatibility; production rankings ignore this option")
 def strategy(round_num, teams, rounds, scoring, changes_path):
-    """🧠 Draft strategy and top targets for a specific round"""
+    """🧠 Draft strategy and top production-ranked targets for a specific round."""
     config = LeagueConfig(teams=teams, rounds=rounds, scoring=scoring)
     targets, advice = get_round_targets(round_num, config)
 
@@ -85,16 +102,19 @@ def strategy(round_num, teams, rounds, scoring, changes_path):
     click.echo(f"  Advice:   {advice}")
 
     try:
-        df = build_rankings(config, changes_path=changes_path)
+        df = _build_production_cli_frame(scoring=scoring, teams=teams)
         available = df[
             (df["suggested_round"] == round_num) & (df["position"].isin(targets))
         ].head(5)
 
         if not available.empty:
-            click.echo(f"\n  Top available in round {round_num}:")
+            click.echo(f"\n  Top production-ranked targets in round {round_num}:")
             for _, row in available.iterrows():
-                adp_str = f"ADP {row['adp']:.1f}" if row["adp"] is not None else "undrafted"
-                click.echo(f"    #{int(row['rank']):<4} {row['name']:<25} {row['position']:<5} {adp_str}")
+                adp_str = f"ADP {row['adp']:.1f}" if row["adp"] is not None and not pd.isna(row["adp"]) else "ADP —"
+                click.echo(
+                    f"    #{int(row['rank']):<4} {row['name']:<25} {row['position']:<5} "
+                    f"{adp_str}  Score {row['composite']:.2f}"
+                )
     except Exception:
         pass
 
@@ -108,13 +128,13 @@ def strategy(round_num, teams, rounds, scoring, changes_path):
 @click.option("--rounds", default=15, show_default=True, type=int)
 @click.option("--top", default=200, show_default=True, type=int, help="Max players to show")
 @click.option("--changes", "changes_path", default="data/offseason_changes.yaml",
-              show_default=True, help="Path to offseason changes YAML")
+              show_default=True, help="Retained for CLI compatibility; production rankings ignore this option")
 def board(scoring, teams, rounds, top, changes_path):
-    """📌 Full draft board grouped by suggested round"""
+    """📌 Full production draft board grouped by rank-derived round."""
     config = LeagueConfig(teams=teams, rounds=rounds, scoring=scoring)
 
     try:
-        df = build_rankings(config, changes_path=changes_path)
+        df = _build_production_cli_frame(scoring=scoring, teams=teams)
     except Exception as e:
         error(str(e))
         return
@@ -135,19 +155,10 @@ def board(scoring, teams, rounds, top, changes_path):
             click.echo(f"     {advice}\n")
 
         adp_val = row["adp"]
-        adp_str = f"ADP {adp_val:.1f}" if adp_val is not None and not pd.isna(adp_val) else "no ADP"
-        note_parts = []
-        inj = row.get("injury")
-        if inj and not pd.isna(inj):
-            note_parts.append(f"[{inj}]")
-        note_val = row.get("note")
-        if note_val and not pd.isna(note_val):
-            note_parts.append(str(note_val))
-        note = "  " + " ".join(note_parts) if note_parts else ""
-
+        adp_str = f"ADP {adp_val:.1f}" if adp_val is not None and not pd.isna(adp_val) else "ADP —"
         click.echo(
             f"  #{int(row['rank']):<4} {row['name']:<26} {row['position']:<5} {row['team']:<5}"
-            f" {row['hist_score']:>6.1f}pts  {adp_str}{note}"
+            f" Score {row['composite']:>6.2f}  {adp_str}"
         )
 
     click.echo()
@@ -180,31 +191,11 @@ def index(scoring, season):
     )
     agg = agg[agg["total_pts"] > 0].sort_values("total_pts", ascending=False)
 
-    pos_names = {
-        "QB": "quarterback", "RB": "running back", "WR": "wide receiver",
-        "TE": "tight end", "K": "kicker",
-    }
-    team_names = {
-        "ARI": "Arizona Cardinals", "ATL": "Atlanta Falcons", "BAL": "Baltimore Ravens",
-        "BUF": "Buffalo Bills", "CAR": "Carolina Panthers", "CHI": "Chicago Bears",
-        "CIN": "Cincinnati Bengals", "CLE": "Cleveland Browns", "DAL": "Dallas Cowboys",
-        "DEN": "Denver Broncos", "DET": "Detroit Lions", "GB": "Green Bay Packers",
-        "HOU": "Houston Texans", "IND": "Indianapolis Colts", "JAX": "Jacksonville Jaguars",
-        "KC": "Kansas City Chiefs", "LAC": "Los Angeles Chargers", "LA": "Los Angeles Rams",
-        "LV": "Las Vegas Raiders", "MIA": "Miami Dolphins", "MIN": "Minnesota Vikings",
-        "NE": "New England Patriots", "NO": "New Orleans Saints", "NYG": "New York Giants",
-        "NYJ": "New York Jets", "PHI": "Philadelphia Eagles", "PIT": "Pittsburgh Steelers",
-        "SEA": "Seattle Seahawks", "SF": "San Francisco 49ers", "TB": "Tampa Bay Buccaneers",
-        "TEN": "Tennessee Titans", "WAS": "Washington Commanders",
-    }
-
     players = []
     for _, row in agg.iterrows():
         name = row["player_display_name"]
         pos_code = str(row["position"]).upper()
-        pos = pos_names.get(pos_code, pos_code.lower())
         team = str(row["team"])
-        team_name = team_names.get(team, team)
         pts = float(row["total_pts"])
         games = int(row["games"])
         ppg = pts / games if games > 0 else 0

@@ -3,6 +3,7 @@ from __future__ import annotations
 from urllib.parse import unquote, urlparse
 
 import feedparser
+import requests
 
 from gridiron_gpt.data_ingest.player_matcher import (
     extract_players_from_text,
@@ -19,25 +20,42 @@ class RSSSourceAdapter(SourceAdapter):
     """
     Retrieve evidence from an RSS feed.
 
-    The adapter performs provider parsing and player resolution only.
-    It does not classify sentiment, fantasy impact, relevance, or
-    recommendations.
+    The adapter performs provider retrieval, parsing, and player resolution only.
+    It does not classify sentiment, fantasy impact, relevance, or recommendations.
+
+    HTTP retrieval uses an explicit timeout so a slow or unavailable provider cannot
+    leave a feedparser-owned network call hanging beyond the ingestion retry policy.
     """
 
     def __init__(
         self,
         feed_url: str,
         source_name: str = "RSS Feed",
+        request_timeout_seconds: float = 8.0,
     ):
+        if request_timeout_seconds <= 0:
+            raise ValueError("request_timeout_seconds must be positive")
+
         self.feed_url = feed_url
         self._source_name = source_name
+        self.request_timeout_seconds = request_timeout_seconds
 
     @property
     def source_name(self) -> str:
         return self._source_name
 
     def fetch(self) -> list[SourceRecord]:
-        feed = feedparser.parse(self.feed_url)
+        response = requests.get(
+            self.feed_url,
+            timeout=self.request_timeout_seconds,
+            headers={
+                "User-Agent": "GridironGPT/1.1 (+https://github.com/phredogee/GridironGPT)",
+                "Accept": "application/rss+xml, application/xml, text/xml, */*",
+            },
+        )
+        response.raise_for_status()
+
+        feed = feedparser.parse(response.content)
         records: list[SourceRecord] = []
 
         for entry in feed.entries:

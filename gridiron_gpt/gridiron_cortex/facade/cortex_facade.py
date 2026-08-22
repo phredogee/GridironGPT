@@ -28,6 +28,10 @@ from gridiron_cortex.reasoning.trend_analyzer import TrendAnalyzer
 from gridiron_cortex.transforms.player_intelligence_builder import PlayerIntelligenceBuilder
 from gridiron_cortex.evidence.evidence_analyzer import EvidenceAnalyzer
 from gridiron_cortex.confidence.confidence_calibrator import ConfidenceCalibrator
+from gridiron_gpt.football_state.repositories.jsonl_game_state_repository import JsonlGameStateRepository
+from gridiron_gpt.football_state.repositories.jsonl_player_state_repository import JsonlPlayerStateRepository
+from gridiron_gpt.football_state.services.football_context_service import FootballContextService
+from gridiron_gpt.football_state.services.schedule_state_service import ScheduleStateService
 
 
 class CortexFacade:
@@ -39,43 +43,35 @@ class CortexFacade:
         catalog_loader: Callable[[], Iterable[dict[str, Any]]] | None = None,
         event_bus: CortexEventBus | None = None,
         engine_version: str = "cortex-dev",
+        football_state_directory: str | Path = "data/football_state",
+        football_season: int | None = None,
     ) -> None:
         data_path = Path(data_directory)
+        football_state_path = Path(football_state_directory)
 
         event_repository = JsonEventRepository(data_path / "events.jsonl")
-        canonical_event_repository = JsonCanonicalEventRepository(
-            data_path / "canonical_events.jsonl"
-        )
-        player_scorecard_repository = JsonPlayerScorecardRepository(
-            data_path / "player_scorecards.jsonl"
-        )
+        canonical_event_repository = JsonCanonicalEventRepository(data_path / "canonical_events.jsonl")
+        player_scorecard_repository = JsonPlayerScorecardRepository(data_path / "player_scorecards.jsonl")
         evidence_aggregator = EvidenceAggregator(repository=canonical_event_repository)
         evidence_analyzer = EvidenceAnalyzer()
         relationship_repository = JsonRelationshipRepository(data_path / "relationships.jsonl")
 
-        self.event_bus = event_bus or CortexEventBus(
-            store=JsonlCortexEventStore(data_path / "cortex_events.jsonl")
-        )
-        self.pipeline_events = PipelineEventPublisher(
-            self.event_bus,
-            engine_version=engine_version,
-        )
+        player_state_repository = JsonlPlayerStateRepository(football_state_path / "player_states.jsonl")
+        game_state_repository = JsonlGameStateRepository(football_state_path / "game_states.jsonl")
+        schedule_state_service = ScheduleStateService(game_state_repository, season=football_season)
+        football_context_service = FootballContextService(player_state_repository, schedule_state_service)
 
-        self.knowledge = KnowledgeService(
-            event_repository=event_repository,
-            player_scorecard_repository=player_scorecard_repository,
-            relationship_repository=relationship_repository,
-        )
+        self.event_bus = event_bus or CortexEventBus(store=JsonlCortexEventStore(data_path / "cortex_events.jsonl"))
+        self.pipeline_events = PipelineEventPublisher(self.event_bus, engine_version=engine_version)
+
+        self.knowledge = KnowledgeService(event_repository=event_repository, player_scorecard_repository=player_scorecard_repository, relationship_repository=relationship_repository)
         self.knowledge_graph = KnowledgeGraphManager(knowledge_service=self.knowledge)
         self.propagation_planner = PropagationPlanner(knowledge_graph=self.knowledge_graph)
         self.engine = CortexEngine(
             entity_resolver=EntityResolver(),
             player_enrichment=PlayerEnrichmentService(catalog_loader=catalog_loader),
             signal_processor=SignalProcessor(),
-            relationship_engine=RelationshipEngine(
-                repository=relationship_repository,
-                propagation_planner=self.propagation_planner,
-            ),
+            relationship_engine=RelationshipEngine(repository=relationship_repository, propagation_planner=self.propagation_planner),
             score_engine=ScoreEngine(repository=player_scorecard_repository),
             recommendation_engine=RecommendationEngine(),
             explanation_engine=ExplanationEngine(),
@@ -87,6 +83,7 @@ class CortexFacade:
             confidence_calibrator=ConfidenceCalibrator(),
             event_repository=event_repository,
             prediction_engine=PredictionEngine(),
+            football_context_service=football_context_service,
         )
 
     def process_event(self, event: RawEvent):
@@ -109,27 +106,13 @@ class CortexFacade:
         return self.knowledge.get_scorecard_history(player_id)
 
     def get_relationships(self, entity_id: str):
-        return {
-            "outgoing": self.knowledge.get_outgoing_relationships(entity_id),
-            "incoming": self.knowledge.get_incoming_relationships(entity_id),
-        }
+        return {"outgoing": self.knowledge.get_outgoing_relationships(entity_id), "incoming": self.knowledge.get_incoming_relationships(entity_id)}
 
     def get_entity_graph(self, entity_id: str, max_depth: int = 2, direction: str = "outgoing"):
-        return self.knowledge_graph.build_graph(
-            root_entity_id=entity_id,
-            max_depth=max_depth,
-            direction=direction,
-        )
+        return self.knowledge_graph.build_graph(root_entity_id=entity_id, max_depth=max_depth, direction=direction)
 
     def get_affected_entities(self, entity_id: str, max_depth: int = 2):
-        return self.knowledge_graph.get_affected_entities(
-            source_entity_id=entity_id,
-            max_depth=max_depth,
-        )
+        return self.knowledge_graph.get_affected_entities(source_entity_id=entity_id, max_depth=max_depth)
 
     def find_relationship_paths(self, source_entity_id: str, target_entity_id: str, max_depth: int = 3):
-        return self.knowledge_graph.find_paths(
-            source_entity_id=source_entity_id,
-            target_entity_id=target_entity_id,
-            max_depth=max_depth,
-        )
+        return self.knowledge_graph.find_paths(source_entity_id=source_entity_id, target_entity_id=target_entity_id, max_depth=max_depth)

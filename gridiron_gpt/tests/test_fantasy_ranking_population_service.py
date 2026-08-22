@@ -1,0 +1,128 @@
+from gridiron_cortex.models.player_scorecard import PlayerScorecard
+from gridiron_gpt.draft.fantasy_ranking_population_service import (
+    FantasyRankingPopulationService,
+)
+from gridiron_gpt.football_state.models.player_state import CanonicalPlayerState
+
+
+class StubPlayerRepository:
+    def __init__(self, players):
+        self.players = players
+
+    def all_latest(self):
+        return list(self.players)
+
+
+class StubScorecardRepository:
+    def __init__(self, scorecards=None):
+        self.scorecards = scorecards or {}
+
+    def get_latest(self, player_id):
+        return self.scorecards.get(player_id)
+
+
+def player(player_id, name, position, status="ACT"):
+    return CanonicalPlayerState(
+        player_id=player_id,
+        player_name=name,
+        team="TST",
+        position=position,
+        roster_status=status,
+    )
+
+
+def test_builds_overall_rankings_from_draftable_skill_positions():
+    players = [player("p1", "Alpha RB", "RB"), player("p2", "Bravo WR", "WR"), player("p3", "Charlie OL", "OL")]
+    service = FantasyRankingPopulationService(StubPlayerRepository(players), StubScorecardRepository())
+    result = service.build(historical_points_by_name={"Alpha RB": 300.0, "Bravo WR": 200.0, "Charlie OL": 500.0})
+    assert [row.player_name for row in result.overall] == ["Alpha RB", "Bravo WR"]
+
+
+def test_excludes_retired_and_released_players():
+    players = [player("p1", "Active RB", "RB", "ACT"), player("p2", "Retired RB", "RB", "RET"), player("p3", "Released WR", "WR", "CUT")]
+    service = FantasyRankingPopulationService(StubPlayerRepository(players), StubScorecardRepository())
+    result = service.build(historical_points_by_name={"Active RB": 200.0, "Retired RB": 400.0, "Released WR": 350.0})
+    assert [row.player_name for row in result.overall] == ["Active RB"]
+
+
+def test_builds_position_lists_from_same_ranked_population():
+    players = [player("qb1", "QB One", "QB"), player("rb1", "RB One", "RB"), player("wr1", "WR One", "WR"), player("te1", "TE One", "TE")]
+    service = FantasyRankingPopulationService(StubPlayerRepository(players), StubScorecardRepository())
+    result = service.build(historical_points_by_name={"QB One": 400.0, "RB One": 350.0, "WR One": 300.0, "TE One": 250.0})
+    assert [row.player_name for row in result.by_position["QB"]] == ["QB One"]
+    assert [row.player_name for row in result.by_position["RB"]] == ["RB One"]
+    assert [row.player_name for row in result.by_position["WR"]] == ["WR One"]
+    assert [row.player_name for row in result.by_position["TE"]] == ["TE One"]
+
+
+def test_cortex_and_adp_can_adjust_order_without_replacing_baseline():
+    players = [player("p1", "Player A", "WR"), player("p2", "Player B", "WR")]
+    scorecards = {
+        "p1": PlayerScorecard(player_id="p1", player_name="Player A", position="WR", overall_score=40.0),
+        "p2": PlayerScorecard(player_id="p2", player_name="Player B", position="WR", overall_score=90.0),
+    }
+    service = FantasyRankingPopulationService(StubPlayerRepository(players), StubScorecardRepository(scorecards))
+    result = service.build(historical_points_by_name={"Player A": 300.0, "Player B": 285.0}, adp_by_name={"Player A": 25.0, "Player B": 5.0}, draft_pool_size=120)
+    assert result.overall[0].player_name == "Player B"
+    assert result.overall[0].components["baseline"] < 100.0
+    assert result.overall[0].components["market"] > result.overall[1].components["market"]
+
+
+def test_projection_scores_are_normalized_within_position():
+    players = [
+        player("qb1", "QB High", "QB"),
+        player("qb2", "QB Low", "QB"),
+        player("wr1", "WR High", "WR"),
+        player("wr2", "WR Low", "WR"),
+    ]
+    service = FantasyRankingPopulationService(StubPlayerRepository(players), StubScorecardRepository())
+    result = service.build(
+        historical_points_by_name={name: 200.0 for name in ["QB High", "QB Low", "WR High", "WR Low"]},
+        projected_points_by_name={"QB High": 400.0, "QB Low": 200.0, "WR High": 300.0, "WR Low": 150.0},
+    )
+    by_name = {row.player_name: row for row in result.overall}
+    assert by_name["QB High"].components["projection"] == 100.0
+    assert by_name["QB Low"].components["projection"] == 50.0
+    assert by_name["WR High"].components["projection"] == 100.0
+    assert by_name["WR Low"].components["projection"] == 50.0
+
+
+def test_missing_projection_is_not_treated_as_zero():
+    players = [player("p1", "Projected RB", "RB"), player("p2", "Rookie RB", "RB")]
+    service = FantasyRankingPopulationService(StubPlayerRepository(players), StubScorecardRepository())
+    result = service.build(
+        historical_points_by_name={"Projected RB": 200.0, "Rookie RB": 200.0},
+        projected_points_by_name={"Projected RB": 250.0},
+    )
+    by_name = {row.player_name: row for row in result.overall}
+    assert by_name["Projected RB"].components["projection"] == 100.0
+    assert "projection" not in by_name["Rookie RB"].components
+    assert "projection" not in by_name["Rookie RB"].weighted_components
+
+
+def test_availability_only_player_is_excluded_without_primary_evidence():
+    players = [player("p1", "Unknown Market RB", "RB")]
+    service = FantasyRankingPopulationService(StubPlayerRepository(players), StubScorecardRepository())
+    result = service.build()
+    assert result.overall == []
+    assert result.by_position["RB"] == []
+    assert result.explained_overall == []
+
+
+def test_limit_applies_to_overall_population_and_position_views():
+    players = [player("p1", "A RB", "RB"), player("p2", "B RB", "RB"), player("p3", "C WR", "WR")]
+    service = FantasyRankingPopulationService(StubPlayerRepository(players), StubScorecardRepository())
+    result = service.build(historical_points_by_name={"A RB": 300, "B RB": 250, "C WR": 200}, limit=2)
+    assert len(result.overall) == 2
+    assert [row.player_name for row in result.by_position["RB"]] == ["A RB", "B RB"]
+    assert result.by_position["WR"] == []
+    assert len(result.explained_overall) == 2
+
+
+def test_explained_overall_tracks_sorted_rank_and_score():
+    players = [player("p1", "Alpha RB", "RB"), player("p2", "Bravo WR", "WR")]
+    service = FantasyRankingPopulationService(StubPlayerRepository(players), StubScorecardRepository())
+    result = service.build(historical_points_by_name={"Alpha RB": 300.0, "Bravo WR": 200.0})
+    assert [row.rank for row in result.explained_overall] == [1, 2]
+    assert [row.score for row in result.explained_overall] == result.overall
+    assert result.explained_overall[0].explanation.summary.startswith("#1 Alpha RB")

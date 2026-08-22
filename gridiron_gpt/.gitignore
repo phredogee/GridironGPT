@@ -35,3 +35,8 @@ client-python/
 
 *.Zone.Identifier
 data/cache/
+
+# Generated football data
+data/player_catalog.json
+data/football_state/
+data/ingestion/

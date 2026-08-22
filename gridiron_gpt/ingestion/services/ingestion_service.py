@@ -89,19 +89,30 @@ class IngestionService:
         self.health_tracker.record(result)
         return result
 
-    def _process_events(self, events: list[RawEvent]) -> None:
+    def _process_events(self, events: list[RawEvent]) -> tuple[int, int, int]:
         if self.event_processor is None:
-            return
+            return 0, 0, 0
+
+        accepted = 0
+        duplicates = 0
+        failures = 0
         for event in events:
             try:
-                self.event_processor(event)
+                result = self.event_processor(event)
+                explanation = getattr(result, "explanation", None)
+                if explanation == "Duplicate event ignored.":
+                    duplicates += 1
+                else:
+                    accepted += 1
             except Exception:
+                failures += 1
                 source_id = event.evidence.get("source_id") if event.evidence else None
                 logger.exception(
                     "Downstream event processor failed for source=%s source_id=%s; ingestion remains successful",
                     event.source,
                     source_id,
                 )
+        return accepted, duplicates, failures
 
     def ingest_result(self, adapter: SourceAdapter) -> ProviderIngestionResult:
         source_name = adapter.source_name
@@ -116,10 +127,16 @@ class IngestionService:
                     self.sleep(self._retry_delay(exc, attempt))
                 continue
 
-            self._process_events(events)
+            accepted, duplicates, failures = self._process_events(events)
             return self._record_result(ProviderIngestionResult(
-                source_name=source_name, success=True, events=events,
-                records_received=len(records), attempts=attempt,
+                source_name=source_name,
+                success=True,
+                events=events,
+                records_received=len(records),
+                attempts=attempt,
+                cortex_events_accepted=accepted,
+                cortex_duplicates_ignored=duplicates,
+                processor_failures=failures,
             ))
 
         assert last_error is not None
@@ -142,6 +159,9 @@ class IngestionService:
             events_created=result.event_count,
             error_type=result.error_type,
             error_message=result.error_message,
+            cortex_events_accepted=result.cortex_events_accepted,
+            cortex_duplicates_ignored=result.cortex_duplicates_ignored,
+            processor_failures=result.processor_failures,
         )
 
     def ingest_run(self, adapters: list[SourceAdapter]) -> IngestionRunSummary:
@@ -162,6 +182,9 @@ class IngestionService:
             records_received=sum(result.records_received for result in results),
             events_created=sum(result.event_count for result in results),
             diagnostics=[self._diagnostic(result) for result in results],
+            cortex_events_accepted=sum(result.cortex_events_accepted for result in results),
+            cortex_duplicates_ignored=sum(result.cortex_duplicates_ignored for result in results),
+            processor_failures=sum(result.processor_failures for result in results),
         )
         if self.run_repository is not None:
             self.run_repository.save(summary)

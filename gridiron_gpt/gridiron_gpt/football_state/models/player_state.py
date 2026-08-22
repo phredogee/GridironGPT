@@ -14,6 +14,9 @@ class CanonicalPlayerState:
     team: str | None = None
     position: str | None = None
     roster_status: str | None = None
+    status_description_abbr: str | None = None
+    roster_week: int | None = None
+    roster_game_type: str | None = None
     depth_chart_position: str | None = None
     jersey_number: int | str | None = None
     years_experience: int | float | None = None

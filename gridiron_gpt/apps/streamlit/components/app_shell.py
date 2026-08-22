@@ -24,6 +24,7 @@ NAVIGATION_ITEMS: Final[dict[str, NavigationItem]] = {
     "Dashboard": {"label": "Dashboard", "description": "Monitor recommendations, signal activity, and the strongest fantasy-football opportunities."},
     "Explorer": {"label": "Cortex Explorer", "description": "Open a unified player dossier with score, confidence, evidence, trend, trajectory, and Cortex profile."},
     "Advisor": {"label": "Advisor", "description": "Ask roster, waiver, trade, and lineup questions using Gridiron Cortex intelligence."},
+    "Rankings": {"label": "Rankings", "description": "Review integrated fantasy rankings with historical, market, role, Cortex, availability, and evidence-based explanations."},
     "Players": {"label": "Players", "description": "Review player scorecards, recommendations, confidence, and supporting signals."},
     "Trends": {"label": "Trends", "description": "Track emerging player movement and changes in fantasy value."},
     "Trajectory": {"label": "Trajectory", "description": "Inspect score history, velocity, and longer-term player direction."},
@@ -33,7 +34,7 @@ NAVIGATION_ITEMS: Final[dict[str, NavigationItem]] = {
 
 NAVIGATION_SECTIONS: Final[tuple[NavigationSection, ...]] = (
     {"label": "Intelligence", "icon": "🧠", "pages": ("Dashboard", "Explorer", "Players", "Trends", "Trajectory", "Inspector")},
-    {"label": "Fantasy", "icon": "🏈", "pages": ("Advisor",)},
+    {"label": "Fantasy", "icon": "🏈", "pages": ("Rankings", "Advisor")},
     {"label": "Operations", "icon": "⚙", "pages": ("Ingestion",)},
 )
 

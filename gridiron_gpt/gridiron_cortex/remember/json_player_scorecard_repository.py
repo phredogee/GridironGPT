@@ -42,8 +42,6 @@ class JsonPlayerScorecardRepository(PlayerScorecardRepository):
                     try:
                         record = json.loads(line)
                     except json.JSONDecodeError:
-                        # Ignore malformed records for now so one bad line
-                        # does not make the entire history unreadable.
                         continue
 
                     if record.get("player_id") != player_id:
@@ -52,7 +50,6 @@ class JsonPlayerScorecardRepository(PlayerScorecardRepository):
                     try:
                         scorecards.append(PlayerScorecard(**record))
                     except TypeError:
-                        # Ignore records that do not match the current model.
                         continue
 
         except OSError as exc:
@@ -76,28 +73,37 @@ class JsonPlayerScorecardRepository(PlayerScorecardRepository):
     def get_all_latest(self) -> list[PlayerScorecard]:
         latest_by_player: dict[str, PlayerScorecard] = {}
 
-        if not self.path.exists():
+        if not self.file_path.exists():
             return []
 
-        with open(self.path, encoding="utf-8") as file:
-            for line in file:
-                line = line.strip()
+        try:
+            with self.file_path.open("r", encoding="utf-8") as file:
+                for line in file:
+                    line = line.strip()
 
-                if not line:
-                    continue
+                    if not line:
+                        continue
 
-                record = json.loads(line)
-                scorecard = PlayerScorecard(**record)
+                    try:
+                        record = json.loads(line)
+                        scorecard = PlayerScorecard(**record)
+                    except (json.JSONDecodeError, TypeError):
+                        continue
 
-                current = latest_by_player.get(scorecard.player_id)
+                    current = latest_by_player.get(scorecard.player_id)
 
-                if current is None:
-                    latest_by_player[scorecard.player_id] = scorecard
-                    continue
+                    if current is None:
+                        latest_by_player[scorecard.player_id] = scorecard
+                        continue
 
-                if (scorecard.last_updated or "") > (
-                    current.last_updated or ""
-                ):
-                    latest_by_player[scorecard.player_id] = scorecard
+                    if (scorecard.last_updated or "") > (
+                        current.last_updated or ""
+                    ):
+                        latest_by_player[scorecard.player_id] = scorecard
+
+        except OSError as exc:
+            raise RuntimeError(
+                f"Unable to read scorecard repository: {self.file_path}"
+            ) from exc
 
         return list(latest_by_player.values())

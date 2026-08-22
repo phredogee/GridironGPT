@@ -11,9 +11,7 @@ def build_player_aliases(
     team: str,
     position: str,
 ) -> list[str]:
-    """
-    Build deterministic aliases for player matching.
-    """
+    """Build deterministic aliases for player matching."""
 
     player_name = player_name.strip()
 
@@ -54,10 +52,13 @@ def build_player_aliases(
 
 def build_player_catalog(
     catalog_path: Path = CATALOG_PATH,
+    *,
+    season: int | None = None,
 ) -> list[dict]:
+    """Build the canonical player catalog from the active roster season."""
 
-    season = nfl.get_current_season()
-    roster = nfl.load_rosters([season])
+    roster_season = season if season is not None else nfl.get_current_season(roster=True)
+    roster = nfl.load_rosters([roster_season])
 
     players: dict[str, dict] = {}
 
@@ -77,6 +78,9 @@ def build_player_catalog(
             "position": row.get("position"),
             "depth_chart_position": row.get("depth_chart_position"),
             "status": row.get("status"),
+            "status_description_abbr": row.get("status_description_abbr"),
+            "week": row.get("week"),
+            "game_type": row.get("game_type"),
 
             "jersey_number": row.get("jersey_number"),
             "years_exp": row.get("years_exp"),
@@ -114,6 +118,7 @@ def build_player_catalog(
         json.dump(catalog, f, indent=2)
 
     return catalog
+
 
 def load_player_catalog(
     catalog_path: Path = CATALOG_PATH,

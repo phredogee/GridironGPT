@@ -2,253 +2,119 @@
 
 ## System Boundary
 
-GridironGPT is the football product layer. **Gridiron Cortex** is the reusable intelligence engine.
+GridironGPT is the football product layer. **Gridiron Cortex** is the reusable intelligence engine. Cortex owns reusable reasoning, scorecards, recommendation confidence, explanations, event history, persistence, and Replay. GridironGPT owns NFL integrations, football-domain concepts, fantasy ranking inputs, draft workflows, runtime composition, Streamlit presentation, and commissioner features.
 
-### GridironGPT owns
-- NFL provider integration
-- Source-record translation and normalization orchestration
-- Player catalog and football aliases
-- Football-specific data and league concepts
-- Fantasy and commissioner workflows
-- Runtime composition
-- Streamlit presentation and visualization
-
-### Cortex owns
-- `RawEvent` intelligence processing
-- Entity resolution
-- Signal interpretation
-- Relationship reasoning and propagation
-- Multidimensional scorecards
-- Recommendations and confidence
-- Explanations and evidence chains
-- Event-bus decision history
-- Persistence and Replay of Cortex decisions
-
-The architectural rule is that providers do not call engine internals. They produce source records. The shared ingestion layer normalizes those records into the Cortex input contract.
-
-## v1.0 Runtime Architecture
+## Runtime Architecture
 
 ```text
-NFL Sources
-  ├─ ESPN NFL RSS
-  ├─ NBC Sports / ProFootballTalk
-  ├─ RotoWire NFL
-  └─ nflverse / nflreadpy
-          ↓
-Provider Adapters
-          ↓
-IngestionService
-  fetch → retry/backoff → normalize
-          ↓
-RawEvent[]
-          ↓
-optional event_processor hook
-          ↓
-CortexFacade.process_event()
-          ↓
-Entity Resolution
-          ↓
-Signal Processing
-          ↓
-Relationship Propagation
-          ↓
-Score Updates / Player Scorecards
-          ↓
-Recommendations + Explanations
-          ↓
-Event Bus
-          ↓
-Persistent Event History
-          ↓
-Dashboard / Advisor / Players / Explorer
-Inspector / Activity / Replay / Mission Control
+NFL Sources → Provider Adapters → IngestionService → RawEvent[]
+    → CortexFacade.process_event()
+    → Resolve → Interpret → Propagate → Score
+    → Scorecards + Recommendations + Explanations
+    → Persistent Event History / Replay
+    → GridironGPT product services + Streamlit
 ```
 
-## Ingestion Boundary
+Downstream Cortex failures are fail-open at the ingestion boundary so a healthy provider fetch is not retried because intelligence processing failed.
 
-`IngestionService` is the shared provider boundary. It owns provider execution, retry behavior, normalization, ingestion health, and optional downstream event processing.
+## Production Fantasy Ranking Architecture
 
-Runtime composition injects `cortex.process_event` through the service's event-processor hook. This means every normalized event can enter Cortex without adding Cortex dependencies to ESPN, NBC, RotoWire, nflverse, or future adapters.
-
-### Fail-open rule
-
-A downstream Cortex exception must not convert a successful provider fetch into a provider failure. The event-processor hook catches downstream exceptions, logs them, and allows ingestion to succeed. This prevents unnecessary provider retries when the source itself was healthy.
+Independent evidence sources feed one authoritative production scorer. Missing evidence is unavailable rather than negative, and available weights are renormalized.
 
 ```text
-Provider succeeds
-      ↓
-RawEvent created
-      ↓
-Cortex unavailable
-      ↓
-log downstream failure
-      ↓
-ingestion remains successful
+Historical production ─┐
+Current ADP / market ───┤
+Recent role / usage ────┤
+Cortex intelligence ────┤→ weighted scorer → anchor validation → production board
+Availability ────────────┤                                      ↓
+Projected production ────┘                              tiers / value / explanations
 ```
 
-## Cortex Processing Contract
+Projection influence is part of the production ranking model at its configured weight; presentation code must not apply a second production adjustment.
 
-`RawEvent` is the boundary object between GridironGPT ingestion and Cortex. Source provenance such as source IDs and provider metadata travels with the event evidence rather than through provider-specific engine APIs.
+## Single Authoritative Ranking Source
 
-A Cortex decision can produce:
-- resolved entities
-- interpreted signal
-- direct and propagated impacts
-- score updates
-- player scorecards
-- recommendations
-- explanation/evidence chains
-- event-bus records for each observable processing stage
+`FantasyRankingDataService` and its ranking population are authoritative for current UI and CLI ordering. Best Available preserves this order. Best Value derives market opportunity from it. Advisory services consume it downstream.
 
-Deduplication occurs before duplicate evidence can create duplicate downstream decisions.
+## Live Draft-State Architecture
 
-## Correlation and Decision History
-
-Each input event has a stable fingerprint/correlation identity. Cortex publishes processing events to its event bus using that correlation so a complete decision trail can be queried later.
+`DraftBoardState` owns ordered pick history and `MY_TEAM` / `OTHER_TEAM` ownership. `FantasyDraftPoolService` removes drafted players without rescoring remaining players.
 
 ```text
-RawEvent fingerprint
-       ↓
-correlation_id
-       ↓
-Cortex pipeline events
-       ↓
-cortex_events.jsonl
-       ↓
-ReplayEngine.by_correlation(...)
+production population + drafted IDs
+              ↓
+    FantasyDraftPoolService
+      ├─ remaining_population
+      ├─ best_available_scores
+      └─ best_value_scores
 ```
 
-Replay reads persisted history. It does **not** rerun the original article through Cortex.
+`FantasyRosterNeedsService` evaluates My Team separately with starter-oriented defaults of QB 1, RB 2, WR 2, and TE 1. `FantasyRosterAdviceService` converts deficits into presentation-safe summaries and badges.
 
-## Persistence and Restart Semantics
+## Best Fit Right Now
 
-Core Cortex persistence currently uses repository-backed JSON/JSONL implementations.
-
-Important persisted artifacts include:
-- Cortex event history
-- player scorecards
-- event/deduplication state
-- historical score information
-- ingestion-run observability
-
-The v1.0 end-to-end test explicitly simulates an application restart by constructing a new `CortexFacade` against the same data directory. The restarted facade reloads persisted event history and scorecard state, and Replay reconstructs the original decision from that persisted history.
-
-This establishes the required invariant:
-
-> A Cortex decision is not only explainable while the process is alive; its decision trail survives restart.
-
-## Runtime Composition
-
-### Streamlit
-
-`streamlit_app.py` creates one `CortexFacade` in Streamlit session state and shares that facade across Cortex-facing pages and services. Pages should receive the facade rather than construct independent engines.
+`FantasyBestFitService` is a contextual recommendation layer downstream of production scoring. It consumes available candidates, My Team roster context, and market views. Its initial conservative heuristic keeps production ranking quality dominant while allowing modest active-roster-need and capped Draft Value adjustments.
 
 ```text
-st.session_state.cortex_facade
-          ↓
-   shared CortexFacade
-    ↙     ↓      ↘
-Inspector Explorer Activity/other Cortex views
+production ranking score ─────────────┐
+active roster need ───────────────────┤→ FantasyBestFitService
+Draft Value / market opportunity ─────┘          ↓
+                                         advisory fit score
+                                                ↓
+                                     FantasyBestFitView
+                                                ↓
+                                   reason / Draft Assistant
 ```
 
-The Ingestion Status surface reads persisted ingestion-run history and does not need to instantiate a second Cortex engine.
+`FantasyBestFitView` converts recommendations into UI-ready explanations such as `fills active roster need` and `positive draft value`.
 
-### Runtime ingestion
+**Invariant:** Best Fit may reorder its own advisory list, but it does not mutate `ranking_score`, Best Available order, or Best Value order.
 
-`build_runtime_ingestion_service(cortex, ...)` composes the production ingestion service with the supplied facade. `ingest_all(cortex)` uses that runtime composition for the default provider set.
-
-## Manual Inspector Path
-
-The Cortex Inspector intentionally constructs diagnostic `RawEvent` objects and calls `cortex.process_event()` directly when the user chooses to analyze an event. This is not legacy ingestion and should not be removed.
+## Draft Assistant Data Flow
 
 ```text
-Production path: Provider → IngestionService → RawEvent → Cortex
-Diagnostic path: Inspector input → RawEvent → Cortex
-```
-
-Both paths share the same Cortex facade contract.
-
-## Intelligence and Propagation
-
-Cortex models football relationships such as passing, rushing, backup, target competition, and depth-chart competition. Propagation applies relationship semantics, strength, confidence, and hop decay. Strongest-path behavior prevents duplicate graph paths from multiplying the same downstream effect.
-
-## Multidimensional Scoring
-
-Persistent player intelligence includes dimensions such as:
-- Overall
-- Opportunity
-- Health
-- Hype
-- Risk
-- Momentum
-
-Scorecards are keyed by engine player identity rather than display name. Presentation code may derive visual summaries but must not become a second scoring engine.
-
-## Presentation Architecture
-
-```text
-Cortex/domain services
+Production Rankings
         ↓
-view + visualization models
+Frozen Draft Board
         ↓
-reusable Streamlit components
+DraftBoardState ──────────────────────┐
+        ↓                             │
+FantasyDraftPoolService               │
+  ├─ Best Available                   │
+  └─ Best Value                       │
+                                      │
+My Team IDs ──────────────────────────┘
         ↓
-page modules
+Roster Needs / Roster Advice
         ↓
-shared app shell/navigation
+Best Fit Right Now
+        ↓
+Draft Assistant UI
 ```
 
-Primary product surfaces include Dashboard, Advisor, Player Intelligence, Trends/Trajectory, Cortex Explorer, Cortex Inspector, Ingestion Status, and Cortex activity/decision views.
+The next planned advisory input is **positional scarcity / tier-drop awareness**. It should quantify the cost of waiting at a position without becoming a second production ranking engine.
 
-## Commissioner Architecture
+## Ranking Explanations and Market Views
 
-Commissioner capabilities are deterministic football-product services and remain separate from Cortex intelligence scoring.
+Ranking explanations explain an existing score rather than rescoring it. Tier and market services derive position rank, tier, ADP context, and Draft Value from the production population. Draft Value remains conceptually `consensus ADP - production overall rank`.
 
-```text
-League Settings
-      ↓
-Schedule Generator
-      ↓
-Constraint / Balance Logic
-      ↓
-Schedule Analytics / Alternatives
-      ↓
-Exports / Delivery
-```
+## Persistence and Replay
 
-Other services cover playoff brackets, draft workflows, league history, and commissioner insights.
+Core Cortex persistence uses repository-backed JSON/JSONL implementations for event history, player scorecards, deduplication state, score history, and ingestion-run observability. Replay reconstructs persisted decision history rather than rerunning the original source through Cortex.
 
-## Extension Points
+## Extension Rules
 
-### New provider
-Implement the provider adapter/source-record contract. Do not add Cortex-specific logic to the adapter.
-
-### New intelligence stage
-Add it behind the Cortex facade/pipeline contracts and publish observable events where the stage contributes to the decision trail.
-
-### New persistence backend
-Implement repository contracts without changing scoring/reasoning consumers.
-
-### New UI surface
-Consume facade/domain services or presentation models. Avoid reading engine implementation details directly from Streamlit pages.
+- New ranking evidence enters through the production scorer with normalization and provenance.
+- New draft advice consumes production output plus contextual state and remains separate from `ranking_score` unless an explicit scoring-model change is tested and approved.
+- New UI surfaces consume domain/advisory services rather than embedding intelligence rules directly in Streamlit.
+- New persistence backends implement repository contracts without changing consumers.
 
 ## Testing Boundary
 
 Current verified full regression checkpoint:
 
 ```text
-702 passed
+878 passed
 ```
 
-The regression suite includes automatic ingestion into Cortex, downstream fail-open behavior, runtime composition, persistent scorecards/event history, restart behavior, and Replay reconstruction.
-
-## v1.0 Architectural Status
-
-The core architecture is in stabilization rather than subsystem expansion. Before release/merge:
-
-1. Keep contributor documentation synchronized with the implemented boundaries.
-2. Remove stale presentation metadata and obsolete references.
-3. Run the full regression suite after stabilization changes.
-4. Perform a Streamlit smoke test across the primary pages.
-5. Reconcile the Cortex branch with `main` without reintroducing stale README architecture.
-6. Prepare the release/merge boundary.
+The suite covers the established runtime, persistence, ranking, projection, tier/value, draft-state, draft-pool, roster-needs/advice boundaries plus Best Fit service and view-model behavior. Streamlit smoke validation confirms Best Fit responds to My Team context while the production board remains stable.
