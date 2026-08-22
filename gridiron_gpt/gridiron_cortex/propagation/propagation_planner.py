@@ -2,6 +2,7 @@ from gridiron_cortex.knowledge.knowledge_graph_manager import (
     KnowledgeGraphManager,
 )
 from gridiron_cortex.models.propagation import PropagationCandidate
+from gridiron_cortex.reason.relationship_context import RelationshipContext
 from gridiron_cortex.reason.relationship_semantics import (
     RelationshipSemantics,
 )
@@ -87,10 +88,12 @@ class PropagationPlanner:
         source_entity_id: str,
         max_depth: int = 2,
         source_impact_score: float = 1.0,
+        relationship_context: RelationshipContext | None = None,
     ) -> list[PropagationCandidate]:
         if max_depth < 1 or source_impact_score == 0:
             return []
 
+        context = relationship_context or RelationshipContext()
         graph = self.knowledge_graph.build_graph(
             root_entity_id=source_entity_id,
             max_depth=max_depth,
@@ -108,6 +111,14 @@ class PropagationPlanner:
                 target_entity_id=node.entity_id,
                 max_depth=max_depth,
             )
+            paths = [
+                path
+                for path in paths
+                if all(
+                    context.allows(relationship.relationship_type)
+                    for relationship in path.relationships
+                )
+            ]
 
             if not paths:
                 continue
@@ -127,8 +138,6 @@ class PropagationPlanner:
                     semantic_multiplier=semantic_multiplier,
                 )
 
-            # Select the path with the largest absolute effect. A strongly
-            # negative path is as important as a strongly positive one.
             best_path = max(
                 paths,
                 key=lambda path: abs(path_weight(path)),
