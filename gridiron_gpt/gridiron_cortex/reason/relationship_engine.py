@@ -2,6 +2,9 @@ from gridiron_cortex.models.impact import Impact
 from gridiron_cortex.propagation.propagation_planner import (
     PropagationPlanner,
 )
+from gridiron_cortex.reason.relationship_context import (
+    RelationshipContextPolicy,
+)
 from gridiron_cortex.reason.relationship_semantics import (
     RelationshipSemantics,
 )
@@ -20,15 +23,20 @@ class RelationshipEngine:
         repository: RelationshipRepository | None = None,
         propagation_planner: PropagationPlanner | None = None,
         relationship_semantics: RelationshipSemantics | None = None,
+        relationship_context_policy: RelationshipContextPolicy | None = None,
     ):
         self.repository = repository
         self.propagation_planner = propagation_planner
         self.relationship_semantics = (
             relationship_semantics or RelationshipSemantics()
         )
+        self.relationship_context_policy = (
+            relationship_context_policy or RelationshipContextPolicy()
+        )
 
     def propagate(self, signal):
         impacts = []
+        relationship_context = self.relationship_context_policy.from_signal(signal)
 
         for entity in signal.entities:
             if entity.entity_type != "player":
@@ -52,6 +60,7 @@ class RelationshipEngine:
                     source_entity_id=source_entity_id,
                     max_depth=2,
                     source_impact_score=signal.impact_score,
+                    relationship_context=relationship_context,
                 )
 
                 for candidate in candidates:
@@ -94,6 +103,11 @@ class RelationshipEngine:
             )
 
             for relationship in relationships:
+                if not relationship_context.allows(
+                    relationship.relationship_type
+                ):
+                    continue
+
                 semantic_multiplier = (
                     self.relationship_semantics.calculate_multiplier(
                         relationship.relationship_type,
