@@ -6,8 +6,8 @@ from typing import Any
 import streamlit as st
 
 from gridiron_gpt.ingestion.freshness import evaluate_ingestion_freshness
-from gridiron_gpt.ingestion.services.ingestion_run_repository import (
-    JsonlIngestionRunRepository,
+from gridiron_gpt.ingestion.services.ingestion_run_repository_factory import (
+    build_ingestion_run_repository,
 )
 
 
@@ -68,12 +68,10 @@ def _render_provider_diagnostic(item: dict[str, Any]) -> None:
         )
 
 
-def render_ingestion_status(
-    repository: JsonlIngestionRunRepository | None = None,
-) -> None:
+def render_ingestion_status(repository=None) -> None:
     """Render persisted ingestion, freshness, and Cortex-boundary observability."""
 
-    repository = repository or JsonlIngestionRunRepository()
+    repository = repository or build_ingestion_run_repository()
     runs = repository.load_all()
     freshness = evaluate_ingestion_freshness(runs)
 
@@ -104,10 +102,7 @@ def render_ingestion_status(
         )
         return
 
-    latest = max(
-        runs,
-        key=lambda run: str(run.get("completed_at") or ""),
-    )
+    latest = max(runs, key=lambda run: str(run.get("completed_at") or ""))
     success = bool(latest.get("success", False))
 
     st.markdown("### Latest Run")
