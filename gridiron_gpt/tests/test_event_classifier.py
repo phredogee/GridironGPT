@@ -225,3 +225,117 @@ def test_classify_remains_compatible_with_multi_signal_events() -> None:
 
     assert result.category == "injury"
     assert result.subtype == "returned_to_practice"
+
+
+def test_live_penix_story_classifies_team_drill_return() -> None:
+    classifier = EventClassifier()
+    event = RawEvent(
+        headline=(
+            "Tua Tagovailoa: Penix cleared for team drills, "
+            "setting stage for QB competition"
+        ),
+        summary=(
+            "Michael Penix is in line to return to 11-on-11 drills "
+            "in Monday's practice."
+        ),
+        source="RotoWire NFL",
+        player="Michael Penix Jr.",
+        team="ATL",
+    )
+
+    identities = {
+        (result.category, result.subtype)
+        for result in classifier.classify_all(event)
+    }
+
+    assert ("injury", "returned_to_team_drills") in identities
+
+
+def test_live_penix_story_classifies_qb_competition() -> None:
+    classifier = EventClassifier()
+    event = RawEvent(
+        headline=(
+            "Tua Tagovailoa: Penix cleared for team drills, "
+            "setting stage for QB competition"
+        ),
+        source="RotoWire NFL",
+        player="Michael Penix Jr.",
+        team="ATL",
+    )
+
+    identities = {
+        (result.category, result.subtype)
+        for result in classifier.classify_all(event)
+    }
+
+    assert ("depth_chart", "qb_competition") in identities
+
+
+def test_live_walkthrough_story_classifies_participation() -> None:
+    classifier = EventClassifier()
+    event = RawEvent(
+        headline="Parker Washington: Present for Sunday's walkthrough",
+        summary=(
+            "Washington (undisclosed) was spotted at Sunday's walkthrough."
+        ),
+        source="RotoWire NFL",
+        player="Parker Washington",
+        team="JAX",
+    )
+
+    result = classifier.classify(event)
+
+    assert result.category == "participation"
+    assert result.subtype == "walkthrough"
+    assert result.polarity == "positive"
+
+
+def test_live_season_ending_achilles_story_classifies_injury() -> None:
+    classifier = EventClassifier()
+    event = RawEvent(
+        headline="Sources: Browns starting DE Wright out for year",
+        summary=(
+            "The Browns are placing starting defensive end Alex Wright "
+            "on season-ending injured reserve with a ruptured Achilles."
+        ),
+        source="ESPN NFL",
+        player="Alex Wright",
+        team="CLE",
+    )
+
+    result = classifier.classify(event)
+
+    assert result.category == "injury"
+    assert result.subtype == "season_ending"
+    assert result.polarity == "negative"
+
+
+def test_generic_wont_play_is_availability_not_injury() -> None:
+    classifier = EventClassifier()
+    event = RawEvent(
+        headline="Jadarian Price: Won't play Sunday",
+        source="RotoWire NFL",
+        player="Jadarian Price",
+        team="SEA",
+    )
+
+    result = classifier.classify(event)
+
+    assert result.category == "availability"
+    assert result.subtype == "ruled_out"
+    assert result.polarity == "negative"
+
+
+def test_explicit_injury_absence_remains_injury_ruled_out() -> None:
+    classifier = EventClassifier()
+    event = RawEvent(
+        headline="Receiver ruled out with a hamstring injury",
+        source="ESPN",
+        player="Example Receiver",
+    )
+
+    result = classifier.classify(event)
+
+    assert result.category == "injury"
+    assert result.subtype == "ruled_out"
+    assert result.polarity == "negative"

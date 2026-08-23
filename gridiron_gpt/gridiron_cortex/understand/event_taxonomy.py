@@ -14,6 +14,22 @@ EVENT_RULES: list[EventRule] = [
     # Injury and recovery
     {
         "category": "injury",
+        "subtype": "season_ending",
+        "polarity": "negative",
+        "impact": -1.0,
+        "confidence": 0.995,
+        "phrases": [
+            "season-ending injured reserve",
+            "season ending injured reserve",
+            "season-ending injury",
+            "season ending injury",
+            "out for the year",
+            "out for year",
+            "will miss the rest of the season",
+        ],
+    },
+    {
+        "category": "injury",
         "subtype": "injured_reserve",
         "polarity": "negative",
         "impact": -1.0,
@@ -77,6 +93,23 @@ EVENT_RULES: list[EventRule] = [
             "placed on nfi",
             "non-football injury list",
             "non-football illness list",
+        ],
+    },
+    {
+        "category": "injury",
+        "subtype": "returned_to_team_drills",
+        "polarity": "positive",
+        "impact": 0.65,
+        "confidence": 0.955,
+        "phrases": [
+            "cleared for team drills",
+            "returned to team drills",
+            "returns to team drills",
+            "return to team drills",
+            "returned to 11-on-11 drills",
+            "returns to 11-on-11 drills",
+            "return to 11-on-11 drills",
+            "cleared for 11-on-11 drills",
         ],
     },
     {
@@ -225,6 +258,22 @@ EVENT_RULES: list[EventRule] = [
             "left practice with",
             "will undergo surgery",
             "needs surgery",
+            "ruptured achilles",
+        ],
+    },
+
+    # Participation
+    {
+        "category": "participation",
+        "subtype": "walkthrough",
+        "polarity": "positive",
+        "impact": 0.20,
+        "confidence": 0.89,
+        "phrases": [
+            "present for walkthrough",
+            "present for sunday's walkthrough",
+            "spotted at the walkthrough",
+            "spotted at sunday's walkthrough",
         ],
     },
 
@@ -253,6 +302,20 @@ EVENT_RULES: list[EventRule] = [
             "first team reps",
             "working with the starters",
             "running with the first team",
+        ],
+    },
+    {
+        "category": "depth_chart",
+        "subtype": "qb_competition",
+        "polarity": "monitor",
+        "impact": 0.0,
+        "confidence": 0.93,
+        "phrases": [
+            "qb competition",
+            "quarterback competition",
+            "battle for qb1",
+            "competing for the starting quarterback job",
+            "competing for the starting job",
         ],
     },
     {

@@ -24,12 +24,17 @@
 - Context-aware relationship propagation driven by structured football classifications.
 - Regression guards preventing classification count from inflating direct player impact.
 - Compound football developments surfaced in explanations/evidence chains.
+- Live ESPN/RotoWire camp-news audit using persisted Cortex events and canonical events.
+- Production-derived taxonomy coverage for season-ending injuries, team-drill returns, walkthrough participation, and QB competitions.
+- Generic absence disambiguation so `won't play` does not automatically imply an injury.
+- Full regression baseline advanced to 915 passing tests.
 
 ### Next - Camp and News Signal Quality
-- Audit ESPN NFL and RotoWire NFL output for injuries, role changes, depth-chart movement, coach comments, camp performance, and preseason usage.
+- Continue auditing live provider output for role changes, depth-chart movement, coach comments, camp performance, and preseason usage.
+- Distinguish event subject from related/affected players when one article resolves to multiple entities.
 - Reconcile overlapping language/rule vocabularies so football concepts and event taxonomy do not drift independently.
-- Expand structured classification coverage only where real provider text exposes meaningful gaps.
-- Improve role/opportunity interpretation for camp battles and depth-chart changes.
+- Improve role/opportunity interpretation for camp battles and depth-chart changes beyond QB-specific competition language.
+- Add explicit low-value/editorial story suppression where feature or analytics articles should not influence fantasy scoring.
 - Evaluate source quality and distinctiveness before adding additional providers.
 - Feed richer structured developments into explanations and relationship context without weakening deduplication or score-safety guarantees.
 
