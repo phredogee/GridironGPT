@@ -308,3 +308,34 @@ def test_live_season_ending_achilles_story_classifies_injury() -> None:
     assert result.category == "injury"
     assert result.subtype == "season_ending"
     assert result.polarity == "negative"
+
+
+def test_generic_wont_play_is_availability_not_injury() -> None:
+    classifier = EventClassifier()
+    event = RawEvent(
+        headline="Jadarian Price: Won't play Sunday",
+        source="RotoWire NFL",
+        player="Jadarian Price",
+        team="SEA",
+    )
+
+    result = classifier.classify(event)
+
+    assert result.category == "availability"
+    assert result.subtype == "ruled_out"
+    assert result.polarity == "negative"
+
+
+def test_explicit_injury_absence_remains_injury_ruled_out() -> None:
+    classifier = EventClassifier()
+    event = RawEvent(
+        headline="Receiver ruled out with a hamstring injury",
+        source="ESPN",
+        player="Example Receiver",
+    )
+
+    result = classifier.classify(event)
+
+    assert result.category == "injury"
+    assert result.subtype == "ruled_out"
+    assert result.polarity == "negative"
