@@ -123,8 +123,12 @@ class EventClassifier:
         ):
             return classification
 
+        normalized_generic_absences = {
+            normalize_event_text(phrase)
+            for phrase in self.GENERIC_ABSENCE_PHRASES
+        }
         matched_generic_absence = any(
-            normalize_event_text(phrase) in self.GENERIC_ABSENCE_PHRASES
+            normalize_event_text(phrase) in normalized_generic_absences
             for phrase in classification.matched_rules
         )
         has_injury_context = any(
