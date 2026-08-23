@@ -9,7 +9,7 @@
 - Player-resolution performance optimization.
 - Persistent ingestion-run observability.
 - Cortex accepted-versus-duplicate metrics.
-- Hourly local ingestion schedule.
+- Daily GitHub Actions production ingestion with Supabase run persistence.
 - Persistent 2026 canonical player/roster state.
 - Persistent 2026 canonical schedule/game state.
 - Availability classification.
@@ -19,6 +19,19 @@
 - Factual football context in explanations.
 - End-to-end facade integration coverage for football context.
 - RankingService repository-read fix and basic overall/position ranking validation.
+- Multi-signal event classification while preserving the legacy single-best classification contract.
+- Compound event evidence retained on one Signal rather than multiplied into several scored Signals.
+- Context-aware relationship propagation driven by structured football classifications.
+- Regression guards preventing classification count from inflating direct player impact.
+- Compound football developments surfaced in explanations/evidence chains.
+
+### Next - Camp and News Signal Quality
+- Audit ESPN NFL and RotoWire NFL output for injuries, role changes, depth-chart movement, coach comments, camp performance, and preseason usage.
+- Reconcile overlapping language/rule vocabularies so football concepts and event taxonomy do not drift independently.
+- Expand structured classification coverage only where real provider text exposes meaningful gaps.
+- Improve role/opportunity interpretation for camp battles and depth-chart changes.
+- Evaluate source quality and distinctiveness before adding additional providers.
+- Feed richer structured developments into explanations and relationship context without weakening deduplication or score-safety guarantees.
 
 ### Next - Fantasy Ranking Score
 - Define a dedicated fantasy-ranking model separate from Cortex `overall_score`.
@@ -31,15 +44,16 @@
 - Add regression fixtures with known ordering expectations.
 
 ### v1.1 Stabilization
-- Let the production-like local collector continue accumulating meaningful historical evidence.
+- Let the production collector continue accumulating meaningful historical evidence.
 - Review scorecard behavior against multi-day real-world evidence.
 - Run combined ingestion + football-state refresh + Cortex validation.
 - Evaluate provider freshness, source quality, and evidence overlap.
 - Add operational safeguards for long-running history growth and log/data retention.
+- Continue regression-testing multi-signal classification against real camp/news phrasing.
 
 ## Later
 - Add richer official/current injury state when reliable 2026 structured data becomes available.
-- Add depth-chart and role history.
+- Add deeper depth-chart and role history.
 - Add player production, projections, and statistical baselines.
 - Add matchup-strength and schedule-quality adjustments where they are demonstrably useful.
 - Expand provider coverage where sources add distinct value rather than duplicate volume.
