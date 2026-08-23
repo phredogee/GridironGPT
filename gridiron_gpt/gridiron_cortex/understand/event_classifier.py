@@ -26,6 +26,27 @@ class EventClassifier:
     found in the event so richer consumers can reason over compound news.
     """
 
+    GENERIC_ABSENCE_PHRASES = {
+        "will not play",
+        "won't play",
+    }
+
+    INJURY_CONTEXT_PHRASES = {
+        "injury",
+        "injured",
+        "hamstring",
+        "ankle",
+        "knee",
+        "shoulder",
+        "concussion",
+        "achilles",
+        "calf",
+        "groin",
+        "foot",
+        "back injury",
+        "illness",
+    }
+
     def classify(self, event: RawEvent) -> EventClassification:
         matches = self.classify_all(event)
 
@@ -56,19 +77,23 @@ class EventClassifier:
             if not matched_phrases:
                 continue
 
-            matches.append(
-                EventClassification(
-                    category=rule["category"],
-                    subtype=rule["subtype"],
-                    polarity=rule["polarity"],
-                    impact=rule["impact"],
-                    confidence=rule["confidence"],
-                    matched_rules=matched_phrases,
-                    metadata={
-                        "classifier": "deterministic_rules",
-                    },
-                )
+            classification = EventClassification(
+                category=rule["category"],
+                subtype=rule["subtype"],
+                polarity=rule["polarity"],
+                impact=rule["impact"],
+                confidence=rule["confidence"],
+                matched_rules=matched_phrases,
+                metadata={
+                    "classifier": "deterministic_rules",
+                },
             )
+
+            classification = self._resolve_generic_absence(
+                classification,
+                searchable_text,
+            )
+            matches.append(classification)
 
         matches.sort(
             key=lambda classification: (
@@ -85,6 +110,43 @@ class EventClassifier:
         )
 
         return matches
+
+    def _resolve_generic_absence(
+        self,
+        classification: EventClassification,
+        searchable_text: str,
+    ) -> EventClassification:
+        """Avoid inferring injury when a report only says a player won't play."""
+        if (
+            classification.category != "injury"
+            or classification.subtype != "ruled_out"
+        ):
+            return classification
+
+        matched_generic_absence = any(
+            normalize_event_text(phrase) in self.GENERIC_ABSENCE_PHRASES
+            for phrase in classification.matched_rules
+        )
+        has_injury_context = any(
+            normalize_event_text(phrase) in searchable_text
+            for phrase in self.INJURY_CONTEXT_PHRASES
+        )
+
+        if not matched_generic_absence or has_injury_context:
+            return classification
+
+        return EventClassification(
+            category="availability",
+            subtype="ruled_out",
+            polarity="negative",
+            impact=-0.70,
+            confidence=0.96,
+            matched_rules=classification.matched_rules,
+            metadata={
+                "classifier": "deterministic_rules",
+                "reason": "generic_absence_without_injury_context",
+            },
+        )
 
     @staticmethod
     def _unknown_classification() -> EventClassification:
