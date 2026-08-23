@@ -1,5 +1,25 @@
 # Changelog
 
+## v1.1 Development - 2026-08-23 - Camp Signal Quality
+
+### Added
+- Production-derived regression fixtures from live ESPN NFL and RotoWire NFL ingestion.
+- `injury.season_ending` coverage for season-ending IR, out-for-year language, and similar definitive season-loss reports.
+- `injury.returned_to_team_drills` coverage for players cleared to resume team or 11-on-11 work.
+- `participation.walkthrough` coverage for low-strength practice/walkthrough participation reports.
+- `depth_chart.qb_competition` coverage for explicit quarterback competition language.
+- Generic absence disambiguation so `won't play` / `will not play` does not automatically imply injury when no injury context is present.
+
+### Improved
+- Generic player absence now maps to `availability.ruled_out`, while explicit injury-related absence remains `injury.ruled_out`.
+- Live camp/news vocabulary is now used to drive taxonomy expansion instead of adding broad speculative keyword coverage.
+- Compound Penix/Tua-style reports can preserve both recovery and depth-chart competition developments through the existing multi-signal pipeline.
+
+### Validated
+- 20 focused EventClassifier tests passing, including six new production-derived cases.
+- Full regression suite: 915 passing tests.
+- Existing multi-signal score-safety guarantees remain intact.
+
 ## v1.1 Development - 2026-08-22 - Multi-Signal Intelligence
 
 ### Added
