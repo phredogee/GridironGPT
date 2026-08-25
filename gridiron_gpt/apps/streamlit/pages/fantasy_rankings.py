@@ -24,6 +24,15 @@ for _name in dir(_legacy):
 _legacy.roster_advice = FantasyRosterAdviceService().build([])
 
 
+def _timing_label(fit) -> str:
+    labels = {
+        "take_now": "TAKE NOW",
+        "can_wait": "CAN WAIT",
+        "neutral": "NEUTRAL",
+    }
+    return labels.get(fit.timing_decision, "NEUTRAL")
+
+
 def _render_draft_assistant(population, market_views, drafted_ids, projection_views):
     best_available = _legacy._best_available_scores(population, drafted_ids, limit=5)
     best_value = _legacy._best_value_scores(population, market_views, drafted_ids, limit=5)
@@ -39,7 +48,7 @@ def _render_draft_assistant(population, market_views, drafted_ids, projection_vi
     _legacy.st.markdown("### Draft Assistant")
     _legacy.st.caption(
         "Live recommendations use the frozen GridironGPT board and update instantly as players are drafted. "
-        "Use Mine when the pick belongs to your roster. Best Fit is advisory and does not change production rankings."
+        "Use Mine when the pick belongs to your roster. Best Fit and pick timing are advisory and do not change production rankings."
     )
     _legacy.st.caption(roster_advice.summary)
 
@@ -87,18 +96,24 @@ def _render_draft_assistant(population, market_views, drafted_ids, projection_vi
 
     with columns[2]:
         _legacy.st.markdown("**Best Fit Right Now**")
-        _legacy.st.caption("Advisory blend of board strength, active roster need, and draft value.")
+        _legacy.st.caption(
+            "Advisory blend of board strength, active roster need, draft value, scarcity, and pick timing."
+        )
         if not best_fit:
             _legacy.st.caption("No undrafted ranked players remain.")
         for fit in best_fit:
             score = fit.score
             projection = _legacy._projection_badge(score, projection_views)
+            timing = _timing_label(fit)
+            urgency = fit.timing_urgency.upper()
             row = _legacy.st.columns([5, 1.5])
             row[0].write(
                 f"**{score.player_name}** · {score.position or '-'} · {score.team or '-'} · "
-                f"Board {score.ranking_score:.2f} · **Fit {fit.fit_score:.2f}** · {fit.reason}"
+                f"Board {score.ranking_score:.2f} · **Fit {fit.fit_score:.2f}** · "
+                f"**{timing} · {urgency} urgency** · {fit.reason}"
                 + (f" · {projection}" if projection else "")
             )
+            row[0].caption(fit.timing_reason)
             with row[1]:
                 _legacy._draft_row_control(score, scope="assistant_fit", drafted_ids=drafted_ids)
 
