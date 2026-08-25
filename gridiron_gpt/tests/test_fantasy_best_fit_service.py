@@ -16,6 +16,10 @@ def _market(draft_value: float | None):
     return SimpleNamespace(draft_value=draft_value)
 
 
+def _scarcity(level: str):
+    return SimpleNamespace(scarcity_level=level)
+
+
 def test_active_roster_need_can_break_close_ranking_gap():
     service = FantasyBestFitService()
     roster = [_player("my-rb-1", "RB One", "RB", 80), _player("my-rb-2", "RB Two", "RB", 79)]
@@ -87,3 +91,61 @@ def test_limit_and_zero_limit_are_respected():
 
     assert len(service.recommend(candidates, [], {}, limit=2)) == 2
     assert service.recommend(candidates, [], {}, limit=0) == []
+
+
+def test_high_scarcity_can_break_close_best_fit_gap():
+    service = FantasyBestFitService()
+    candidates = [
+        _player("wr", "Wide Receiver", "WR", 80),
+        _player("te", "Tight End", "TE", 79),
+    ]
+
+    result = service.recommend(
+        candidates,
+        [],
+        {"wr": _market(0), "te": _market(0)},
+        scarcity_views={
+            "wr": _scarcity("low"),
+            "te": _scarcity("high"),
+        },
+    )
+
+    assert result[0].score.player_id == "te"
+    assert result[0].scarcity_level == "high"
+    assert result[0].scarcity_bonus > 0
+
+
+def test_high_scarcity_cannot_overcome_large_production_ranking_gap():
+    service = FantasyBestFitService()
+    candidates = [
+        _player("wr", "Elite Wide Receiver", "WR", 95),
+        _player("te", "Scarce Tight End", "TE", 75),
+    ]
+
+    result = service.recommend(
+        candidates,
+        [],
+        {"wr": _market(0), "te": _market(0)},
+        scarcity_views={
+            "wr": _scarcity("low"),
+            "te": _scarcity("high"),
+        },
+    )
+
+    assert result[0].score.player_id == "wr"
+
+
+def test_scarcity_adjustment_does_not_mutate_production_ranking_score():
+    service = FantasyBestFitService()
+    candidate = _player("te", "Tight End", "TE", 81.25)
+
+    result = service.recommend(
+        [candidate],
+        [],
+        {"te": _market(0)},
+        scarcity_views={"te": _scarcity("high")},
+    )
+
+    assert candidate.ranking_score == 81.25
+    assert result[0].scarcity_level == "high"
+    assert result[0].scarcity_bonus > 0
