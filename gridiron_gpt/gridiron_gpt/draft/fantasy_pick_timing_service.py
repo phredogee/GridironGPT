@@ -34,6 +34,7 @@ class FantasyPickTimingService:
         roster_need: bool,
     ) -> PickTimingResult:
         urgency = scarcity.scarcity_level
+        score_drop = round(float(scarcity.score_drop), 3)
 
         if urgency == "high":
             decision = "take_now"
@@ -43,13 +44,13 @@ class FantasyPickTimingService:
             reason = (
                 "Take now: medium position scarcity combines with an active "
                 "roster need; waiting risks a "
-                f"{scarcity.score_drop:.1f}-point drop."
+                f"{score_drop:.1f}-point drop."
             )
         elif urgency == "low":
             decision = "can_wait"
             reason = (
                 "Can wait: comparable same-position options remain and the "
-                f"next-option score drop is only {scarcity.score_drop:.1f}."
+                f"next-option score drop is only {score_drop:.1f}."
             )
         else:
             decision = "neutral"
@@ -64,7 +65,7 @@ class FantasyPickTimingService:
             decision=decision,
             urgency=urgency,
             ranking_score=float(candidate.ranking_score),
-            score_drop=scarcity.score_drop,
+            score_drop=score_drop,
             tier_cliff=scarcity.tier_cliff,
             roster_need=roster_need,
             reason=reason,
@@ -75,10 +76,15 @@ class FantasyPickTimingService:
         scarcity: PositionScarcityResult,
         roster_need: bool,
     ) -> str:
-        details = [
-            "Take now: high position scarcity",
-            f"waiting exposes a {scarcity.score_drop:.1f}-point drop",
-        ]
+        details = ["Take now: high position scarcity"]
+
+        if scarcity.remaining_same_position == 0:
+            details.append("no same-position alternatives remain")
+        else:
+            details.append(
+                f"waiting exposes a {float(scarcity.score_drop):.1f}-point drop"
+            )
+
         if scarcity.tier_cliff:
             details.append("the next option crosses a tier boundary")
         if roster_need:
