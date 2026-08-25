@@ -1,115 +1,95 @@
 # Changelog
 
+## v1.1 Development - 2026-08-25 - Position Scarcity and Ingestion Hardening
+
+### Added
+- `FantasyPositionScarcityService` for draft-time same-position depth and opportunity-cost analysis.
+- Tier-cliff detection and next-option ranking-score drop measurement.
+- Low/medium/high scarcity classification.
+- Bounded scarcity integration into `FantasyBestFitService`: low `+0`, medium `+1`, high `+2`.
+- Best Fit view support for scarcity level/bonus and deterministic scarcity explanations.
+- Realistic draft scenario coverage for RB cliffs, TE scarcity, deep same-tier pools, position runs, and the cost of waiting.
+- Event-taxonomy integrity regression tests requiring every rule to define `category`, `subtype`, `polarity`, `impact`, `confidence`, and `phrases`.
+
+### Fixed
+- Added the missing `impact` value to `transaction.released` after a live RotoWire ingestion event caused `KeyError: 'impact'` in EventClassifier.
+- Daily ingestion now completes normally for that production path; a verified post-fix run processed 41 records with zero processor failures.
+
+### Decision Safety
+- Position scarcity is advisory and never mutates production `ranking_score`.
+- Scarcity can break close Best Fit gaps but cannot overcome large production-ranking gaps.
+- Low scarcity is intentionally suppressed from Draft Assistant explanation text to reduce draft-night noise.
+- Scarcity is recomputed from the current undrafted pool, so position runs update urgency naturally.
+
+### Validated
+- 25 focused scarcity/Best Fit tests passed before view integration.
+- 6 Best Fit view-boundary tests passed after integration.
+- Full regression suite: **939 passing tests** on `main`.
+- Position scarcity merged through PR #10.
+
 ## v1.1 Development - 2026-08-23 - Camp Signal Quality
 
 ### Added
 - Production-derived regression fixtures from live ESPN NFL and RotoWire NFL ingestion.
-- `injury.season_ending` coverage for season-ending IR, out-for-year language, and similar definitive season-loss reports.
+- `injury.season_ending` coverage for season-ending IR and out-for-year language.
 - `injury.returned_to_team_drills` coverage for players cleared to resume team or 11-on-11 work.
-- `participation.walkthrough` coverage for low-strength practice/walkthrough participation reports.
+- `participation.walkthrough` coverage for low-strength walkthrough participation.
 - `depth_chart.qb_competition` coverage for explicit quarterback competition language.
-- Generic absence disambiguation so `won't play` / `will not play` does not automatically imply injury when no injury context is present.
-
-### Improved
-- Generic player absence now maps to `availability.ruled_out`, while explicit injury-related absence remains `injury.ruled_out`.
-- Live camp/news vocabulary is now used to drive taxonomy expansion instead of adding broad speculative keyword coverage.
-- Compound Penix/Tua-style reports can preserve both recovery and depth-chart competition developments through the existing multi-signal pipeline.
+- Generic absence disambiguation so `won't play` does not automatically imply injury without injury context.
 
 ### Validated
-- 20 focused EventClassifier tests passing, including six new production-derived cases.
+- 20 focused EventClassifier tests passing.
 - Full regression suite: 915 passing tests.
-- Existing multi-signal score-safety guarantees remain intact.
 
 ## v1.1 Development - 2026-08-22 - Multi-Signal Intelligence
 
 ### Added
-- `EventClassifier.classify_all()` for extracting multiple structured football developments from one RawEvent while preserving the legacy single-best `classify()` contract.
-- Signal evidence now stores both the primary `event_classification` and complete `event_classifications` collection.
-- Explanation output and structured evidence chains can surface compound football developments.
-- `RelationshipContextPolicy` for using structured classifications to guide relationship-path relevance during propagation.
-- Context-aware propagation for opportunity-sensitive relationships such as `backs_up`, `competes_with`, `target_competitor`, and `depth_chart_competitor` while preserving normal football graph paths.
-- Regression guards proving that secondary classifications do not create additional direct score contributions.
-
-### Improved
-- Compound reports such as return-to-practice + first-team reps + coach praise now retain all detected developments instead of discarding all but the highest-ranked classification.
-- Relationship propagation now uses secondary classifications as context rather than independent source events.
-- Existing football dependency paths remain available when contextual relationship rules are active.
+- `EventClassifier.classify_all()` for extracting multiple structured football developments from one RawEvent while preserving legacy `classify()` behavior.
+- Complete classification collections on one Signal.
+- `RelationshipContextPolicy` for classification-guided relationship relevance.
+- Regression guards preventing secondary classifications from multiplying direct score contribution.
 
 ### Validated
-- One RawEvent still produces one Cortex Signal.
-- A Signal with direct impact `0.8` remains one `0.8` direct impact whether one or three classifications are attached.
-- End-to-end Phase B graph propagation remains intact for normal QB-to-receiver relationships under contextual classification.
+- One RawEvent still produces one Cortex Signal and one direct source impact.
 - Full regression suite: 909 passing tests.
-- Feature merged to `main` through PR #6, merge commit `798b8e3052e61597bebac09c2f653f8239297536`.
+- Feature merged through PR #6.
 
-## v1.1 Development - 2026-08-22
+## v1.1 Development - 2026-08-22 - Production Daily Ingestion
 
 ### Added
-- Production `scripts/run_daily_ingestion.py` command for scheduler-friendly NFL news ingestion through the existing Cortex runtime path.
-- Ingestion freshness evaluator with fresh, stale, failed, and missing states and a 26-hour daily freshness window.
-- Streamlit ingestion freshness metrics for last update time, update age, and stale/failed operational warnings.
-- Dedicated `cortex_ingestion_runs` Supabase persistence contract for durable operational history without changing the legacy article-ingestion table.
-- `SupabaseIngestionRunRepository` and explicit ingestion-run repository factory.
-- Environment-controlled persistence via `GRIDIRON_INGESTION_RUN_PERSISTENCE=jsonl|supabase`; local development defaults to JSONL while production must explicitly select Supabase.
-- GitHub Actions `Daily NFL Ingestion` workflow prepared for daily and manual execution with Supabase-backed persistence.
+- `scripts/run_daily_ingestion.py` production command.
+- Ingestion freshness evaluation and Streamlit operational status.
+- Supabase-backed `cortex_ingestion_runs` persistence.
+- GitHub Actions daily ingestion workflow.
+
+### Validated
+- Supabase-backed production ingestion successfully processed ESPN/RotoWire data with Cortex duplicate accounting.
+- 894 tests passing.
+
+## v1.1 Development - 2026-08-12 - Structured Football Context
+
+### Added
+- Persistent 2026 player/roster and schedule/game state.
+- Availability classification, ScheduleStateService, and FootballContextService.
+- Stable GSIS identity propagation into Cortex.
+
+### Validated
+- Production-path football context smoke test completed successfully.
+- 744 tests passing.
+
+## v1.1 Development - 2026-08-10 - Continuous Ingestion
+
+### Added
+- Scheduled ingestion runner, ESPN/RotoWire composition, persistent diagnostics, and Streamlit ingestion status.
 
 ### Improved
-- Streamlit Ingestion Operations now reads from the same configured ingestion-run repository as the production ingestion runtime.
-- Production persistence configuration fails on unsupported modes rather than silently falling back to ephemeral local storage.
-- Daily workflow validates required Supabase secrets before attempting ingestion and protects against overlapping scheduled runs.
+- Player-resolution benchmark improved from approximately 20.559 seconds to 0.221 seconds.
 
 ### Validated
-- Manual production ingestion successfully retrieved 28 records from ESPN NFL and RotoWire NFL, normalized all 28, and completed with zero provider or processor failures.
-- Supabase-backed end-to-end run `bae87553-00f7-4a21-998d-02474f33fd91` persisted 28 normalized events, including 1 newly accepted Cortex event and 27 correctly ignored duplicates.
-- Streamlit freshness/status UI was manually smoke-tested against the production ingestion flow.
-- 894 tests passing after durable persistence, runtime repository selection, Streamlit reader wiring, and scheduler preparation.
-
-## v1.1 Development - 2026-08-12
-
-### Added
-- Structured 2026 NFL game/schedule state with persistent JSONL storage.
-- Structured 2026 player/roster state with stable GSIS identities.
-- Player availability classification for available, reserve, exempt, retired, and released states.
-- ScheduleStateService for team schedules, next-game context, opponent/location lookup, and bye-week detection.
-- FootballContextService combining canonical player state and schedule state.
-- Production CortexFacade wiring for football context.
-- Factual football context in Cortex explanations without changing Cortex scoring behavior.
-- Facade-level integration coverage proving player identity -> football state -> schedule state -> Cortex explanation.
-
-### Fixed
-- EntityResolver now preserves player GSIS ID and position instead of dropping identity metadata during canonical entity construction.
-- JsonPlayerScorecardRepository `get_all_latest()` now uses the repository's correct file-path attribute, restoring RankingService reads.
-- Live alias/suffix tests were hardened against upstream roster display-name changes.
-- Facade football-context fixture now uses chronological synthetic kickoff dates.
-
-### Validated
-- Real production-path smoke test resolved C.J. Stroud to GSIS `00-0039163` and produced available status, Week 1 home game vs BUF, and Week 8 bye context.
-- RankingService infrastructure can read latest scorecards and produce overall/position-sorted lists; these are not yet authoritative fantasy rankings.
-- 744 tests passing after football-state/context integration and facade-level regression coverage.
-
-## v1.1 Development - 2026-08-10
-
-### Added
-- Scheduled ingestion runner for recurring NFL data collection.
-- ESPN NFL and RotoWire NFL runtime provider composition.
-- Persisted ingestion-run diagnostics and provider health.
-- Streamlit Ingestion Status observability.
-- Cortex acceptance, duplicate, and processor-failure counters at run and provider level.
-- Hourly WSL cron deployment for local continuous ingestion.
-
-### Improved
-- Added explicit HTTP timeout handling to RSS retrieval.
-- Optimized player alias matching by caching ordered aliases and avoiding unnecessary regex evaluation.
-- ESPN player resolution benchmark improved from approximately 20.559 seconds to 0.221 seconds, with total diagnostic processing reduced from approximately 20.777 seconds to 0.480 seconds.
-- End-to-end scheduled ingestion subsequently completed in under one second with both providers healthy.
-
-### Validated
-- 709 tests passing after initial v1.1 ingestion and observability work.
-- Live run processed 30 normalized events: 3 accepted as new Cortex evidence, 27 rejected as duplicates, and 0 processor failures.
+- 709 tests passing.
 
 ## v1.0.0 - 2026-08-10
 
 - Stabilized GridironGPT / Gridiron Cortex runtime architecture.
 - Verified 702 passing tests before release.
 - Completed Streamlit smoke validation, branch reconciliation, documentation refresh, persistent Cortex state, and replay support.
-- Release commit: de14fd460d42f4f2a2dc04097224501f84b82caf.
