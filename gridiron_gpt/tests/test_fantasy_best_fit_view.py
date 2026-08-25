@@ -106,3 +106,45 @@ def test_best_fit_view_scarcity_reacts_to_thinner_available_pool():
     assert before_by_id["rb-1"].scarcity_level == "low"
     assert after_by_id["rb-3"].scarcity_level == "high"
     assert "9.5-point drop" in after_by_id["rb-3"].reason
+
+
+def test_best_fit_view_exposes_take_now_timing_for_tier_cliff():
+    candidates = [
+        _player("rb-1", "Top RB", "RB", 91.0, 1),
+        _player("rb-2", "Next RB", "RB", 82.0, 2),
+    ]
+
+    views = build_best_fit_views(candidates, [], {})
+    by_id = {view.score.player_id: view for view in views}
+
+    assert by_id["rb-1"].timing_decision == "take_now"
+    assert by_id["rb-1"].timing_urgency == "high"
+    assert "9.0" in by_id["rb-1"].timing_reason
+
+
+def test_best_fit_view_exposes_can_wait_for_deep_same_tier_pool():
+    candidates = [
+        _player("wr-1", "WR One", "WR", 88.0, 2),
+        _player("wr-2", "WR Two", "WR", 87.5, 2),
+        _player("wr-3", "WR Three", "WR", 87.0, 2),
+    ]
+
+    views = build_best_fit_views(candidates, [], {})
+    by_id = {view.score.player_id: view for view in views}
+
+    assert by_id["wr-1"].timing_decision == "can_wait"
+    assert by_id["wr-1"].timing_urgency == "low"
+    assert "comparable" in by_id["wr-1"].timing_reason.lower()
+
+
+def test_best_fit_view_pick_timing_preserves_ranking_score():
+    candidates = [
+        _player("te-1", "TE One", "TE", 87.75, 1),
+        _player("te-2", "TE Two", "TE", 75.0, 2),
+    ]
+
+    views = build_best_fit_views(candidates, [], {})
+    by_id = {view.score.player_id: view for view in views}
+
+    assert by_id["te-1"].score.ranking_score == 87.75
+    assert by_id["te-1"].timing_decision == "take_now"
