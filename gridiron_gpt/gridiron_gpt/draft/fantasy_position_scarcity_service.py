@@ -33,13 +33,14 @@ class FantasyPositionScarcityService:
         available_players: Sequence[Any],
     ) -> PositionScarcityResult:
         position = str(candidate.position).upper()
+        candidate_id = str(candidate.player_id)
         current_score = float(candidate.ranking_score)
         current_tier = getattr(candidate, "tier", None)
 
         alternatives = [
             player
             for player in available_players
-            if player is not candidate
+            if str(getattr(player, "player_id", "")) != candidate_id
             and str(getattr(player, "position", "")).upper() == position
         ]
         alternatives.sort(
@@ -77,7 +78,7 @@ class FantasyPositionScarcityService:
         )
 
         return PositionScarcityResult(
-            player_id=str(candidate.player_id),
+            player_id=candidate_id,
             position=position,
             current_score=current_score,
             next_score=next_score,
