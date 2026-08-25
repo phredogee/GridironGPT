@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Iterable, Mapping
 
 from gridiron_gpt.draft.fantasy_best_fit_service import FantasyBestFitService
@@ -24,6 +24,41 @@ class BestFitView:
     reason: str
 
 
+def _candidate_with_market_tier(candidate: object, market_views: Mapping[str, object]) -> object:
+    """Return a scarcity-only candidate carrying the best available tier.
+
+    Production ranking score objects do not necessarily carry tier, while the
+    market view does. Keep the authoritative score object untouched and enrich
+    only the temporary object consumed by scarcity/timing calculations.
+    """
+    if getattr(candidate, "tier", None) is not None:
+        return candidate
+
+    player_id = str(getattr(candidate, "player_id", ""))
+    market_view = market_views.get(player_id)
+    market_tier = getattr(market_view, "tier", None) if market_view is not None else None
+    if market_tier is None:
+        return candidate
+
+    try:
+        return replace(candidate, tier=market_tier)
+    except (TypeError, ValueError):
+        pass
+
+    class _TieredCandidate:
+        pass
+
+    tiered = _TieredCandidate()
+    if hasattr(candidate, "__dict__"):
+        tiered.__dict__.update(candidate.__dict__)
+    else:
+        for name in ("player_id", "player_name", "position", "ranking_score", "team"):
+            if hasattr(candidate, name):
+                setattr(tiered, name, getattr(candidate, name))
+    tiered.tier = market_tier
+    return tiered
+
+
 def build_best_fit_views(
     candidates: Iterable[object],
     roster_scores: Iterable[object],
@@ -32,11 +67,15 @@ def build_best_fit_views(
     limit: int = 5,
 ) -> list[BestFitView]:
     candidate_list = list(candidates)
+    scarcity_candidates = [
+        _candidate_with_market_tier(candidate, market_views)
+        for candidate in candidate_list
+    ]
     scarcity_service = FantasyPositionScarcityService()
     timing_service = FantasyPickTimingService()
     scarcity_views = {
-        str(candidate.player_id): scarcity_service.evaluate(candidate, candidate_list)
-        for candidate in candidate_list
+        str(candidate.player_id): scarcity_service.evaluate(candidate, scarcity_candidates)
+        for candidate in scarcity_candidates
         if getattr(candidate, "tier", None) is not None
     }
 
