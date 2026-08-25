@@ -9,7 +9,7 @@ def _player(
     player_id: str,
     position: str,
     ranking_score: float,
-    tier: int,
+    tier: int | None,
 ):
     return SimpleNamespace(
         player_id=player_id,
@@ -94,3 +94,81 @@ def test_service_does_not_mutate_production_ranking_score() -> None:
 
     assert candidate.ranking_score == 91.5
     assert alternative.ranking_score == 84.0
+
+
+def test_last_available_player_at_position_is_high_scarcity() -> None:
+    service = FantasyPositionScarcityService()
+    candidate = _player("te-1", "TE", 84.0, 2)
+
+    result = service.evaluate(
+        candidate,
+        [candidate, _player("wr-1", "WR", 83.0, 3)],
+    )
+
+    assert result.next_score is None
+    assert result.next_tier is None
+    assert result.remaining_same_position == 0
+    assert result.scarcity_level == "high"
+
+
+def test_same_player_id_is_excluded_even_when_object_is_reconstructed() -> None:
+    service = FantasyPositionScarcityService()
+    candidate = _player("rb-1", "RB", 92.0, 1)
+    reconstructed_candidate = _player("rb-1", "RB", 92.0, 1)
+    next_rb = _player("rb-2", "RB", 84.0, 2)
+
+    result = service.evaluate(
+        candidate,
+        [reconstructed_candidate, next_rb],
+    )
+
+    assert result.next_score == 84.0
+    assert result.remaining_same_position == 1
+
+
+def test_position_matching_is_case_insensitive() -> None:
+    service = FantasyPositionScarcityService()
+    candidate = _player("wr-1", "wr", 88.0, 2)
+    next_wr = _player("wr-2", "WR", 86.0, 2)
+
+    result = service.evaluate(candidate, [candidate, next_wr])
+
+    assert result.position == "WR"
+    assert result.next_score == 86.0
+    assert result.remaining_same_position == 1
+
+
+def test_tier_cliff_with_modest_drop_is_meaningful_scarcity() -> None:
+    service = FantasyPositionScarcityService()
+    candidate = _player("qb-1", "QB", 90.0, 1)
+    next_qb = _player("qb-2", "QB", 88.0, 2)
+
+    result = service.evaluate(candidate, [candidate, next_qb])
+
+    assert result.score_drop == 2.0
+    assert result.tier_cliff is True
+    assert result.scarcity_level == "medium"
+
+
+def test_higher_ranked_alternative_never_creates_negative_score_drop() -> None:
+    service = FantasyPositionScarcityService()
+    candidate = _player("wr-2", "WR", 87.0, 2)
+    higher_wr = _player("wr-1", "WR", 90.0, 1)
+
+    result = service.evaluate(candidate, [candidate, higher_wr])
+
+    assert result.next_score == 90.0
+    assert result.score_drop == 0.0
+
+
+def test_missing_tier_information_does_not_create_false_tier_cliff() -> None:
+    service = FantasyPositionScarcityService()
+    candidate = _player("rb-1", "RB", 88.0, None)
+    next_rb = _player("rb-2", "RB", 86.0, None)
+
+    result = service.evaluate(candidate, [candidate, next_rb])
+
+    assert result.current_tier is None
+    assert result.next_tier is None
+    assert result.tier_cliff is False
+    assert result.scarcity_level == "low"
