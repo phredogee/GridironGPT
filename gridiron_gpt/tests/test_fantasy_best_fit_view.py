@@ -19,8 +19,8 @@ def _player(
     )
 
 
-def _market(draft_value: float | None):
-    return SimpleNamespace(draft_value=draft_value)
+def _market(draft_value: float | None, tier: int | None = None):
+    return SimpleNamespace(draft_value=draft_value, tier=tier)
 
 
 def test_best_fit_view_explains_roster_need_and_value():
@@ -148,3 +148,20 @@ def test_best_fit_view_pick_timing_preserves_ranking_score():
 
     assert by_id["te-1"].score.ranking_score == 87.75
     assert by_id["te-1"].timing_decision == "take_now"
+
+
+def test_best_fit_view_uses_market_tier_when_score_has_no_tier():
+    rb1 = _player("rb-1", "Top RB", "RB", 91.0)
+    rb2 = _player("rb-2", "Next RB", "RB", 82.0)
+    market_views = {
+        "rb-1": _market(2.0, tier=1),
+        "rb-2": _market(0.0, tier=2),
+    }
+
+    views = build_best_fit_views([rb1, rb2], [], market_views)
+    by_id = {view.score.player_id: view for view in views}
+
+    assert by_id["rb-1"].timing_decision == "take_now"
+    assert by_id["rb-1"].timing_urgency == "high"
+    assert "tier boundary" in by_id["rb-1"].reason
+    assert rb1.ranking_score == 91.0
