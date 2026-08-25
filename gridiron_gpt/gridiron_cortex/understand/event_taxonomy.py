@@ -374,6 +374,7 @@ EVENT_RULES: list[EventRule] = [
         "category": "transaction",
         "subtype": "released",
         "polarity": "negative",
+        "impact": -0.80,
         "confidence": 0.96,
         "phrases": [
             "released by",
