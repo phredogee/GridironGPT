@@ -3,8 +3,20 @@ from types import SimpleNamespace
 from gridiron_gpt.draft.fantasy_best_fit_view import build_best_fit_views
 
 
-def _player(player_id: str, name: str, position: str, ranking_score: float):
-    return SimpleNamespace(player_id=player_id, player_name=name, position=position, ranking_score=ranking_score)
+def _player(
+    player_id: str,
+    name: str,
+    position: str,
+    ranking_score: float,
+    tier: int | None = None,
+):
+    return SimpleNamespace(
+        player_id=player_id,
+        player_name=name,
+        position=position,
+        ranking_score=ranking_score,
+        tier=tier,
+    )
 
 
 def _market(draft_value: float | None):
@@ -42,3 +54,55 @@ def test_best_fit_view_respects_limit():
     views = build_best_fit_views(candidates, [], {}, limit=2)
 
     assert len(views) == 2
+
+
+def test_best_fit_view_calculates_high_scarcity_from_candidate_pool():
+    candidates = [
+        _player("rb-1", "Top RB", "RB", 90.0, 1),
+        _player("rb-2", "Next RB", "RB", 80.5, 2),
+        _player("wr-1", "Wide Receiver", "WR", 89.5, 1),
+    ]
+
+    views = build_best_fit_views(
+        candidates,
+        [],
+        {player.player_id: _market(0) for player in candidates},
+    )
+    by_id = {view.score.player_id: view for view in views}
+
+    assert by_id["rb-1"].scarcity_level == "high"
+    assert by_id["rb-1"].scarcity_bonus > 0
+    assert "high position scarcity" in by_id["rb-1"].reason
+    assert "9.5-point drop" in by_id["rb-1"].reason
+    assert "tier boundary" in by_id["rb-1"].reason
+
+
+def test_best_fit_view_keeps_low_scarcity_quiet():
+    candidates = [
+        _player("rb-1", "RB One", "RB", 88.0, 2),
+        _player("rb-2", "RB Two", "RB", 87.5, 2),
+        _player("rb-3", "RB Three", "RB", 87.0, 2),
+    ]
+
+    views = build_best_fit_views(candidates, [], {})
+    by_id = {view.score.player_id: view for view in views}
+
+    assert by_id["rb-1"].scarcity_level == "low"
+    assert by_id["rb-1"].scarcity_bonus == 0.0
+    assert "scarcity" not in by_id["rb-1"].reason.lower()
+
+
+def test_best_fit_view_scarcity_reacts_to_thinner_available_pool():
+    rb1 = _player("rb-1", "RB One", "RB", 90.0, 1)
+    rb2 = _player("rb-2", "RB Two", "RB", 89.0, 1)
+    rb3 = _player("rb-3", "RB Three", "RB", 88.5, 1)
+    rb4 = _player("rb-4", "RB Four", "RB", 79.0, 2)
+
+    before = build_best_fit_views([rb1, rb2, rb3, rb4], [], {})
+    after = build_best_fit_views([rb3, rb4], [], {})
+    before_by_id = {view.score.player_id: view for view in before}
+    after_by_id = {view.score.player_id: view for view in after}
+
+    assert before_by_id["rb-1"].scarcity_level == "low"
+    assert after_by_id["rb-3"].scarcity_level == "high"
+    assert "9.5-point drop" in after_by_id["rb-3"].reason
