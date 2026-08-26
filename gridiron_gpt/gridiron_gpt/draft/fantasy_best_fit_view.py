@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Iterable, Mapping
 
 from gridiron_gpt.draft.fantasy_best_fit_service import FantasyBestFitService
+from gridiron_gpt.draft.fantasy_pick_timing_service import FantasyPickTimingService
 from gridiron_gpt.draft.fantasy_position_scarcity_service import (
     FantasyPositionScarcityService,
 )
@@ -17,7 +18,45 @@ class BestFitView:
     draft_value: float
     scarcity_level: str
     scarcity_bonus: float
+    timing_decision: str
+    timing_urgency: str
+    timing_reason: str
     reason: str
+
+
+def _candidate_with_market_tier(candidate: object, market_views: Mapping[str, object]) -> object:
+    """Return a scarcity-only candidate carrying the best available tier.
+
+    Production ranking score objects do not necessarily carry tier, while the
+    market view does. Keep the authoritative score object untouched and enrich
+    only the temporary object consumed by scarcity/timing calculations.
+    """
+    if getattr(candidate, "tier", None) is not None:
+        return candidate
+
+    player_id = str(getattr(candidate, "player_id", ""))
+    market_view = market_views.get(player_id)
+    market_tier = getattr(market_view, "tier", None) if market_view is not None else None
+    if market_tier is None:
+        return candidate
+
+    try:
+        return replace(candidate, tier=market_tier)
+    except (TypeError, ValueError):
+        pass
+
+    class _TieredCandidate:
+        pass
+
+    tiered = _TieredCandidate()
+    if hasattr(candidate, "__dict__"):
+        tiered.__dict__.update(candidate.__dict__)
+    else:
+        for name in ("player_id", "player_name", "position", "ranking_score", "team"):
+            if hasattr(candidate, name):
+                setattr(tiered, name, getattr(candidate, name))
+    tiered.tier = market_tier
+    return tiered
 
 
 def build_best_fit_views(
@@ -28,10 +67,15 @@ def build_best_fit_views(
     limit: int = 5,
 ) -> list[BestFitView]:
     candidate_list = list(candidates)
-    scarcity_service = FantasyPositionScarcityService()
-    scarcity_views = {
-        str(candidate.player_id): scarcity_service.evaluate(candidate, candidate_list)
+    scarcity_candidates = [
+        _candidate_with_market_tier(candidate, market_views)
         for candidate in candidate_list
+    ]
+    scarcity_service = FantasyPositionScarcityService()
+    timing_service = FantasyPickTimingService()
+    scarcity_views = {
+        str(candidate.player_id): scarcity_service.evaluate(candidate, scarcity_candidates)
+        for candidate in scarcity_candidates
         if getattr(candidate, "tier", None) is not None
     }
 
@@ -50,19 +94,32 @@ def build_best_fit_views(
         if recommendation.draft_value > 0:
             reasons.append("positive draft value")
 
-        scarcity_view = scarcity_views.get(
-            str(getattr(recommendation.score, "player_id", ""))
-        )
+        player_id = str(getattr(recommendation.score, "player_id", ""))
+        scarcity_view = scarcity_views.get(player_id)
         if (
             scarcity_view is not None
             and recommendation.scarcity_level in {"medium", "high"}
         ):
             scarcity_reason = f"{recommendation.scarcity_level} position scarcity"
-            if scarcity_view.score_drop > 0:
+            if scarcity_view.next_score is not None and scarcity_view.score_drop > 0:
                 scarcity_reason += f" · {scarcity_view.score_drop:.1f}-point drop"
             if scarcity_view.tier_cliff:
                 scarcity_reason += " across tier boundary"
             reasons.append(scarcity_reason)
+
+        if scarcity_view is not None:
+            timing = timing_service.evaluate(
+                recommendation.score,
+                scarcity=scarcity_view,
+                roster_need=recommendation.roster_need,
+            )
+            timing_decision = timing.decision
+            timing_urgency = timing.urgency
+            timing_reason = timing.reason
+        else:
+            timing_decision = "neutral"
+            timing_urgency = "low"
+            timing_reason = "Neutral timing: insufficient tier data for pick-timing guidance."
 
         if not reasons:
             reasons.append("strong board position")
@@ -74,6 +131,9 @@ def build_best_fit_views(
                 draft_value=recommendation.draft_value,
                 scarcity_level=recommendation.scarcity_level,
                 scarcity_bonus=recommendation.scarcity_bonus,
+                timing_decision=timing_decision,
+                timing_urgency=timing_urgency,
+                timing_reason=timing_reason,
                 reason=" · ".join(reasons),
             )
         )
