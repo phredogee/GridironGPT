@@ -33,16 +33,21 @@ class FantasyWaitRiskService:
         next_pick: int,
         consensus_adp: float | None,
     ) -> WaitRiskResult:
+        current_pick = int(current_pick)
+        next_pick = int(next_pick)
+        if next_pick < current_pick:
+            raise ValueError("next_pick must be greater than or equal to current_pick")
+
         player_id = str(getattr(player, "player_id", ""))
         ranking_score = float(getattr(player, "ranking_score", 0.0))
-        picks_until_next_turn = max(0, int(next_pick) - int(current_pick))
+        picks_until_next_turn = next_pick - current_pick
 
         if consensus_adp is None:
             return WaitRiskResult(
                 player_id=player_id,
                 ranking_score=ranking_score,
-                current_pick=int(current_pick),
-                next_pick=int(next_pick),
+                current_pick=current_pick,
+                next_pick=next_pick,
                 picks_until_next_turn=picks_until_next_turn,
                 consensus_adp=None,
                 market_gap=None,
@@ -52,35 +57,35 @@ class FantasyWaitRiskService:
             )
 
         adp = float(consensus_adp)
-        market_gap = round(float(next_pick) - adp, 1)
+        market_gap = round(next_pick - adp, 1)
 
         if market_gap >= 3.0:
             risk_level = "high"
             recommendation = "unlikely_available"
             reason = (
                 f"High wait risk: consensus ADP {adp:.1f} is {market_gap:.1f} picks "
-                f"before your next pick at {int(next_pick)}."
+                f"before your next pick at {next_pick}."
             )
         elif market_gap <= -3.0:
             risk_level = "low"
             recommendation = "likely_available"
             reason = (
                 f"Low wait risk: consensus ADP {adp:.1f} is {abs(market_gap):.1f} picks "
-                f"after your next pick at {int(next_pick)}."
+                f"after your next pick at {next_pick}."
             )
         else:
             risk_level = "medium"
             recommendation = "uncertain"
             reason = (
                 f"Medium wait risk: consensus ADP {adp:.1f} is close to your next "
-                f"pick at {int(next_pick)}."
+                f"pick at {next_pick}."
             )
 
         return WaitRiskResult(
             player_id=player_id,
             ranking_score=ranking_score,
-            current_pick=int(current_pick),
-            next_pick=int(next_pick),
+            current_pick=current_pick,
+            next_pick=next_pick,
             picks_until_next_turn=picks_until_next_turn,
             consensus_adp=adp,
             market_gap=market_gap,
