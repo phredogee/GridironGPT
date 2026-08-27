@@ -15,6 +15,8 @@ def test_display_propagates_draft_settings_and_live_drafted_count() -> None:
 
     assert display.current_pick == 8
     assert display.next_pick == 17
+    assert display.is_user_turn is True
+    assert display.context_label == "Current Pick 8 · You are on the clock · Next Pick 17"
     assert display.risk_label == "HIGH WAIT RISK"
     assert display.recommendation_label == "unlikely to reach Pick 17"
 
@@ -62,3 +64,37 @@ def test_display_preserves_authoritative_board_score() -> None:
     )
 
     assert display.ranking_score == 91.23
+
+
+def test_before_user_turn_is_presented_as_upcoming_pick_availability() -> None:
+    settings = FantasyDraftSettings(league_size=12, draft_slot=8)
+
+    display = build_wait_risk_display(
+        player_id="rb-1",
+        ranking_score=86.5,
+        consensus_adp=1.5,
+        drafted_count=0,
+        settings=settings,
+    )
+
+    assert display.current_pick == 1
+    assert display.next_pick == 8
+    assert display.is_user_turn is False
+    assert display.context_label == "Current Pick 1 · Your Upcoming Pick 8"
+    assert display.risk_label == "AVAILABILITY AT PICK 8 · HIGH RISK"
+    assert display.recommendation_label == "unlikely to reach your pick"
+
+
+def test_before_user_turn_low_risk_uses_availability_wording() -> None:
+    settings = FantasyDraftSettings(league_size=12, draft_slot=8)
+
+    display = build_wait_risk_display(
+        player_id="rb-2",
+        ranking_score=80.0,
+        consensus_adp=25.3,
+        drafted_count=0,
+        settings=settings,
+    )
+
+    assert display.risk_label == "AVAILABILITY AT PICK 8 · LOW RISK"
+    assert display.recommendation_label == "likely to reach your pick"
