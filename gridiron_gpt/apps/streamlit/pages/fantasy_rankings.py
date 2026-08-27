@@ -79,7 +79,7 @@ def _render_draft_assistant(population, market_views, drafted_ids, projection_vi
     _legacy.st.markdown("### Draft Assistant")
     _legacy.st.caption(
         "Live recommendations use the frozen GridironGPT board and update instantly as players are drafted. "
-        "Use Mine when the pick belongs to your roster. Best Fit, pick timing, and Wait Risk are advisory and do not change production rankings."
+        "Use Mine when the pick belongs to your roster. Best Fit, pick timing, and market availability are advisory and do not change production rankings."
     )
     draft_settings = _draft_settings_controls()
     _legacy.st.caption(roster_advice.summary)
@@ -130,10 +130,11 @@ def _render_draft_assistant(population, market_views, drafted_ids, projection_vi
         _legacy.st.markdown("**Best Fit Right Now**")
         _legacy.st.caption(
             "Advisory blend of board strength, active roster need, draft value, scarcity, and pick timing. "
-            "Wait Risk separately estimates whether a player is likely to survive until your next pick."
+            "Market availability estimates whether a player is likely to survive to the relevant selection; on your turn this becomes Wait Risk if you pass."
         )
         if not best_fit:
             _legacy.st.caption("No undrafted ranked players remain.")
+        context_shown = False
         for fit in best_fit:
             score = fit.score
             projection = _legacy._projection_badge(score, projection_views)
@@ -149,6 +150,9 @@ def _render_draft_assistant(population, market_views, drafted_ids, projection_vi
                 drafted_count=len(drafted_ids),
                 settings=draft_settings,
             )
+            if not context_shown:
+                _legacy.st.caption(wait_risk.context_label)
+                context_shown = True
             row = _legacy.st.columns([5, 1.5])
             row[0].write(
                 f"**{score.player_name}** · {score.position or '-'} · {score.team or '-'} · "
