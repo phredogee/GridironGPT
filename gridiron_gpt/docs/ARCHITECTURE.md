@@ -53,12 +53,13 @@ production population + drafted IDs
 
 ## Best Fit Right Now
 
-`FantasyBestFitService` is a contextual recommendation layer downstream of production scoring. It consumes available candidates, My Team roster context, and market views. Its initial conservative heuristic keeps production ranking quality dominant while allowing modest active-roster-need and capped Draft Value adjustments.
+`FantasyBestFitService` is a contextual recommendation layer downstream of production scoring. It consumes available candidates, My Team roster context, market views, and bounded scarcity input. Production ranking quality remains dominant.
 
 ```text
 production ranking score ─────────────┐
-active roster need ───────────────────┤→ FantasyBestFitService
-Draft Value / market opportunity ─────┘          ↓
+active roster need ───────────────────┤
+Draft Value / market opportunity ─────┤→ FantasyBestFitService
+bounded scarcity signal ──────────────┘          ↓
                                          advisory fit score
                                                 ↓
                                      FantasyBestFitView
@@ -66,9 +67,61 @@ Draft Value / market opportunity ─────┘          ↓
                                    reason / Draft Assistant
 ```
 
-`FantasyBestFitView` converts recommendations into UI-ready explanations such as `fills active roster need` and `positive draft value`.
-
 **Invariant:** Best Fit may reorder its own advisory list, but it does not mutate `ranking_score`, Best Available order, or Best Value order.
+
+## Position Scarcity and Pick Timing
+
+`FantasyPositionScarcityService` evaluates the cost of waiting at the same position using remaining depth, score drop, and tier cliffs. Production-shaped ranking objects may not carry tiers directly, so `FantasyBestFitView` uses existing market tiers to build temporary advisory-only candidates without mutating the authoritative score objects.
+
+`FantasyPickTimingService` converts scarcity plus roster need into `TAKE NOW`, `CAN WAIT`, or `NEUTRAL` guidance.
+
+```text
+available same-position pool
+        +
+market tier context
+        ↓
+FantasyPositionScarcityService
+        ↓
+scarcity level / score drop / tier cliff
+        ↓
+FantasyPickTimingService
+        ↓
+TAKE NOW / CAN WAIT / NEUTRAL
+```
+
+Pick Timing answers whether the same-position pool can tolerate waiting. It does not estimate whether a specific player will survive to the user's next selection.
+
+## Draft Turn and Wait Risk Architecture
+
+`FantasyDraftSettings` validates league size and draft slot. `FantasyDraftTurnService` calculates snake-draft turns from those settings and the live drafted count. `FantasyWaitRiskViewService` combines that turn state with consensus ADP and delegates to `FantasyWaitRiskService`.
+
+```text
+DraftBoardState drafted count ───────────────┐
+FantasyDraftSettings                         │
+  ├─ league size                             │
+  └─ draft slot                              │
+        ↓                                    │
+FantasyDraftTurnService                      │
+  ├─ current overall pick                    │
+  └─ next user selection                     │
+                                             │
+Consensus ADP ───────────────────────────────┤
+                                             ↓
+                               FantasyWaitRiskViewService
+                                             ↓
+                                  FantasyWaitRiskService
+                                             ↓
+                                  WaitRiskResult
+                                             ↓
+                                  presentation adapter
+```
+
+The presentation layer is state-aware:
+
+- Before the user's turn, it reports **availability at the upcoming pick**.
+- On the user's turn, it reports **Wait Risk** for passing until the following user selection.
+
+This intentionally remains separate from Pick Timing. A player can be `CAN WAIT` from a positional-scarcity perspective while still carrying `HIGH WAIT RISK` because market ADP suggests that specific player will not return.
 
 ## Draft Assistant Data Flow
 
@@ -77,22 +130,23 @@ Production Rankings
         ↓
 Frozen Draft Board
         ↓
-DraftBoardState ──────────────────────┐
-        ↓                             │
-FantasyDraftPoolService               │
-  ├─ Best Available                   │
-  └─ Best Value                       │
-                                      │
-My Team IDs ──────────────────────────┘
+DraftBoardState ──────────────────────────────┐
+        ↓                                     │
+FantasyDraftPoolService                       │
+  ├─ Best Available                           │
+  └─ Best Value                               │
+                                              │
+My Team IDs ──────────────────────────────────┘
         ↓
 Roster Needs / Roster Advice
         ↓
 Best Fit Right Now
+  ├─ Position Scarcity
+  ├─ Pick Timing
+  └─ Market Availability / Wait Risk
         ↓
 Draft Assistant UI
 ```
-
-The next planned advisory input is **positional scarcity / tier-drop awareness**. It should quantify the cost of waiting at a position without becoming a second production ranking engine.
 
 ## Ranking Explanations and Market Views
 
@@ -114,7 +168,7 @@ Core Cortex persistence uses repository-backed JSON/JSONL implementations for ev
 Current verified full regression checkpoint:
 
 ```text
-878 passed
+990 passed
 ```
 
-The suite covers the established runtime, persistence, ranking, projection, tier/value, draft-state, draft-pool, roster-needs/advice boundaries plus Best Fit service and view-model behavior. Streamlit smoke validation confirms Best Fit responds to My Team context while the production board remains stable.
+The suite covers runtime, persistence, production ranking, projection, tier/value, draft state, draft pool, roster advice, Best Fit, position scarcity, Pick Timing, snake-turn calculation, Wait Risk, state-aware presentation contracts, and production-shaped integration behavior. Live Streamlit validation confirms snake progression and the distinction between pre-turn availability and on-the-clock Wait Risk while the production board remains stable.

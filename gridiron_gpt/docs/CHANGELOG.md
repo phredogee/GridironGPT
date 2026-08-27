@@ -1,5 +1,39 @@
 # Changelog
 
+## 2026-08-27 — Scarcity, Pick Timing, and Wait Risk
+
+### Added
+- `FantasyPositionScarcityService` for same-position depth, score-drop, and tier-cliff awareness.
+- Scarcity integration into Best Fit using bounded advisory adjustments without mutating production rankings.
+- `FantasyPickTimingService` with `TAKE NOW`, `CAN WAIT`, and `NEUTRAL` guidance.
+- Production-shaped tier handoff from existing market views into scarcity/pick-timing evaluation.
+- `FantasyDraftSettings` for validated league size and draft slot.
+- `FantasyDraftTurnService` for deterministic snake-draft turn calculation.
+- `FantasyWaitRiskService` and `FantasyWaitRiskViewService` for ADP-based next-pick availability.
+- `fantasy_wait_risk_ui` presentation adapter so Streamlit renders domain output rather than owning business logic.
+- Draft Assistant controls for league size and draft slot.
+- State-aware market guidance: upcoming-pick availability before the user's turn and Wait Risk while on the clock.
+- Focused service, scenario, integration, UI-contract, and production-shape regression tests.
+
+### Architectural Boundary
+
+Scarcity, Pick Timing, and Wait Risk remain advisory layers downstream of the authoritative production board. Pick Timing answers whether the same-position pool can tolerate waiting; Wait Risk answers whether the specific player is likely to survive to the user's next selection. Neither mutates `ranking_score`.
+
+### Validation
+
+```text
+990 passed
+```
+
+Interactive Streamlit validation confirmed:
+- live market tiers reach Pick Timing,
+- snake turns advance correctly from slot-based settings,
+- pre-turn guidance targets the user's upcoming pick,
+- on-the-clock guidance targets the following user selection,
+- positional timing and market availability remain independently explainable.
+
+---
+
 ## 2026-08-22 — Best Fit Right Now
 
 ### Added
@@ -20,10 +54,6 @@ Best Fit is advisory. Its initial conservative heuristic reads production rankin
 ```
 
 Interactive Streamlit validation confirmed Best Fit responds as My Team changes while the underlying production board remains stable.
-
-### Next
-
-Add positional scarcity / tier-drop awareness as an independently tested advisory signal before considering it as an input to Best Fit.
 
 ---
 
