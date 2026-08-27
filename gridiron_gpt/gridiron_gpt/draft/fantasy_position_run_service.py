@@ -35,7 +35,8 @@ class FantasyPositionRunService:
         positions = [
             str(getattr(pick, "position", "")).strip().upper()
             for pick in recent
-            if str(getattr(pick, "position", "")).strip()
+            if getattr(pick, "position", None)
+            and str(getattr(pick, "position", "")).strip()
         ]
         if not positions:
             return PositionRunResult(
@@ -47,12 +48,26 @@ class FantasyPositionRunService:
             )
 
         counts = Counter(positions)
-        position, count = counts.most_common(1)[0]
-        observed_window = len(recent)
+        leaders = counts.most_common()
+        position, count = leaders[0]
+        if len(leaders) > 1 and leaders[1][1] == count:
+            return PositionRunResult(
+                level="none",
+                position=None,
+                position_count=count,
+                window_size=len(recent),
+                reason="No positional run: recent position leaders are tied.",
+            )
 
-        if count >= 4 and observed_window >= 6:
+        observed_window = len(recent)
+        concentration = count / observed_window
+
+        # A run is about concentration, not an absolute pick count. Four of five
+        # is stronger than four of seven, while the original 4-of-6 contract
+        # remains an active run.
+        if count >= 4 and concentration >= (2 / 3):
             level = "active"
-        elif count >= 3 and observed_window >= 5:
+        elif count >= 3 and concentration >= 0.5:
             level = "developing"
         else:
             return PositionRunResult(
