@@ -18,12 +18,15 @@ Build GridironGPT into a complete fantasy-football intelligence, live draft, and
 | Live Draft State / My Team | Operational |
 | Best Available / Best Value | Operational |
 | Roster Needs / Roster Advice | Operational first pass |
-| Best Fit Right Now | Operational first pass |
-| Positional Scarcity / Tier Drop | Next milestone |
+| Best Fit Right Now | Operational |
+| Positional Scarcity / Tier Drop | Operational |
+| Pick Timing | Operational |
+| Snake-Draft Turn Awareness | Operational |
+| Market Availability / Wait Risk | Operational |
 | Commissioner Suite | Operational |
 | Production / Cloud | Future phase |
 
-Current verified regression checkpoint: **878 passed**.
+Current verified regression checkpoint: **990 passed**.
 
 ## Completed Draft Milestones
 
@@ -38,37 +41,42 @@ Current verified regression checkpoint: **878 passed**.
 - [x] Add a Best Fit presentation/view layer with concise reasons.
 - [x] Expose Best Fit Right Now in the Draft Assistant.
 - [x] Verify Best Fit responds to roster context without changing production ranking order.
+- [x] Add positional scarcity and tier-cliff awareness.
+- [x] Add Pick Timing guidance while preserving the production score.
+- [x] Validate production-shaped tier handoff for live Pick Timing.
+- [x] Add validated league-size and draft-slot settings.
+- [x] Add deterministic snake-draft turn calculation.
+- [x] Add consensus-ADP-based next-pick availability / Wait Risk.
+- [x] Distinguish pre-turn availability from on-the-clock Wait Risk in the UI.
+- [x] Validate live snake progression and advisory independence in Streamlit.
 
-## Next Milestone — Positional Scarcity / Tier-Drop Awareness
+## Next Milestone — Draft-Night Stabilization and Strategy Context
 
-Answer the draft question:
+The core draft assistant now answers four separate questions:
 
-> If I pass on this position now, how much worse does the next realistic option become?
+1. Who is strongest on the authoritative board?
+2. Who is the best market value?
+3. Which player best fits the current roster and positional landscape?
+4. Can the position wait, and is the specific player likely to survive to the next selection?
 
-Planned inputs:
-- Current player's production ranking score.
-- Next available players at the same position.
-- Position tier boundaries.
-- Score drop to the next realistic option.
-- Remaining depth at the position.
-- Market/ADP context where useful and defensible.
+Near-term work should prioritize stability and explainability before adding more scoring complexity.
 
 Planned steps:
-- [ ] Define a `FantasyPositionScarcityService` contract.
-- [ ] Add focused tests for meaningful score drop-offs and tier cliffs.
-- [ ] Keep scarcity independent from production `ranking_score`.
-- [ ] Produce explainable scarcity labels/reasons.
-- [ ] Feed scarcity into Best Fit as a bounded advisory signal only after focused validation.
-- [ ] Simulate multiple roster-construction paths.
-- [ ] Run full regression and Streamlit smoke tests.
+- [ ] Run extended live-draft simulations across multiple draft slots.
+- [ ] Verify turn transitions at snake boundaries and back-to-back picks.
+- [ ] Improve zero-drop wording such as `0.0-point drop` for human readability.
+- [ ] Add positional-run awareness without mutating the production board.
+- [ ] Add configurable roster targets / league lineup requirements.
+- [ ] Evaluate persistent draft-session storage.
+- [ ] Add post-draft roster analysis.
 
 ## Draft Center Expansion
 
-After scarcity:
+Later draft-center candidates:
 - Reach/value indicators.
-- Expected availability at future picks where modeling is defensible.
-- Draft-round strategy and positional-run awareness.
-- Configurable roster targets and league-specific lineup requirements.
+- Positional-run awareness.
+- Draft-round strategy context.
+- League-specific lineup requirements.
 - Persistent draft sessions.
 - Post-draft roster analysis.
 
