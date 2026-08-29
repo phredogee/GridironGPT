@@ -5,6 +5,7 @@ from pathlib import Path
 
 from gridiron_gpt.draft.fantasy_best_fit_view import build_best_fit_views
 from gridiron_gpt.draft.fantasy_draft_settings import FantasyDraftSettings
+from gridiron_gpt.draft.fantasy_position_run_draft_state import build_position_run_from_draft_state
 from gridiron_gpt.draft.fantasy_roster_advice_service import FantasyRosterAdviceService
 from gridiron_gpt.draft.fantasy_wait_risk_ui import build_wait_risk_display
 
@@ -64,6 +65,20 @@ def _draft_settings_controls() -> FantasyDraftSettings:
     return FantasyDraftSettings(league_size=league_size, draft_slot=draft_slot)
 
 
+def _render_position_run(position_run) -> None:
+    """Show meaningful market momentum without changing any recommendation score."""
+    if position_run.level == "none" or not position_run.position:
+        return
+
+    label = f"{position_run.level.upper()} {position_run.position} RUN"
+    if position_run.level == "active":
+        guidance = f"Market momentum is increasing pressure at {position_run.position}."
+        _legacy.st.warning(f"**{label}** · {position_run.reason} {guidance}")
+    else:
+        guidance = "A positional run may be forming."
+        _legacy.st.info(f"**{label}** · {position_run.reason} {guidance}")
+
+
 def _render_draft_assistant(population, market_views, drafted_ids, projection_views):
     best_available = _legacy._best_available_scores(population, drafted_ids, limit=5)
     best_value = _legacy._best_value_scores(population, market_views, drafted_ids, limit=5)
@@ -75,14 +90,16 @@ def _render_draft_assistant(population, market_views, drafted_ids, projection_vi
 
     candidates = [score for score in population.overall if score.player_id not in drafted_ids]
     best_fit = build_best_fit_views(candidates, roster_scores, market_views, limit=5)
+    position_run = build_position_run_from_draft_state(_legacy._draft_state(), by_id)
 
     _legacy.st.markdown("### Draft Assistant")
     _legacy.st.caption(
         "Live recommendations use the frozen GridironGPT board and update instantly as players are drafted. "
-        "Use Mine when the pick belongs to your roster. Best Fit, pick timing, and market availability are advisory and do not change production rankings."
+        "Use Mine when the pick belongs to your roster. Best Fit, pick timing, market availability, and positional runs are advisory and do not change production rankings."
     )
     draft_settings = _draft_settings_controls()
     _legacy.st.caption(roster_advice.summary)
+    _render_position_run(position_run)
 
     columns = _legacy.st.columns(3)
 
