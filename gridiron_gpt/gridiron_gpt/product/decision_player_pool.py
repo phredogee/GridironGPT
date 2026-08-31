@@ -36,10 +36,12 @@ def build_decision_player_pool(
             continue
 
         catalog_team = str(item.get("team") or "").strip().upper()
-        scored_team, data = score_data.get(
-            (name, catalog_team),
-            scores_by_name.get(name, (catalog_team, {})),
-        )
+        exact_data = score_data.get((name, catalog_team))
+        if exact_data is not None:
+            scored_team = catalog_team
+            data = exact_data
+        else:
+            scored_team, data = scores_by_name.get(name, (catalog_team, {}))
 
         signals = list(data.get("signals", []))
         score = float(data.get("score", 0.0))
