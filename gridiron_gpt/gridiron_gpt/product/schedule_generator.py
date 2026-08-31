@@ -89,7 +89,9 @@ class ScheduleGenerator:
 
     def generate(self, config: ScheduleConfig) -> GeneratedSchedule:
         required_pairs = self._required_pair_counts(config)
-        extra_weeks = config.regular_season_weeks - config.minimum_regular_season_weeks
+        games_per_week = len(config.teams) // 2
+        represented_weeks = sum(required_pairs.values()) // games_per_week
+        extra_weeks = config.regular_season_weeks - represented_weeks
         if extra_weeks:
             self._add_balanced_extra_games(config, required_pairs, extra_weeks)
 
@@ -115,10 +117,14 @@ class ScheduleGenerator:
             away_games=dict(away_games),
         )
 
-    @staticmethod
+    @classmethod
     def _required_pair_counts(
+        cls,
         config: ScheduleConfig,
     ) -> dict[tuple[str, str], int]:
+        if cls._uses_ten_team_fourteen_week_format(config):
+            return cls._ten_team_fourteen_week_pair_counts(config)
+
         division_by_team = {
             team.team_id: team.division for team in config.teams
         }
@@ -126,6 +132,51 @@ class ScheduleGenerator:
         for left, right in combinations(sorted(division_by_team), 2):
             same_division = division_by_team[left] == division_by_team[right]
             counts[(left, right)] = 2 if same_division else 1
+        return counts
+
+    @staticmethod
+    def _uses_ten_team_fourteen_week_format(config: ScheduleConfig) -> bool:
+        return (
+            len(config.teams) == 10
+            and len({team.division for team in config.teams}) == 2
+            and config.division_size == 5
+            and config.regular_season_weeks == 14
+        )
+
+    @staticmethod
+    def _ten_team_fourteen_week_pair_counts(
+        config: ScheduleConfig,
+    ) -> dict[tuple[str, str], int]:
+        """Build the balanced 10-team, two-division, 14-week format.
+
+        Each team plays its four divisional opponents exactly twice (8 games).
+        Cross-division play uses a five-round bipartite rotation: one round is
+        skipped, two rounds are doubled, and two rounds are played once. That
+        gives every team six cross-division games against exactly four of the
+        five teams in the opposite division, with no third divisional meeting.
+        """
+        divisions: dict[str, list[str]] = {}
+        for team in config.teams:
+            divisions.setdefault(team.division, []).append(team.team_id)
+
+        division_names = sorted(divisions)
+        left = sorted(divisions[division_names[0]])
+        right = sorted(divisions[division_names[1]])
+
+        counts: dict[tuple[str, str], int] = {}
+
+        for division_teams in (left, right):
+            for first, second in combinations(division_teams, 2):
+                counts[tuple(sorted((first, second)))] = 2
+
+        round_weights = (0, 2, 2, 1, 1)
+        for shift, weight in enumerate(round_weights):
+            if weight == 0:
+                continue
+            for index, first in enumerate(left):
+                second = right[(index + shift) % len(right)]
+                counts[tuple(sorted((first, second)))] = weight
+
         return counts
 
     def _add_balanced_extra_games(
@@ -327,9 +378,6 @@ class ScheduleGenerator:
                 )
             return adjusted
 
-        # A schedule should remain usable even when unusual extra-week rules
-        # make the ideal floor/ceiling targets infeasible. Preserve the best
-        # deterministic orientation rather than breaking exports entirely.
         return adjusted
 
     @staticmethod
