@@ -83,6 +83,65 @@ def test_each_cross_division_opponent_is_played_once():
                 assert counts[(left.team_id, right.team_id)] == 1
 
 
+def test_fourteen_week_format_never_adds_a_third_divisional_game():
+    config = rrfl_config(regular_season_weeks=14, playoff_start_week=15)
+    schedule = ScheduleGenerator().generate(config)
+    division = {team.team_id: team.division for team in config.teams}
+    counts = Counter(
+        tuple(sorted((game.home_team_id, game.away_team_id)))
+        for game in schedule.matchups
+    )
+
+    for left_index, left in enumerate(config.teams):
+        for right in config.teams[left_index + 1 :]:
+            if division[left.team_id] == division[right.team_id]:
+                assert counts[tuple(sorted((left.team_id, right.team_id)))] == 2
+
+
+def test_fourteen_week_format_gives_every_team_eight_division_games():
+    config = rrfl_config(regular_season_weeks=14, playoff_start_week=15)
+    schedule = ScheduleGenerator().generate(config)
+
+    for team in config.teams:
+        divisional_games = [
+            game
+            for game in schedule.games_for(team.team_id)
+            if game.divisional
+        ]
+        assert len(divisional_games) == 8
+
+
+def test_fourteen_week_format_skips_one_cross_opponent_and_repeats_two():
+    config = rrfl_config(regular_season_weeks=14, playoff_start_week=15)
+    schedule = ScheduleGenerator().generate(config)
+    division = {team.team_id: team.division for team in config.teams}
+
+    for team in config.teams:
+        cross_counts = Counter()
+        for game in schedule.games_for(team.team_id):
+            opponent = (
+                game.away_team_id
+                if game.home_team_id == team.team_id
+                else game.home_team_id
+            )
+            if division[opponent] != division[team.team_id]:
+                cross_counts[opponent] += 1
+
+        assert len(cross_counts) == 4
+        assert sorted(cross_counts.values()) == [1, 1, 2, 2]
+        assert sum(cross_counts.values()) == 6
+
+
+def test_fourteen_week_format_has_balanced_home_and_away_totals():
+    schedule = ScheduleGenerator().generate(
+        rrfl_config(regular_season_weeks=14, playoff_start_week=15)
+    )
+
+    for team_id in schedule.home_games:
+        assert schedule.home_games[team_id] == 7
+        assert schedule.away_games[team_id] == 7
+
+
 def test_home_and_away_totals_are_as_even_as_mathematically_possible():
     schedule = ScheduleGenerator().generate(rrfl_config())
 
