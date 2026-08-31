@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-08-31 — Decision Center Canonical Player Pool
+
+### Fixed
+- Decision Center now builds its selectable player universe from the canonical NFL roster catalog instead of only from players that currently have Cortex score data.
+- Start / Sit, Waivers, Trade, Roster, and Commissioner Hub can retain fantasy-relevant catalog players even when those players have no recent signals.
+- Stable GSIS IDs are used when available, with existing fallback IDs retained for compatibility.
+- Catalog players are enriched with Cortex score/confidence data when present; unscored players remain selectable with neutral score/confidence defaults.
+- Added focused regression tests for unscored-player retention, fantasy-position filtering, stable IDs, and team-code fallback behavior.
+
+### Architectural Boundary
+
+The canonical player catalog is now authoritative for Decision Center player identity and population. Cortex score data is enrichment, not an inclusion gate. This keeps roster construction independent from whether a player happened to produce a recent intelligence signal.
+
+---
+
 ## 2026-08-27 — Scarcity, Pick Timing, and Wait Risk
 
 ### Added

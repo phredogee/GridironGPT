@@ -12,7 +12,7 @@ from gridiron_gpt.data_ingest.player_scores import (
     calculate_player_scores,
     confidence_from_signals,
 )
-from gridiron_gpt.fantasy_decisions.models import PlayerDecisionInput
+from gridiron_gpt.product.decision_player_pool import build_decision_player_pool
 
 
 st.set_page_config(
@@ -37,25 +37,11 @@ page = st.sidebar.radio(
 
 catalog = load_player_catalog()
 score_data = calculate_player_scores()
-lookup = {item["player"]: item for item in catalog}
-
-players = []
-for (name, team), data in score_data.items():
-    catalog_item = lookup.get(name, {})
-    score = float(data.get("score", 0.0))
-    players.append(
-        PlayerDecisionInput(
-            player_id=str(catalog_item.get("player_id") or name.casefold().replace(" ", "-")),
-            player_name=name,
-            position=str(catalog_item.get("position") or "UNK"),
-            team=team,
-            cortex_score=score,
-            confidence=confidence_from_signals(data.get("signals", [])) / 100.0,
-            projected_points=max(0.0, 10.0 + score),
-            replacement_value=max(0.0, score / 2.0),
-            evidence={"signals": data.get("signals", [])},
-        )
-    )
+players = build_decision_player_pool(
+    catalog,
+    score_data,
+    confidence_from_signals=confidence_from_signals,
+)
 
 if page == "Decision Center":
     render_decision_center(players)
