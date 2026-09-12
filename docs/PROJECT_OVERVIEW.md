@@ -13,14 +13,9 @@ GridironGPT is a fantasy-football intelligence platform powered by the reusable 
 - FootballContextService supplies factual roster/schedule context to Cortex explanations.
 - Cortex supports compound football developments on one Signal without multiplying direct source impact.
 - Context-aware relationship propagation uses structured classifications to select relevant graph paths.
-- Fantasy draft Best Fit recommendations now include deterministic position-scarcity reasoning based on the current undrafted candidate pool.
-- Position scarcity measures same-position depth, next-option ranking-score drop, and tier cliffs.
-- Scarcity is advisory: bounded bonuses may resolve close Best Fit decisions but never mutate the production `ranking_score`.
-- Draft Assistant explanations surface meaningful medium/high scarcity while suppressing low-scarcity noise.
+- Fantasy draft Best Fit recommendations include deterministic position-scarcity reasoning based on the current undrafted candidate pool.
+- Position scarcity is advisory and never mutates the production ranking score.
 - Cortex persists event history, scorecards, recommendations, and replayable decision trails.
-- Ingestion records provider health, normalized events, Cortex-accepted events, duplicate events, and processor failures.
-- A production taxonomy integrity guard now verifies every event rule contains the required classification fields after a live RotoWire event exposed a missing `impact` field.
-- Current regression baseline: **939 passing tests as of 2026-08-25**.
 
 ## Runtime Flow
 
@@ -34,26 +29,45 @@ Structured NFL data -> canonical player/game state -> JSONL repositories -> Sche
 
 Draft decision path:
 
-Available draft board -> production `ranking_score` -> PositionScarcityService -> bounded Best Fit adjustment -> deterministic Best Fit view -> Draft Assistant.
+Available draft board -> production ranking_score -> PositionScarcityService -> bounded Best Fit adjustment -> deterministic Best Fit view -> Draft Assistant.
 
-## Position Scarcity
+## Capstone Project: GridironGPT DFS Intelligence
 
-Position scarcity answers a draft-specific opportunity-cost question: what is likely lost by waiting at this position? For each candidate, the service evaluates remaining same-position alternatives, the score of the next option, the score drop, and whether waiting crosses a tier boundary.
+The Fall 2026 Capstone extends the existing GridironGPT platform with a new, isolated Daily Fantasy Sports decision-support module for DraftKings and FanDuel. Existing GridironGPT infrastructure is prior work and remains the season-long fantasy foundation. Capstone credit applies to the new DFS-specific pipeline, machine-learning projection system, platform integration, value analysis, optimization, human-in-the-loop controls, backtesting, live evaluation, and integration work.
 
-Scarcity levels are intentionally bounded in Best Fit: low adds 0, medium adds 1, and high adds 2. This allows scarcity to break close decisions without allowing positional urgency to overwhelm a materially better player. The underlying production `ranking_score` remains unchanged and authoritative.
+### Capstone Scope
 
-Because scarcity is calculated from the current candidate pool, it reacts naturally to position runs as players are drafted. The Draft Assistant exposes useful high/medium urgency in deterministic explanation text and keeps low scarcity quiet.
+The new DFS work will include:
 
-## Multi-Signal Intelligence
+- Historical NFL player-week training data.
+- Pregame feature engineering using only information available before kickoff.
+- A baseline projection method and multiple regression models.
+- Prediction of player fantasy-point production.
+- DraftKings and FanDuel salary/slate ingestion through permitted sources or import workflows.
+- Platform-specific scoring and roster-rule adapters.
+- DFS player-value analysis combining projections with salary and platform context.
+- Human review controls for locking, excluding, and overriding players before optimization.
+- A constrained lineup optimizer.
+- Human acceptance, modification, or rejection of candidate lineups.
+- Historical backtesting and live 2026 weekly evaluation.
+- Integration that does not disrupt existing season-long GridironGPT functionality.
 
-A single report can contain several fantasy-relevant developments, such as a player returning to practice, receiving first-team reps, and drawing coach praise. EventClassifier preserves all detected classifications through `classify_all()` while the legacy `classify()` contract still returns the highest-ranked primary classification.
+### Prediction Target
 
-SignalProcessor stores the primary classification plus the full classification collection on one Signal. RelationshipContextPolicy can use those classifications to keep relevant graph paths eligible without creating additional direct player impacts.
+The primary machine-learning target is actual fantasy-point production for an NFL player in a given player-week/game. Each training row represents one player appearance. Features must be derived only from information available before that game's kickoff to prevent data leakage.
 
-## Ranking Status
+The initial baseline will use recent rolling fantasy-point performance. Candidate models will include linear regression, random forest regression, and gradient-boosted regression. Model selection will use chronological validation rather than random future-to-past mixing.
 
-Fantasy draft decisions now use a production ranking score plus explicit advisory layers such as roster need, market/draft value, and position scarcity. Cortex intelligence remains interpretable and separate from the ranking contract. Position scarcity does not rewrite player value; it only expresses the opportunity cost of waiting.
+### Success Criteria
+
+Prediction quality will be evaluated with MAE, RMSE, predicted-versus-actual correlation, positional error analysis, and comparison with the rolling-performance baseline. Success requires the selected ML approach to demonstrate measurable improvement over the baseline on unseen chronological test data.
+
+Optimizer success requires 100% compliance with implemented salary-cap, roster, position, FLEX, platform, and human lock/exclude constraints. Human-in-the-loop success requires the user to be able to review projections, constrain optimization, and accept, modify, or reject candidate lineups. DFS integration must not break existing season-long GridironGPT behavior.
+
+### Human-in-the-Loop Principle
+
+GridironGPT DFS Intelligence is a decision-support system, not an autonomous wagering system. Human review occurs before optimization and human authority is retained after candidate lineups are generated. The system will not automatically enter contests or present predictions as guaranteed outcomes.
 
 ## Operational Goal
 
-Allow GridironGPT to continuously accumulate trustworthy historical evidence and structured NFL state without duplicate or multi-signal score inflation, while turning that evidence into explainable, deterministic draft-night decisions with explicit safety boundaries.
+Allow GridironGPT to continuously accumulate trustworthy historical evidence and structured NFL state while turning that information into explainable fantasy-football decisions. The DFS Capstone adds a measurable ML-and-optimization workflow while preserving clear boundaries between prediction, optimization, and human judgment.
