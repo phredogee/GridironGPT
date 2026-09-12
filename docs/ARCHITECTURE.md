@@ -6,113 +6,95 @@ GridironGPT owns provider integration, ingestion scheduling, football-specific s
 
 Football-specific facts and draft policy remain outside the reusable Cortex core until application composition supplies them through explicit services.
 
-## News Ingestion Pipeline
+## Existing Season-Long Architecture
 
-1. Scheduled runner invokes configured providers.
-2. Provider adapters retrieve source records.
-3. Player resolution maps article text to NFL entities.
-4. Records are normalized into RawEvents.
-5. Ingestion forwards each event to the configured Cortex processor.
-6. Cortex fingerprints the event and rejects previously processed evidence.
-7. New evidence moves through entity resolution, multi-signal classification, Signal construction, relationship propagation, scoring, recommendation, prediction, and explanation stages.
-8. Cortex state and event-bus history are persisted for restart recovery and replay.
-9. Ingestion-run diagnostics are persisted independently for operational observability.
+The existing system maintains separate news-ingestion, structured football-state, ranking, and draft-decision paths. Production ranking value remains authoritative; advisory layers such as roster need and position scarcity must not silently mutate that value.
 
-### Multi-Signal Classification Boundary
+## Capstone DFS Architecture
 
-`EventClassifier.classify(event)` preserves the legacy single-best classification contract while `classify_all(event)` returns all distinct structured developments detected in one RawEvent. SignalProcessor still creates exactly one Signal per RawEvent. Secondary classifications are evidence/context, not independent direct score contributions.
-
-### Taxonomy Integrity Boundary
-
-Event taxonomy rules are runtime dictionaries consumed by EventClassifier. Every rule must define `category`, `subtype`, `polarity`, `impact`, `confidence`, and `phrases`, and must contain at least one phrase. Regression tests enforce this schema after a live RotoWire event exposed a missing `impact` field in the `transaction.released` rule. This prevents malformed taxonomy entries from reaching production ingestion as runtime `KeyError` failures.
-
-### Context-Aware Relationship Propagation
-
-RelationshipContextPolicy derives relationship relevance from structured Signal classifications. RelationshipEngine applies that context before PropagationPlanner uses relationship strength, confidence, hop decay, and semantic multipliers. Classification count does not modify source impact magnitude.
+The DFS Capstone is an isolated extension of GridironGPT. It reuses appropriate existing NFL identity and football-data foundations while introducing a new player-week ML pipeline, DFS platform adapters, value analysis, human review, and constrained optimization.
 
 ```text
-RawEvent
-  -> classify_all()
-  -> one Signal
-       |- primary classification
-       |- compound classification evidence
-       v
-RelationshipContextPolicy
-  -> eligible graph paths
-  -> existing propagation math
-  -> one direct impact + contextual propagated impacts
+Historical + Current NFL Data
+          |
+          v
+Player-Week Dataset
+          |
+          v
+Data Preparation / Feature Engineering
+          |
+          v
+Baseline + ML Projection Models
+          |
+          v
+Predicted Fantasy Points
+          |
+          v
+DFS Value Layer
+  |- projection
+  |- salary
+  |- platform scoring
+  `- slate context
+          |
+          v
++---------------------------+
+|       HUMAN REVIEW        |
+| review projection/context |
+| lock players              |
+| exclude players           |
+| consider late information |
+| set strategy/preferences  |
++-------------+-------------+
+              |
+              v
+Constrained Lineup Optimizer
+  |- salary cap
+  |- roster requirements
+  |- position eligibility
+  |- FLEX rules
+  |- platform rules
+  `- human constraints
+              |
+              v
+Candidate Optimized Lineup(s)
+              |
+              v
++---------------------------+
+|      HUMAN DECISION       |
+| accept / modify / reject  |
++---------------------------+
 ```
 
-## Daily Production Refresh
+### ML Boundary
 
-`scripts/run_daily_ingestion.py` is the scheduler-facing production entry point. A healthy run requires zero provider failures and zero Cortex processor failures; otherwise the command exits non-zero so schedulers can surface the failure.
+One training observation represents one NFL player in one game/week. The primary target is actual fantasy-point production. Inputs may include historical performance, rolling form, usage, team context, matchup, game context, injury/status information when reliably available, and position. Only information available before kickoff may be used as a feature.
 
-The GitHub Actions workflow runs daily and supports manual dispatch. Production explicitly selects Supabase ingestion-run persistence and requires the configured Supabase credentials.
+The initial baseline is recent rolling fantasy-point performance. Candidate models are linear regression, random forest regression, and gradient-boosted regression. Train, validation, and test partitions are chronological to reduce leakage and better represent real forecasting conditions.
 
-A post-hotfix manual production run on 2026-08-25 processed 41 records from ESPN NFL and RotoWire NFL, accepted 10 new Cortex events, ignored 31 duplicates, recorded zero processor failures, and finished healthy.
+### DFS Platform Boundary
 
-## Structured Football State
+Football-performance prediction and DFS platform rules are separate concerns. DraftKings and FanDuel adapters will supply salary, slate, scoring, roster, and eligibility constraints. This separation allows the football projection layer to remain reusable while platform-specific scoring and optimization rules vary independently.
 
-GridironGPT maintains factual player/roster and schedule/game state separately from scored Cortex news evidence. FootballContextService bridges this state into CortexEngine for explanation context without silently redefining Cortex scores.
+### Human-in-the-Loop Boundary
 
-## Fantasy Draft Decision Architecture
+Human control exists at two explicit gates. Before optimization, the user reviews projections and current information and may lock or exclude players or establish strategy constraints. After optimization, the system presents candidate lineups for human acceptance, modification, or rejection. No contest entry is automated.
 
-Draft decisions are composed outside Cortex scoring:
+### Optimization Objective
+
+For an eligible player set, the optimizer seeks a legal lineup that maximizes projected fantasy production subject to platform and human constraints. Conceptually:
 
 ```text
-Current undrafted candidate pool
-          |
-          v
-Production ranking_score --------------------+
-          |                                   |
-          v                                   |
-FantasyPositionScarcityService                |
-  |- remaining same-position alternatives     |
-  |- next-option ranking score                 |
-  |- score drop                                |
-  `- tier-cliff detection                      |
-          |                                   |
-          v                                   |
-scarcity level: low / medium / high            |
-          |                                   |
-          v                                   |
-FantasyBestFitService <------------------------+
-  |- production score remains read-only
-  |- roster/market decision inputs
-  `- bounded scarcity bonus: 0 / 1 / 2
-          |
-          v
-BestFitView
-  |- deterministic reason
-  |- scarcity level/bonus
-  `- low-scarcity noise suppressed
-          |
-          v
-Streamlit Draft Assistant
+maximize sum(P_i * x_i)
 ```
 
-### Scarcity Contract
+where `P_i` is the projected fantasy-point value for player `i` and `x_i` is 1 when the player is selected and 0 otherwise. Salary caps, roster composition, position/FLEX eligibility, platform rules, and user locks/exclusions constrain the solution.
 
-Position scarcity is an advisory opportunity-cost signal, not a replacement ranking model. `FantasyPositionScarcityService` evaluates a candidate against the current available pool and excludes the candidate by stable `player_id`, including reconstructed objects representing the same player.
+## Failure and Safety Model
 
-Best Fit uses bounded scarcity bonuses: low `+0`, medium `+1`, high `+2`. This permits a scarce position to break a close ranking gap while preventing scarcity from overcoming a large production-value difference. The service never mutates `ranking_score`.
+DFS data providers and salary imports must be replaceable through explicit adapters. Missing optional injury or contextual data should degrade gracefully rather than invalidate the full pipeline. Player identity mapping must use canonical IDs where possible. Feature construction must preserve chronological integrity.
 
-The view layer computes scarcity from the current undrafted pool on each recommendation build. Position runs therefore change scarcity automatically as the pool thins. Medium/high scarcity can appear in deterministic explanation text; low scarcity remains quiet.
-
-## Failure Model
-
-Provider failures are isolated so healthy providers can continue. Downstream processor failures are fail-open from the provider-ingestion perspective but are counted as processor failures. The production daily command converts either provider or processor failures into a non-zero exit status.
-
-Football context and draft advisory context are optional enrichment. Missing optional context must not prevent the underlying evidence pipeline from operating.
-
-## Deduplication Contract
-
-Cortex remains the authority for whether normalized evidence is new. Ingestion reports accepted events separately from duplicates ignored. Multi-signal classification preserves one source RawEvent as one deduplicated event and one Signal.
-
-## Ranking Boundary
-
-Production fantasy ranking value and Cortex intelligence remain conceptually distinct. Draft advisory services may use ranking value as an input, but must not mutate it. New decision policies should be explicit, bounded, deterministic where practical, and covered by ordering/regression fixtures.
+DFS work must not modify authoritative season-long rankings, draft state, waiver logic, or weekly lineup behavior. Integration will be regression-tested so the Capstone module remains additive.
 
 ## Performance and Persistence
 
-RSS retrieval uses explicit timeouts. Player alias resolution caches aliases and performs a cheap literal pre-check before regex boundary matching. Cortex data-directory persistence supports event history, score state, and replay. Operational ingestion history is persisted independently, and structured football state remains under `data/football_state/`.
+Historical player-week datasets and derived features should be reproducible from documented inputs. Classical ML models are the initial implementation target to keep compute requirements practical and experiments interpretable. More complex approaches are stretch work only after the baseline, evaluation, optimizer, HITL controls, and platform integration are working.
