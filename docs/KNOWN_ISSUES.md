@@ -1,51 +1,38 @@
-# Known Issues
+# Known Issues and Risk Register
 
-## Position Scarcity Is Advisory, Not Player Value
+## DFS Capstone Risks
 
-Position scarcity measures the opportunity cost of waiting at a position. It must not be interpreted as a replacement fantasy ranking. Best Fit applies only a bounded low/medium/high scarcity bonus (`0/1/2`) and never mutates production `ranking_score`.
+| Risk | Likelihood | Impact | Mitigation |
+|---|---|---|---|
+| DFS salary/slate data unavailable or changes format | Medium | High | Use modular platform/provider adapters and support permitted CSV/import fallback workflows. |
+| NFL data source changes | Medium | Medium | Keep source-specific logic behind adapters and preserve reproducible intermediate datasets. |
+| Player identity mismatch across NFL and DFS sources | Medium | High | Use canonical player IDs and explicit identity mapping/validation. |
+| Data leakage from future or post-kickoff information | Medium | High | Generate features chronologically and enforce the rule that only information available before kickoff may be used. |
+| Model overfitting | Medium | High | Use chronological train/validation/test partitions and compare against a simple baseline. |
+| ML models fail to beat the baseline | Medium | Medium | Evaluate multiple candidate models, refine features, and report results transparently rather than assuming ML must win. |
+| Late injury/inactive information changes a slate | High | Medium | Refresh available information and require human review before optimization. |
+| Scope creep | High | High | Complete MVP milestones before stretch features; keep season-long GridironGPT improvements outside Capstone scope. |
+| DFS changes disrupt season-long GridironGPT | Low | High | Isolate development on `dfs-capstone`, preserve system boundaries, and run regression tests before integration. |
+| Compute/storage requirements become excessive | Low | Medium | Begin with efficient classical ML, compact player-week datasets, and expand only when justified by measurable benefit. |
 
-A high-scarcity player can move ahead of a closely ranked alternative, but should not leapfrog a materially stronger player. Changes to these bounds require explicit ordering/regression tests.
+## Model and Evaluation Limitations
 
-## Scarcity Depends on Candidate-Pool Accuracy
+Fantasy-point outcomes contain substantial variance from injuries, game scripts, coaching decisions, weather, turnovers, and other events that cannot be perfectly predicted. Model output is therefore probabilistic decision support rather than a guarantee.
 
-Scarcity is calculated from the current undrafted candidate pool. If a drafted player remains available in application state, or an available player is incorrectly removed, the measured position depth and tier cliff can be wrong. Draft-night pick-state accuracy is therefore part of the scarcity contract.
+Evaluation must distinguish model quality from unusual late-breaking events where practical. Error analysis by position and time period will be used to identify systematic weaknesses.
 
-## Tier Metadata Matters
+## DFS Data Access
 
-Tier-cliff reasoning depends on usable tier information. Candidates without tier metadata can still participate in existing Best Fit behavior, but tier-boundary explanations should not be inferred when the source data does not support them.
+The project does not assume that DraftKings or FanDuel provide a stable public DFS salary API. Platform salary/slate ingestion must use permitted sources or user-provided/platform-provided import files where available. The architecture should not depend on prohibited scraping or automated contest-entry behavior.
 
-## Live Taxonomy Requires Integrity Guards
+## Injury and Context Coverage
 
-A live RotoWire event exposed a malformed `transaction.released` taxonomy rule that lacked `impact`, producing a downstream `KeyError`. The rule is fixed and taxonomy integrity tests now require all rule fields plus non-empty phrases. New taxonomy rules must preserve that contract.
+Reliable structured injury, participation, depth-chart, snap-share, weather, and game-environment data may not all be available during the MVP. These are optional enrichments unless a reliable source is established. Missing optional context must not prevent the core projection/optimization pipeline from operating.
 
-## Provider Record Counts Vary
+## Human-in-the-Loop Dependency
 
-ESPN and RotoWire may return different record counts between runs, including zero records from a provider. A low/zero record count alone does not prove a scheduling failure. Production health is determined from provider failures and Cortex processor failures, with diagnostics inspected when a run reports `status=attention`.
+Late news can make an otherwise valid optimized lineup undesirable. The system therefore requires an explicit human review gate before optimization and a human decision gate after candidate lineups are produced. Human controls reduce—but do not eliminate—the risk of stale or incomplete information.
 
-## Football Context Is Factual-Only
+## Existing Season-Long Boundaries
 
-Roster availability, next opponent, home/away location, and bye week are available to explanations. These facts should affect fantasy decisions only through explicit, tested ranking/decision policies rather than silently changing Cortex `overall_score`.
-
-## 2026 Structured Data Coverage
-
-Not every nflverse/nflreadpy dataset is guaranteed to expose the 2026 season at the same time. Injury, depth-chart, projection, and statistical integrations must handle source-specific season availability.
-
-## WSL Scheduler Availability
-
-Local WSL cron collection depends on the Debian/WSL environment and cron service being available. GitHub Actions daily ingestion reduces dependence on the workstation for the production daily refresh, but local hourly collection can still stop across host/WSL lifecycle events.
-
-## PYTHONPATH Under Cron
-
-The local scheduled runner imports the repository package. Cron must set `PYTHONPATH=.` after changing into the repository directory or imports can fail.
-
-## Duplicate Volume
-
-RSS providers frequently expose the same articles across successive polls. This is expected. Cortex fingerprint deduplication prevents repeated evidence from changing score history. Operational views should distinguish normalized events from newly accepted Cortex events.
-
-## Local JSONL Growth
-
-Cortex, football state, and local observability history can grow continuously. Retention, compaction, archival, or database migration should be evaluated as history becomes substantial.
-
-## Source Overlap
-
-Additional providers should not be added solely to increase volume. New sources should be evaluated for unique evidence, reliability, timeliness, and fantasy-football value.
+DFS development must not silently change authoritative season-long rankings, draft state, waiver logic, or weekly lineup behavior. Shared services must have explicit interfaces and regression coverage before integration.
