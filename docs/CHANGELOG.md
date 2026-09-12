@@ -1,5 +1,26 @@
 # Changelog
 
+## DFS Capstone - 2026-09-11 - Week 3 Proposal Finalization
+
+### Finalized
+- Capstone scope: new DFS intelligence functionality is separated from pre-existing season-long GridironGPT work.
+- Primary ML target: actual player fantasy-point production for a player-week/game using only pre-kickoff information.
+- Baseline and initial candidate model strategy: rolling performance, linear regression, random forest regression, and gradient-boosted regression.
+- Chronological train/validation/test approach to reduce data leakage.
+- DraftKings/FanDuel platform-adapter boundary for salary, scoring, roster, and eligibility rules.
+- Human-in-the-loop architecture with human review before optimization and human acceptance/modification/rejection after optimization.
+- Phase 1-5 milestone definitions and MVP priority order.
+- Success metrics covering MAE, RMSE, correlation, baseline improvement, optimizer legality, HITL controls, and regression safety.
+- Formal DFS risk register with likelihood, impact, and mitigation.
+- Ethical/responsible-AI principles: probabilistic predictions, human final authority, no automated contest entry, transparent evaluation, and permitted data access.
+
+### Documentation
+- Updated `PROJECT_OVERVIEW.md` with Capstone scope, target, success criteria, and HITL principle.
+- Updated `ARCHITECTURE.md` with the DFS ML -> value -> human review -> optimizer -> candidate lineup -> human decision workflow.
+- Updated `ROADMAP.md` with measurable milestone definitions.
+- Updated `KNOWN_ISSUES.md` into a DFS-aware risk register.
+- Added `ETHICS.md` for responsible AI, DFS, and human-in-the-loop boundaries.
+
 ## v1.1 Development - 2026-08-25 - Position Scarcity and Ingestion Hardening
 
 ### Added
