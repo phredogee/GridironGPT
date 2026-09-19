@@ -1,5 +1,27 @@
 # Changelog
 
+## DFS Capstone - 2026-09-19 - Phase 2 Data Foundation
+
+### Added
+- Reproducible `scripts/build_dfs_player_week_dataset.py` pipeline for nflverse/nflreadpy historical player-week data.
+- Raw regular-season Parquet snapshot, canonical player-week dataset, chronological split labels, and JSON data-quality reporting.
+- `DATA_PIPELINE.md` documentation for acquisition, storage, leakage prevention, data quality, and Phase 2 workflow.
+
+### Verified
+- Historical scope: 2020-2025 regular seasons.
+- **107,359** regular-season player-week observations from nflverse/nflreadpy.
+- Stable **150-column** source schema and **37-column** canonical dataset.
+- Regular-season week ranges correctly filter to Week 17 in 2020 and Week 18 in 2021-2025.
+- **0** duplicate `(season, week, game_id, player_id)` keys.
+- **0** missing `game_id`, `fantasy_points`, or `fantasy_points_ppr` values.
+- **107** rows have missing `player_id` and `position` and require investigation/filtering before ML-ready output.
+
+### Split Policy
+- Training: 2020-2023.
+- Validation: 2024.
+- Test: 2025.
+- Live evaluation: 2026.
+
 ## DFS Capstone - 2026-09-11 - Week 3 Proposal Finalization
 
 ### Finalized
@@ -73,7 +95,6 @@
 ### Validated
 - One RawEvent still produces one Cortex Signal and one direct source impact.
 - Full regression suite: 909 passing tests.
-- Feature merged through PR #6.
 
 ## v1.1 Development - 2026-08-22 - Production Daily Ingestion
 
