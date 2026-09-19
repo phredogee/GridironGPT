@@ -261,6 +261,30 @@ Week 4 is complete when:
 6. Privacy, licensing/access, and ethical considerations are documented.
 7. At least one reproducible acquisition path is demonstrated for the core NFL data.
 
+
+## Reproducible Player-Week Build
+
+Phase 2 now includes:
+
+`gridiron_gpt/scripts/build_dfs_player_week_dataset.py`
+
+Run from the repository's `gridiron_gpt` directory:
+
+```bash
+python scripts/build_dfs_player_week_dataset.py
+```
+
+The script:
+
+- loads 2020–2025 player statistics through `nflreadpy`
+- filters to `season_type == "REG"`
+- preserves all source fields in a raw Parquet snapshot
+- writes a smaller canonical player-week Parquet table
+- labels rows as train / validation / test by season
+- writes a JSON data-quality report with row counts, missingness, week ranges, and duplicate-key checks
+
+Generated outputs are written beneath `data/dfs/` and should be treated as reproducible artifacts rather than hand-edited source files.
+
 ## Phase 2 Next Steps
 
 1. Verify regular-season row counts after filtering `season_type`.
