@@ -1,5 +1,31 @@
 # Changelog
 
+## DFS Capstone - 2026-09-27 - Phase 2 Week 5 Preprocessing Complete
+
+### Completed
+- Cleaned the canonical player-week dataset by excluding 107 source rows without usable player identity/position while preserving the raw snapshot.
+- Created the initial DFS offensive modeling population for QB/RB/WR/TE.
+- Added leakage-safe lag-1, rolling-3, and rolling-5 historical features.
+- Added explicit `has_prior_game` cold-start handling rather than silently deleting first-appearance observations.
+- Preserved chronological train/validation/test splitting: 2020-2023 training, 2024 validation, 2025 test, with 2026 reserved for live evaluation.
+- Added `scripts/audit_dfs_phase2_week5.py` for repeatable preprocessing validation.
+
+### Week 5 Audit Results
+- **35,515** DFS offensive player-week rows.
+- **71** total processed columns.
+- **33** engineered lag/rolling feature columns.
+- **31,830** baseline-ready observations.
+- **3,685** retained cold-start observations.
+- **0** duplicate player-game keys.
+- **0** baseline-ready rows missing the 3-game rolling PPR feature.
+- **0** NaN/infinite numeric feature anomalies.
+- Split integrity verified: train **23,472** rows (2020-2023), validation **5,935** rows (2024), test **6,108** rows (2025).
+- Automated Week 5 audit result: **CHECKS PASSED: True**.
+
+### Week 6 Preview
+- The initial 3-game rolling PPR baseline has already been created as an early Week 6 step.
+- Next work: EDA visualizations, pattern/insight documentation, and assembly of the October 3 Data Report and preprocessed dataset deliverable.
+
 ## DFS Capstone - 2026-09-19 - Phase 2 Data Foundation
 
 ### Added
@@ -14,7 +40,7 @@
 - Regular-season week ranges correctly filter to Week 17 in 2020 and Week 18 in 2021-2025.
 - **0** duplicate `(season, week, game_id, player_id)` keys.
 - **0** missing `game_id`, `fantasy_points`, or `fantasy_points_ppr` values.
-- **107** rows have missing `player_id` and `position` and require investigation/filtering before ML-ready output.
+- **107** rows have missing `player_id` and `position`; these were subsequently investigated and excluded from the canonical player-level dataset in Week 5.
 
 ### Split Policy
 - Training: 2020-2023.
