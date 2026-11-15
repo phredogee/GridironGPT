@@ -20,3 +20,14 @@
 - DFS development is additive and must not mutate season-long ranking or advisory state.
 - ML prediction and lineup optimization remain separate subsystems.
 - The final contest-use decision remains with the human user.
+
+
+
+## 2026-11-15 Phase 04 synthetic prototype
+
+- Added deterministic fictional salary fixture and built-in UI selection.
+- Added explicit synthetic provenance and source CSV download.
+- Fixed roster state disappearing on approval reruns.
+- Tied approval to roster/source identity.
+- Added integration, invalid-input, and Streamlit workflow tests.
+- Verified 13 tests passing, including existing scoring tests. This is a focused suite, not the full season-long regression suite.

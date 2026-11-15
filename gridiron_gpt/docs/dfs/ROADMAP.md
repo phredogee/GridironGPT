@@ -92,3 +92,11 @@ Only pursue after MVP exit criteria are met:
 - QB/pass-catcher and game-stack correlation logic
 - Ownership/leverage modeling
 - Additional DFS contest formats
+
+
+
+## Phase 04 checkpoint 2026-11-15
+
+Completed: built-in synthetic slate; importer/optimizer/UI integration; lock/exclude and export approval; focused automated tests.
+
+Remaining before submission: user-run local smoke test, screenshots or recording, deployment environment confirmation, and instructor-specific submission packaging. Real model-to-platform forecasting, FanDuel integration, full-core regression testing, and live contest validation remain open. The synthetic checkpoint does not satisfy the earlier real-salary/two-platform MVP exit criteria.

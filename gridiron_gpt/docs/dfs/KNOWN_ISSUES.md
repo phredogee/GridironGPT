@@ -29,3 +29,15 @@ Injuries, inactive announcements, and depth-chart changes can occur close to kic
 ## Protection of season-long core
 
 DFS work must not alter authoritative season-long rankings, draft state, waiver logic, or weekly lineup behavior unless a separate tested product decision explicitly promotes shared functionality.
+
+
+
+## Phase 04 synthetic checkpoint limits
+
+- Synthetic salaries/point estimates prove integration behavior, not predictive accuracy or profitability.
+- No public deployment or interactive user acceptance test is claimed.
+- Only the focused 13-test suite was executed for this checkpoint; the full repository was not downloaded/tested.
+- FanDuel and validated live DraftKings projections remain unimplemented.
+- The solver can prune pools over 300 entries and allows a 1% MIP gap; do not describe results as guaranteed globally optimal over any arbitrary uploaded slate.
+- A non-blocking pytest dependency deprecation warning was emitted.
+- Existing broader architecture/roadmap sections describe future scope, not completion.

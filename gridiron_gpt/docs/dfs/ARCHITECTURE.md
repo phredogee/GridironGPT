@@ -189,3 +189,9 @@ Key invariant:
 > DFS experiments must not mutate authoritative season-long ranking scores, Draft Assistant state, waiver workflows, or weekly season-long lineup logic.
 
 Successful DFS components may later be promoted deliberately into shared infrastructure only after testing and explicit approval.
+
+
+
+## Implemented synthetic integration path
+
+`synthetic_slate.synthetic_salary_csv` -> existing CSV importer -> `prepare_slate` using the fixed demo clock -> MILP optimizer -> roster validation -> human approval -> CSV export. The 36 fictional entries span QB/RB/WR/TE/DST and four fictional teams. Model and historical-data files are unnecessary for this path. Roster state is synchronized before widgets render; approval is tied to roster/source identity. No season-long code is changed.

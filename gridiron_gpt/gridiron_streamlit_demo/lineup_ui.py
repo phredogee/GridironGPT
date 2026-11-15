@@ -4,6 +4,7 @@ import pandas as pd
 import streamlit as st
 from lineup_optimizer import CAP, SLOTS, prepare_slate, optimize, suggestions, fits, kickoff_utc
 from model_slate import match_historical_slate
+from synthetic_slate import synthetic_salary_csv, DEMO_NOW
 from dk_scoring import dst_demo_estimate, score_observed_offense
 
 
@@ -29,7 +30,21 @@ def render_lineup_lab(platform, importer, validation_error, data_path=None, mode
     if platform != 'DraftKings':
         st.info('FanDuel support is planned. Select DraftKings in the sidebar.')
         return
-    uploaded = st.file_uploader('Upload DraftKings NFL Classic salary CSV',type=['csv'],key='dk_csv')
+    input_mode = st.radio('Slate input', ['Built-in synthetic slate', 'Upload salary CSV'], key='phase4_input')
+    synthetic = input_mode.startswith('Built-in')
+    input_signature = ('synthetic-v1' if synthetic else 'upload')
+    if st.session_state.get('phase4_input_signature') != input_signature:
+        for key in ['dk_slate', 'dk_upload_signature', 'dk_completed', 'exclude_select']:
+            st.session_state.pop(key, None)
+        st.session_state['dk_picks'] = {}
+        st.session_state['dk_excluded'] = []
+        for slot in SLOTS: st.session_state.pop(f'roster_slot_{slot}', None)
+        st.session_state['phase4_input_signature'] = input_signature
+    if synthetic:
+        st.warning('SYNTHETIC TEST DATA: fictional players, salaries, teams, and point estimates. No trained model or real contest forecasts are used.')
+        st.session_state['dk_slate'], _ = importer(synthetic_salary_csv())
+        st.download_button('Download synthetic source CSV', synthetic_salary_csv(), 'synthetic_dk_classic.csv', 'text/csv')
+    uploaded = None if synthetic else st.file_uploader('Upload DraftKings NFL Classic salary CSV',type=['csv'],key='dk_csv')
     if uploaded is not None:
         try:
             slate,_ = importer(uploaded.getvalue())
@@ -46,7 +61,7 @@ def render_lineup_lab(platform, importer, validation_error, data_path=None, mode
         st.info('Upload a DraftKings salary CSV to start building a lineup.')
         return
     st.markdown('#### Projection source')
-    source = st.radio('Lineup scoring', ['Uploaded DK average (demo)', 'Historical locked-model PPR (retrospective)'],
+    source = st.radio('Lineup scoring', (['Synthetic point estimates (test only)'] if synthetic else ['Uploaded DK average (demo)', 'Historical locked-model PPR (retrospective)']),
                       horizontal=True, key='v5_source')
     base = st.session_state['dk_slate'].copy()
     # Only the uploaded-average demonstration can use a simulated clock.
@@ -55,7 +70,7 @@ def render_lineup_lab(platform, importer, validation_error, data_path=None, mode
         st.markdown('#### Slate clock · Version 8')
         demo_clock = st.radio(
             'Kickoff eligibility mode',
-            ['Demo simulation (sample slates)', 'Live clock (actual kickoff lockout)'],
+            (['Demo simulation (sample slates)'] if synthetic else ['Demo simulation (sample slates)', 'Live clock (actual kickoff lockout)']),
             horizontal=True, key='v8_clock_mode',
         )
         if demo_clock.startswith('Demo'):
@@ -88,7 +103,7 @@ def render_lineup_lab(platform, importer, validation_error, data_path=None, mode
         base['Optimization Points'] = base['Model PPR']
     else:
         base['Optimization Points'] = base['DK Avg Pts']
-    source_sig=(source, demo_clock, st.session_state.get('v5_season'), st.session_state.get('v5_week'))
+    source_sig=(input_mode, source, demo_clock, st.session_state.get('v5_season'), st.session_state.get('v5_week'))
     if st.session_state.get('v5_last_source_sig') != source_sig:
         st.session_state['dk_picks']={}
         st.session_state['dk_excluded']=[]
@@ -121,15 +136,15 @@ def render_lineup_lab(platform, importer, validation_error, data_path=None, mode
                 st.error('Demo simulation requires at least one valid kickoff timestamp. '
                          'Unknown kickoffs remain blocked.')
                 return
-            demo_now = min(known) - pd.Timedelta(minutes=1)
+            demo_now = DEMO_NOW if synthetic else min(known) - pd.Timedelta(minutes=1)
             slate = prepare_slate(base, now=demo_now)
             st.caption(f'Simulated eligibility clock: {demo_now.tz_convert("America/New_York"):%b %d, %Y %I:%M %p %Z}. '
                        'Actual kickoff dates are unchanged; this lineup is for demonstration only.')
         else:
             slate = prepare_slate(base)
-    score_label = 'Historical PPR proxy' if source.startswith('Historical') else 'Uploaded DK average proxy'
+    score_label = 'Synthetic test points' if synthetic else ('Historical PPR proxy' if source.startswith('Historical') else 'Uploaded DK average proxy')
     st.caption('**Projection source:** ' + ('Locked Random Forest · historical PPR (offense); uploaded-average DST fallback'
-             if source.startswith('Historical') else 'Uploaded DraftKings AvgPointsPerGame · demo proxy, not an ML forecast'))
+             if source.startswith('Historical') else ('Fictional deterministic point estimates · no ML inference' if synthetic else 'Uploaded DraftKings AvgPointsPerGame · demo proxy, not an ML forecast')))
     if source.startswith('Historical'):
         # Explicit fallback for DST only; offensive rows MUST be model matched.
         slate.loc[slate['Position']=='DST','Demo Points'] = slate.loc[slate['Position']=='DST','DK Avg Pts'].map(dst_demo_estimate)
@@ -137,6 +152,9 @@ def render_lineup_lab(platform, importer, validation_error, data_path=None, mode
         slate.loc[slate['Demo Points'].isna(),'Eligible'] = False
         slate.loc[slate['Demo Points'].isna(),'Status'] = 'NO MODEL MATCH'
         st.caption('DST points = bounded uploaded DK historical average (demo-only fallback); QB/RB/WR/TE = locked-model historical PPR predictions. Mixed scoring: research only.')
+    if st.session_state.pop('phase4_sync_roster', False):
+        for slot in SLOTS:
+            st.session_state[f'roster_slot_{slot}'] = st.session_state.get('dk_picks', {}).get(slot, '')
     picks = dict(st.session_state.get('dk_picks',{}))
     excluded = set(st.session_state.get('dk_excluded',[]))
     now_local = datetime.now().astimezone()
@@ -171,7 +189,7 @@ def render_lineup_lab(platform, importer, validation_error, data_path=None, mode
             widget_key=f'roster_slot_{slot}'
             if widget_key not in st.session_state or st.session_state[widget_key] not in options:
                 st.session_state[widget_key]=current
-            selected=st.selectbox(slot,options,index=options.index(current),format_func=lambda x: labels.get(x,'— Empty —'),key=widget_key)
+            selected=st.selectbox(slot,options,index=None,format_func=lambda x, labels=labels: labels.get(x,'— Empty —'),key=widget_key)
             if selected: picks[slot]=selected
             else: picks.pop(slot,None)
         st.session_state['dk_picks']=picks
@@ -194,13 +212,13 @@ def render_lineup_lab(platform, importer, validation_error, data_path=None, mode
             if err: st.error(err)
             else:
                 st.session_state['dk_picks']={row['Slot']:row['Key'] for _,row in result.iterrows()}
-                for slot in SLOTS: st.session_state.pop(f'roster_slot_{slot}',None)
+                st.session_state['phase4_sync_roster'] = True
                 st.session_state['dk_completed']=result
                 st.rerun()
         if st.button('Clear roster',use_container_width=True):
             st.session_state['dk_picks']={}
             st.session_state.pop('dk_completed',None)
-            for slot in SLOTS: st.session_state.pop(f'roster_slot_{slot}',None)
+            st.session_state['phase4_sync_roster'] = True
             st.rerun()
     with right:
         st.markdown('### Suggested roster picks')
@@ -248,7 +266,7 @@ def render_lineup_lab(platform, importer, validation_error, data_path=None, mode
                         trial.pop(slot,None)
                     if chosen:
                         st.session_state['dk_picks']=trial
-                        st.session_state.pop(f'roster_slot_{chosen}',None)
+                        st.session_state['phase4_sync_roster'] = True
                         st.rerun()
                     st.error('Could not place that player without making the roster infeasible.')
         st.divider()
@@ -282,8 +300,10 @@ def render_lineup_lab(platform, importer, validation_error, data_path=None, mode
         else:
             st.dataframe(lineup[['Slot','Player','Position','Team','Salary',score]].style.format({'Salary':'${:,.2f}',score:'{:.2f}'}),use_container_width=True,hide_index=True)
             st.success(f"Legal roster · ${lineup['Salary'].sum():,.2f} spent · {lineup[score].sum():.2f} {score_label.lower()}")
-            approved=st.checkbox('I reviewed this research/demo lineup and understand it is not a validated live DraftKings projection.',value=False)
+            approval_key = 'approve_' + str(hash((input_mode, source, tuple(sorted(picks.items())))))
+            approved=st.checkbox('I reviewed this research/demo lineup and understand it is not a validated live DraftKings projection.',value=False, key=approval_key)
             if approved:
                 st.download_button('Export approved lineup (CSV)',lineup[['Slot','Player','Position','Team','Salary',score]].round(2).to_csv(index=False).encode(),file_name='gridirongpt_dk_research_lineup.csv',mime='text/csv')
     else:
         st.info('Fill all nine slots manually or click Complete My Lineup to review a legal roster.')
+
