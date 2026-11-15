@@ -72,3 +72,9 @@ The minimum successful Capstone will:
 - Player/game correlation and stacking logic
 - Ownership/leverage modeling
 - Additional DFS contest formats
+
+
+
+## Phase 04 synthetic MVP
+
+A built-in fictional DraftKings-style slate now exercises CSV normalization, point-value calculation, roster completion, locks/exclusions, human approval, and CSV export. All fixture points are deterministic test estimates, not trained-model predictions. This provides an integrated local prototype; live DFS forecasting and FanDuel remain future work.
